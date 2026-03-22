@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.env
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Local data
+local_data/
+chrome/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project config (lives at project root, not in repo)
+CLAUDE.md
+.mcp.json
+
+# Docker volumes
+db_data/

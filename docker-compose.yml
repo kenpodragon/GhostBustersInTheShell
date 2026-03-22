@@ -1,0 +1,67 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: ghostbusters-db
+    restart: "no"
+    ports:
+      - "5566:5432"
+    environment:
+      POSTGRES_DB: ghostbusters
+      POSTGRES_USER: ghostbusters
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-ghostbusters_dev}
+    volumes:
+      - ../local_data/db_data:/var/lib/postgresql/data
+      - ./db/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ghostbusters"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ghostbusters-net
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ghostbusters-app
+    restart: "no"
+    ports:
+      - "8066:8066"
+      - "8067:8067"
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ghostbusters
+      DB_USER: ghostbusters
+      DB_PASSWORD: ${DB_PASSWORD:-ghostbusters_dev}
+      FLASK_PORT: 8066
+      MCP_PORT: 8067
+      AI_PROVIDER: ${AI_PROVIDER:-claude}
+    volumes:
+      - ./backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - ghostbusters-net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ghostbusters-ui
+    restart: "no"
+    ports:
+      - "5176:5176"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - ghostbusters-net
+
+networks:
+  ghostbusters-net:
+    driver: bridge
