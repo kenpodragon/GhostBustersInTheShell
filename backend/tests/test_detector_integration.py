@@ -42,6 +42,36 @@ class TestDetectAIPatterns:
         assert 0 <= low <= result["overall_score"]
         assert result["overall_score"] <= high <= 100
 
+    def test_returns_3tier_structure(self, ai_text):
+        result = detect_ai_patterns(ai_text)
+        assert "overall_score" in result
+        assert "sentences" in result
+        assert "detected_patterns" in result
+        assert "confidence" in result
+        assert "genre" in result
+        assert "signal_count" in result
+        assert "tiers" in result
+        assert "sentence_score" in result["tiers"]
+        assert "paragraph_score" in result["tiers"]
+        assert "document_score" in result["tiers"]
+        assert "paragraphs" in result
+
+    def test_paragraphs_array_present(self, ai_text_multipar):
+        result = detect_ai_patterns(ai_text_multipar)
+        assert len(result["paragraphs"]) >= 2
+        for para in result["paragraphs"]:
+            assert "index" in para
+            assert "score" in para
+            assert "text" in para
+            assert "patterns" in para
+
+    def test_tier_scores_are_numeric(self, ai_text):
+        result = detect_ai_patterns(ai_text)
+        tiers = result["tiers"]
+        assert isinstance(tiers["sentence_score"], (int, float))
+        assert isinstance(tiers["paragraph_score"], (int, float))
+        assert isinstance(tiers["document_score"], (int, float))
+
     def test_new_heuristic_patterns_appear(self, ai_text):
         result = detect_ai_patterns(ai_text)
         pattern_names = [p["pattern"] for p in result["detected_patterns"]]

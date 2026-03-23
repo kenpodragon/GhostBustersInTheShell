@@ -34,7 +34,7 @@ from utils.heuristics.structural import (
     check_char_ngram_profile,
 )
 from utils.heuristics.stylometric import check_burrows_delta
-from utils.heuristics.scoring import combine_signals, estimate_confidence, detect_genre
+from utils.heuristics.scoring import combine_signals, composite_score, estimate_confidence, detect_genre
 from utils.heuristics.reference_data import GENRE_BASELINES
 from utils.heuristics.crowdsourced import (
     check_em_dash_overuse, check_ai_opening_phrases,
@@ -45,11 +45,25 @@ from utils.heuristics.crowdsourced import (
 
 
 def detect_ai_patterns(text: str) -> dict:
-    """Run all heuristic detectors on text. Returns sentence-level scores."""
+    """Run all heuristic detectors on text. Returns 3-tier scores."""
     sentences = _split_sentences(text)
     if not sentences:
-        return {"overall_score": 0, "sentences": [], "detected_patterns": []}
+        return {
+            "overall_score": 0,
+            "sentences": [],
+            "paragraphs": [],
+            "detected_patterns": [],
+            "confidence": (0, 0),
+            "genre": "general",
+            "signal_count": 0,
+            "tiers": {
+                "sentence_score": 0,
+                "paragraph_score": 0,
+                "document_score": 0,
+            },
+        }
 
+    # --- TIER 1: Sentence-level ---
     sentence_results = []
     all_patterns = []
 
@@ -63,23 +77,53 @@ def detect_ai_patterns(text: str) -> dict:
         })
         all_patterns.extend(patterns)
 
-    # Aggregate overall score (weighted average favoring high-scoring sentences)
     scores = [s["score"] for s in sentence_results]
     sentence_overall = _weighted_overall(scores)
 
-    # Document-level patterns and scores — single pass, no double-calling
+    # --- TIER 2: Paragraph-level ---
+    paragraphs = _split_paragraphs(text)
+    paragraph_results = []
+    paragraph_signals_all = {}
+
+    for i, para in enumerate(paragraphs):
+        para_score, para_patterns, para_signals = _score_paragraph(
+            para, i, len(paragraphs)
+        )
+        paragraph_results.append({
+            "index": i,
+            "text": para,
+            "score": para_score,
+            "patterns": para_patterns,
+        })
+        all_patterns.extend(para_patterns)
+        paragraph_signals_all.update(para_signals)
+
+    if paragraph_results:
+        para_scores = [p["score"] for p in paragraph_results]
+        paragraph_overall = sum(para_scores) / len(para_scores)
+    else:
+        paragraph_overall = 0.0
+
+    # --- TIER 3: Document-level ---
     doc_patterns, doc_signals = _document_level_patterns(text, sentences)
     all_patterns.extend(doc_patterns)
-
-    # Use new scoring engine for document-level signals
     doc_combined = combine_signals(doc_signals)
 
-    # Blend sentence-level and document-level (keep existing 60/40 ratio)
-    if doc_signals:
-        overall = sentence_overall * 0.6 + doc_combined * 0.4
-    else:
-        overall = sentence_overall
+    # --- COMPOSITE: 3-tier blend ---
+    sentence_signal_count = len(set(
+        p["pattern"] for s in sentence_results for p in s.get("patterns", [])
+    ))
+    paragraph_signal_count = len(paragraph_signals_all)
+    document_signal_count = len(doc_signals)
 
+    overall = composite_score(
+        sentence_overall,
+        paragraph_overall,
+        doc_combined,
+        sentence_signal_count,
+        paragraph_signal_count,
+        document_signal_count,
+    )
     overall = min(100, overall)
 
     # Genre detection and genre-aware score adjustment
@@ -87,21 +131,13 @@ def detect_ai_patterns(text: str) -> dict:
     genre_baseline = GENRE_BASELINES.get(genre, GENRE_BASELINES["general"])
     human_ceil = genre_baseline["human_ceil"]
 
-    # If score falls in the ambiguous zone between AI floor and human ceiling,
-    # adjust based on genre. Genres like poetry, literary, memoir, and academic
-    # have higher human ceilings — human writers in these genres naturally
-    # trigger more heuristic signals, so we dampen the score.
     if human_ceil > 25 and overall < human_ceil + 10:
-        # Scale the score down proportionally to how much this genre's human
-        # ceiling exceeds the general baseline (25)
-        dampening = (human_ceil - 25) / 25  # e.g. poetry ceil=40 -> 0.6 dampening
-        dampened = overall * (1 - dampening * 0.3)  # max 18% reduction
-        overall = max(dampened, overall * 0.7)  # never reduce more than 30%
+        dampening = (human_ceil - 25) / 25
+        dampened = overall * (1 - dampening * 0.3)
+        overall = max(dampened, overall * 0.7)
 
     word_count = len(re.findall(r"[a-z']+", text.lower()))
-    signal_count = len(doc_signals) + len(set(
-        p["pattern"] for s in sentence_results for p in s.get("patterns", [])
-    ))
+    signal_count = sentence_signal_count + paragraph_signal_count + document_signal_count
     confidence = estimate_confidence(overall, signal_count, word_count)
 
     unique_patterns = list({p["pattern"]: p for p in all_patterns}.values())
@@ -109,10 +145,16 @@ def detect_ai_patterns(text: str) -> dict:
     return {
         "overall_score": round(overall, 1),
         "sentences": sentence_results,
+        "paragraphs": paragraph_results,
         "detected_patterns": unique_patterns,
         "confidence": confidence,
         "genre": genre,
         "signal_count": signal_count,
+        "tiers": {
+            "sentence_score": round(sentence_overall, 1),
+            "paragraph_score": round(paragraph_overall, 1),
+            "document_score": round(doc_combined, 1),
+        },
     }
 
 

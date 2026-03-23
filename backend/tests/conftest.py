@@ -60,3 +60,21 @@ def academic_text():
         "SE = 0.08), suggesting that cultural capital mechanisms may mediate the "
         "relationship more powerfully than pure economic resources."
     )
+
+
+@pytest.fixture
+def ai_text_multipar():
+    """Multi-paragraph AI text for testing paragraph-level analysis."""
+    return (
+        "In today's rapidly evolving digital landscape, organizations must leverage "
+        "innovative strategies to navigate the complexities of modern business. "
+        "Furthermore, it is essential to streamline operations and harness the power "
+        "of cutting-edge technology.\n\n"
+        "Additionally, stakeholders should foster a culture of collaboration and "
+        "transparency. Moreover, the implementation of robust frameworks can "
+        "significantly enhance overall performance. It is worth noting that these "
+        "approaches have proven to be highly effective.\n\n"
+        "In conclusion, a comprehensive and strategic approach is paramount to "
+        "achieving meaningful outcomes. Ultimately, by embracing these transformative "
+        "solutions, businesses can position themselves for long-term success."
+    )
