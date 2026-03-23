@@ -17,6 +17,12 @@ from utils.heuristics.structural import (
 )
 from utils.heuristics.stylometric import check_burrows_delta
 from utils.heuristics.scoring import combine_signals, estimate_confidence, detect_genre
+from utils.heuristics.crowdsourced import (
+    check_em_dash_overuse, check_ai_opening_phrases,
+    check_closing_summary, check_question_exclamation_absence,
+    check_oxford_comma_consistency, check_bullet_subheading_overuse,
+    check_digression_absence, check_consensus_middle,
+)
 
 __all__ = [
     "check_yules_k", "check_hapax_legomena",
@@ -25,4 +31,8 @@ __all__ = [
     "check_sentence_opener_pos", "check_word_length_distribution",
     "check_char_ngram_profile", "check_burrows_delta",
     "combine_signals", "estimate_confidence", "detect_genre",
+    "check_em_dash_overuse", "check_ai_opening_phrases",
+    "check_closing_summary", "check_question_exclamation_absence",
+    "check_oxford_comma_consistency", "check_bullet_subheading_overuse",
+    "check_digression_absence", "check_consensus_middle",
 ]

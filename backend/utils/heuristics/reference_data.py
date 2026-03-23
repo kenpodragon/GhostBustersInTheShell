@@ -41,4 +41,9 @@ HEURISTIC_WEIGHTS = {
     "mattr": 0.6, "zipf_deviation": 0.7, "compression_ratio": 0.8,
     "sentence_opener_pos": 0.6, "burrows_delta": 0.8,
     "char_ngram_profile": 0.5, "word_length_distribution": 0.4,
+    # Phase 2.3+ crowdsourced tells
+    "em_dash_overuse": 0.6, "ai_opening_phrases": 0.8,
+    "closing_summary": 0.7, "question_exclamation_absence": 0.5,
+    "oxford_comma_consistency": 0.3, "bullet_subheading_overuse": 0.5,
+    "digression_absence": 0.5, "consensus_middle": 0.6,
 }

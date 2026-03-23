@@ -35,6 +35,12 @@ from utils.heuristics.structural import (
 )
 from utils.heuristics.stylometric import check_burrows_delta
 from utils.heuristics.scoring import combine_signals, estimate_confidence, detect_genre
+from utils.heuristics.crowdsourced import (
+    check_em_dash_overuse, check_ai_opening_phrases,
+    check_closing_summary, check_question_exclamation_absence,
+    check_oxford_comma_consistency, check_bullet_subheading_overuse,
+    check_digression_absence, check_consensus_middle,
+)
 
 
 def detect_ai_patterns(text: str) -> dict:
@@ -1013,6 +1019,15 @@ def _document_level_patterns(text: str, sentences: list) -> tuple[list[dict], di
         ("word_length_distribution", check_word_length_distribution),
         ("char_ngram_profile", check_char_ngram_profile),
         ("burrows_delta", check_burrows_delta),
+        # Phase 2.3+ crowdsourced tells
+        ("em_dash_overuse", check_em_dash_overuse),
+        ("ai_opening_phrases", check_ai_opening_phrases),
+        ("closing_summary", check_closing_summary),
+        ("question_exclamation_absence", check_question_exclamation_absence),
+        ("oxford_comma_consistency", check_oxford_comma_consistency),
+        ("bullet_subheading_overuse", check_bullet_subheading_overuse),
+        ("digression_absence", check_digression_absence),
+        ("consensus_middle", check_consensus_middle),
     ]
 
     for name, check_fn in checks_on_text:
