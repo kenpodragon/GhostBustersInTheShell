@@ -19,7 +19,12 @@ def combine_signals(signals: dict[str, float]) -> float:
     Returns:
         Combined score 0-100
     """
-    active = {k: v for k, v in signals.items() if v > 0}
+    # Filter out signals with zero weight (killed heuristics)
+    active = {}
+    for k, v in signals.items():
+        if v > 0 and HEURISTIC_WEIGHTS.get(k, 0.5) > 0:
+            active[k] = v
+
     if not active:
         return 0
 
@@ -36,7 +41,10 @@ def combine_signals(signals: dict[str, float]) -> float:
     base_score = weighted_sum / weight_total
 
     # Signal count bonus: convergence of evidence
-    count_bonus = min(20, (len(active) - 1) * 4)
+    # Only count signals with meaningful weight (>= 0.3) to avoid
+    # inflating scores from many weak/noisy signals
+    meaningful_signals = [n for n in active if HEURISTIC_WEIGHTS.get(n, 0) >= 0.3]
+    count_bonus = min(15, max(0, len(meaningful_signals) - 2) * 3)
 
     # Extra boost when multiple high-confidence signals agree
     high_conf_signals = [s for n, s in active.items()
@@ -115,15 +123,114 @@ def detect_genre(text: str) -> str:
                       "murmured", "gaze", "softly"}
     creative_score = len(word_set & creative_words) / max(1, min(word_count / 20, 10))
 
+    # Memoir/personal narrative detection
+    memoir_words = {"remember", "remembered", "childhood", "grew", "father", "mother",
+                    "years", "old", "family", "home", "school", "friends", "life",
+                    "story", "stories", "decided", "realized", "felt", "thought"}
+    memoir_score = len(word_set & memoir_words) / max(1, min(word_count / 20, 10))
+    # Memoir often uses first-person past tense
+    first_person_past = len(re.findall(r"\bI\s+(?:was|had|went|saw|felt|thought|knew|decided|remember)", text))
+    memoir_score += min(0.5, first_person_past / max(1, word_count / 100))
+
+    # Poetry detection
+    lines = text.strip().split('\n')
+    non_empty_lines = [l for l in lines if l.strip()]
+    if non_empty_lines:
+        avg_line_len = sum(len(l.strip()) for l in non_empty_lines) / len(non_empty_lines)
+        # Poetry has short lines (< 60 chars avg) and many line breaks relative to words
+        line_ratio = len(non_empty_lines) / max(1, word_count / 10)
+        poetry_score = 0
+        if avg_line_len < 60 and line_ratio > 0.5:
+            poetry_score = 0.5
+        if avg_line_len < 40:
+            poetry_score += 0.3
+        # No sentence-ending punctuation on most lines = poetry
+        lines_without_period = sum(1 for l in non_empty_lines if not l.strip().endswith(('.', '!', '?')))
+        if lines_without_period / max(1, len(non_empty_lines)) > 0.6:
+            poetry_score += 0.2
+    else:
+        poetry_score = 0
+
+    # Literary fiction — older/classic style with formal 3rd person narrative
+    literary_words = {"whom", "whilst", "hitherto", "wherein", "countenance",
+                      "therefore", "indeed", "manner", "exclaimed", "replied",
+                      "observed", "remarked", "henceforth", "accordingly"}
+    literary_score = len(word_set & literary_words) / max(1, min(word_count / 20, 10))
+    # High semicolon or em-dash usage + 3rd person = literary
+    semicolons = text.count(';')
+    em_dashes = text.count('—') + text.count(' - ')
+    if semicolons > 2 or em_dashes > 3:
+        literary_score += 0.15
+
     scores = {
         "academic": academic_score,
         "casual": casual_score,
         "business": business_score,
         "resume": resume_score,
         "creative": creative_score,
+        "memoir": memoir_score,
+        "poetry": poetry_score,
+        "literary": literary_score,
     }
 
     best = max(scores, key=scores.get)
     if scores[best] > 0.15:
         return best
     return "general"
+
+
+def composite_score(
+    sentence_score: float,
+    paragraph_score: float,
+    document_score: float,
+    sentence_signals: int,
+    paragraph_signals: int,
+    document_signals: int,
+) -> float:
+    """Compute 3-tier composite AI detection score.
+
+    Weights:
+    - Document-level: 35% (whole-text statistics are most stable)
+    - Paragraph-level: 35% (intermediate aggregation catches patterns)
+    - Sentence-level: 30% (individual sentences are noisiest)
+
+    Bonuses:
+    - Convergence: if all three tiers agree (low variance), +5-10 points
+    - Signal density: more signals across tiers = higher confidence
+
+    Returns: composite score 0-100
+    """
+    if sentence_score == 0 and paragraph_score == 0 and document_score == 0:
+        return 0.0
+
+    # Weighted blend
+    weighted = (
+        sentence_score * 0.30 +
+        paragraph_score * 0.35 +
+        document_score * 0.35
+    )
+
+    # Convergence bonus: all tiers agreeing boosts confidence
+    scores = [sentence_score, paragraph_score, document_score]
+    non_zero = [s for s in scores if s > 0]
+    if len(non_zero) >= 2:
+        mean = sum(non_zero) / len(non_zero)
+        variance = sum((s - mean) ** 2 for s in non_zero) / len(non_zero)
+        # Low variance = high agreement = bonus
+        if variance < 100:  # scores within ~10 points of each other
+            convergence_bonus = min(10, (100 - variance) / 10)
+        else:
+            convergence_bonus = 0
+    else:
+        convergence_bonus = 0
+
+    # Cross-tier signal density bonus
+    total_signals = sentence_signals + paragraph_signals + document_signals
+    tiers_with_signals = sum(1 for s in [sentence_signals, paragraph_signals, document_signals] if s > 0)
+    density_bonus = 0
+    if tiers_with_signals >= 3 and total_signals >= 8:
+        density_bonus = min(10, (total_signals - 8) * 2)
+    elif tiers_with_signals >= 2 and total_signals >= 5:
+        density_bonus = min(5, (total_signals - 5))
+
+    return min(100, round(weighted + convergence_bonus + density_bonus, 1))

@@ -80,3 +80,59 @@ class TestDetectGenre:
     def test_academic_text_detected(self, academic_text):
         genre = detect_genre(academic_text)
         assert genre == "academic"
+
+
+from utils.heuristics.scoring import composite_score
+
+
+class TestCompositeScore:
+    """3-tier composite scoring."""
+
+    def test_returns_float(self):
+        result = composite_score(
+            sentence_score=30, paragraph_score=25, document_score=20,
+            sentence_signals=3, paragraph_signals=2, document_signals=4,
+        )
+        assert isinstance(result, float)
+        assert 0 <= result <= 100
+
+    def test_all_zeros_returns_zero(self):
+        result = composite_score(
+            sentence_score=0, paragraph_score=0, document_score=0,
+            sentence_signals=0, paragraph_signals=0, document_signals=0,
+        )
+        assert result == 0
+
+    def test_high_all_tiers_scores_high(self):
+        result = composite_score(
+            sentence_score=70, paragraph_score=65, document_score=60,
+            sentence_signals=8, paragraph_signals=5, document_signals=10,
+        )
+        assert result > 60
+
+    def test_one_bad_sentence_doesnt_tank_score(self):
+        """One high sentence score with low paragraph/doc should not dominate."""
+        result = composite_score(
+            sentence_score=80, paragraph_score=5, document_score=5,
+            sentence_signals=2, paragraph_signals=0, document_signals=1,
+        )
+        assert result < 40
+
+    def test_convergence_bonus(self):
+        """All three tiers agreeing should boost the score."""
+        converged = composite_score(
+            sentence_score=40, paragraph_score=40, document_score=40,
+            sentence_signals=5, paragraph_signals=3, document_signals=5,
+        )
+        diverged = composite_score(
+            sentence_score=60, paragraph_score=10, document_score=50,
+            sentence_signals=5, paragraph_signals=3, document_signals=5,
+        )
+        assert converged > diverged
+
+    def test_capped_at_100(self):
+        result = composite_score(
+            sentence_score=95, paragraph_score=95, document_score=95,
+            sentence_signals=12, paragraph_signals=8, document_signals=15,
+        )
+        assert result <= 100
