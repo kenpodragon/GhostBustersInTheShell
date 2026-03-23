@@ -189,10 +189,10 @@ def composite_score(
 ) -> float:
     """Compute 3-tier composite AI detection score.
 
-    Weights:
-    - Document-level: 35% (whole-text statistics are most stable)
-    - Paragraph-level: 35% (intermediate aggregation catches patterns)
-    - Sentence-level: 30% (individual sentences are noisiest)
+    Weights (calibrated against 126-sample corpus, Phase 3.5):
+    - Sentence-level: 45% (best discriminator, +21.7 AI-human gap)
+    - Paragraph-level: 30% (good intermediate signal, +18.0 gap)
+    - Document-level: 25% (weakest discriminator, +8.5 gap — many heuristics fire on human literary text)
 
     Bonuses:
     - Convergence: if all three tiers agree (low variance), +5-10 points
@@ -205,9 +205,9 @@ def composite_score(
 
     # Weighted blend
     weighted = (
-        sentence_score * 0.30 +
-        paragraph_score * 0.35 +
-        document_score * 0.35
+        sentence_score * 0.45 +
+        paragraph_score * 0.30 +
+        document_score * 0.25
     )
 
     # Convergence bonus: all tiers agreeing boosts confidence
