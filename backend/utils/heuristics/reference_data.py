@@ -38,6 +38,7 @@ HEURISTIC_WEIGHTS = {
     "contractions": 1.0,            # AI avoids contractions: +12.5 gap
     "entity_density": 1.0,          # AI lacks specifics: +10.3 gap
     "ai_opening_phrases": 1.0,      # "In today's world..." dead giveaway
+    "ai_phrases": 0.9,              # Multi-word AI collocations (Phase 3.6)
     "buzzwords": 0.9,               # Hard-ban vocabulary stays high
     "compression_ratio": 0.8,       # AI text compresses more uniformly
     "length_uniformity": 0.8,       # uniform_length is AI-ONLY (+0.46 disc)

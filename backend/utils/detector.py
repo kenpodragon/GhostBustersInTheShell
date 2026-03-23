@@ -43,6 +43,8 @@ from utils.heuristics.crowdsourced import (
     check_oxford_comma_consistency, check_bullet_subheading_overuse,
     check_digression_absence, check_consensus_middle,
 )
+from utils.heuristics.ai_phrases import check_ai_phrases, check_ai_phrases_sentence
+from utils.heuristics.classification import classify_category
 
 
 def detect_ai_patterns(text: str) -> dict:
@@ -125,6 +127,7 @@ def _detect_ai_patterns_inner(text: str, detail: bool = False) -> dict:
                 "score_math": {},
                 "escalation_traces": [],
             }
+        result["classification"] = classify_category(result)
         return result
 
     # --- TIER 1: Sentence-level ---
@@ -273,6 +276,9 @@ def _detect_ai_patterns_inner(text: str, detail: bool = False) -> dict:
             ),
         }
 
+    # --- Classification: Ghost Written / Ghost Touched / Clean ---
+    result["classification"] = classify_category(result)
+
     return result
 
 
@@ -343,6 +349,12 @@ def _score_sentence(sentence: str, all_sentences: list) -> tuple:
     if emo_score > 0:
         scores.append(emo_score)
         patterns.extend(emo_patterns)
+
+    # 11. AI phrases — multi-word collocations anywhere in sentence
+    phrase_score, phrase_patterns = check_ai_phrases_sentence(sentence)
+    if phrase_score > 0:
+        scores.append(phrase_score)
+        patterns.extend(phrase_patterns)
 
     # Combine scores: only count non-zero signals to avoid dilution
     nonzero = [s for s in scores if s > 0]
@@ -1311,6 +1323,8 @@ def _document_level_patterns(text: str, sentences: list) -> tuple[list[dict], di
         ("bullet_subheading_overuse", check_bullet_subheading_overuse),
         ("digression_absence", check_digression_absence),
         ("consensus_middle", check_consensus_middle),
+        # Phase 3.6: AI phrase detection
+        ("ai_phrases", check_ai_phrases),
     ]
 
     for name, check_fn in checks_on_text:

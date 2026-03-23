@@ -40,6 +40,9 @@ HEURISTIC_LEVELS = {
     "transitions": "sentence",
     "punctuation_fingerprint": "sentence",
 
+    # Sentence + document: multi-word AI phrases (Phase 3.6)
+    "ai_phrases": "sentence",
+
     # Cross-level: computed doc-wide but inform sentence/paragraph scoring
     "contractions": "cross",
     "first_person": "cross",
