@@ -185,6 +185,11 @@ def _check_buzzwords(sentence: str) -> tuple:
         "streamline", "champion", "evangelize", "pioneer", "facilitate",
         "optimize", "incentivize", "conceptualize", "contextualize",
         "problematize", "underscore", "showcase", "illuminate",
+        # Crowdsourced additions
+        "bolster", "reimagine", "transcend", "demystify",
+        "unpack", "unravel", "embark", "endeavor", "resonate",
+        "captivate", "cultivate", "envision", "propel",
+        "augment", "orchestrate", "curate", "architect", "ideate",
     }
     # Hard-ban adjectives (Voice Guide Part 1)
     hard_ban_adj = {
@@ -194,6 +199,13 @@ def _check_buzzwords(sentence: str) -> tuple:
         "mission-critical", "enterprise-grade", "multifaceted", "nuanced",
         "pivotal", "compelling", "invaluable", "indispensable", "unparalleled",
         "unprecedented", "myriad",
+        # Crowdsourced additions
+        "meticulous", "intricate", "vibrant", "bustling", "nestled",
+        "thoughtful", "noteworthy", "commendable", "remarkable", "insightful",
+        "profound", "impactful", "actionable", "scalable", "bespoke",
+        "granular", "overarching", "undeniable", "instrumental",
+        "versatile", "ubiquitous", "burgeoning", "nascent",
+        "seminal", "salient", "cogent", "astute", "discerning",
     }
     # Hard-ban filler / connector words (Voice Guide Part 1-2)
     hard_ban_filler = {
@@ -201,6 +213,11 @@ def _check_buzzwords(sentence: str) -> tuple:
         "paradigm", "ecosystem", "synergy", "landscape", "realm", "tapestry",
         "underpinning", "bedrock", "cornerstone", "linchpin", "crucible",
         "zeitgeist", "ethos", "nexus", "interplay", "juxtaposition",
+        # Crowdsourced additions
+        "plethora", "gamut", "spectrum",
+        "confluence", "dichotomy", "trajectory", "framework", "methodology",
+        "stakeholder", "deliverable", "bandwidth", "synergistic", "proactive",
+        "aforementioned", "henceforth", "notwithstanding", "thereof", "whereby",
     }
     buzzwords = hard_ban_verbs | hard_ban_adj | hard_ban_filler
 
