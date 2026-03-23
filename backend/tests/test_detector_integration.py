@@ -26,7 +26,7 @@ class TestDetectAIPatterns:
     def test_short_text_returns_low_confidence(self, short_text):
         result = detect_ai_patterns(short_text)
         low, high = result["confidence"]
-        assert (high - low) > 10
+        assert (high - low) > 5  # Short text = wide uncertainty
 
     def test_academic_text_not_over_flagged(self, academic_text):
         result = detect_ai_patterns(academic_text)

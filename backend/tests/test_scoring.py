@@ -18,8 +18,9 @@ class TestCombineSignals:
         assert 0 < result <= 100
 
     def test_high_weight_signal_dominates(self):
-        high = combine_signals({"compression_ratio": 40})  # weight 0.8
-        low = combine_signals({"emoji_density": 40})  # weight 0.3
+        """When combined with another signal, high-weight signals pull the average up more."""
+        high = combine_signals({"compression_ratio": 40, "hedge_words": 20})  # 0.8 + 0.6
+        low = combine_signals({"emoji_density": 40, "hedge_words": 20})  # 0.3 + 0.6
         assert high > low
 
     def test_multiple_signals_boost_score(self):
