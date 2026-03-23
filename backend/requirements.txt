@@ -17,3 +17,4 @@ scipy==1.15.2
 # AI providers (Claude CLI installed via npm in Dockerfile)
 # Testing
 pytest==8.3.4
+pytest-cov==6.1.1
