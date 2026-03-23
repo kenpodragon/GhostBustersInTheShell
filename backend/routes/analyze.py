@@ -53,6 +53,11 @@ def quick_score():
     if not data or "text" not in data:
         return jsonify({"error": "Provide 'text' in JSON body"}), 400
 
-    from utils.detector import detect_ai_patterns
-    result = detect_ai_patterns(data["text"])
+    detail = data.get("detail")
+    if detail == "full":
+        from utils.detector import detect_ai_patterns_detailed
+        result = detect_ai_patterns_detailed(data["text"])
+    else:
+        from utils.detector import detect_ai_patterns
+        result = detect_ai_patterns(data["text"])
     return jsonify(result)

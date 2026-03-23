@@ -72,6 +72,29 @@ class TestDetectAIPatterns:
         assert isinstance(tiers["paragraph_score"], (int, float))
         assert isinstance(tiers["document_score"], (int, float))
 
+    def test_detail_mode_returns_report(self, ai_text_multipar):
+        from utils.detector import detect_ai_patterns_detailed
+        result = detect_ai_patterns_detailed(ai_text_multipar)
+        assert "report" in result
+        report = result["report"]
+        assert "tier_breakdown" in report
+        assert "score_math" in report
+        assert "escalation_traces" in report
+        assert "document" in report["tier_breakdown"]
+        assert "paragraph" in report["tier_breakdown"]
+        assert "sentence" in report["tier_breakdown"]
+
+    def test_escalation_traces_structure(self, ai_text_multipar):
+        from utils.detector import detect_ai_patterns_detailed
+        result = detect_ai_patterns_detailed(ai_text_multipar)
+        traces = result["report"]["escalation_traces"]
+        assert isinstance(traces, list)
+        if traces:
+            trace = traces[0]
+            assert "signal" in trace
+            assert "levels" in trace
+            assert "compounded_severity" in trace
+
     def test_new_heuristic_patterns_appear(self, ai_text):
         result = detect_ai_patterns(ai_text)
         pattern_names = [p["pattern"] for p in result["detected_patterns"]]

@@ -19,51 +19,60 @@ FUNCTION_WORD_FREQS = {
 }
 
 GENRE_BASELINES = {
-    # Phase 2.4 calibrated baselines (from 60-sample corpus, 2026-03-23)
+    # Phase 3.4 calibrated baselines (from 116-sample corpus, 2026-03-23)
     "general": {"ai_floor": 30, "human_ceil": 25, "description": "General prose"},
-    "academic": {"ai_floor": 30, "human_ceil": 35, "description": "Academic/formal writing — inherently formal, higher human ceiling"},
+    "academic": {"ai_floor": 30, "human_ceil": 40, "description": "Academic/formal writing — inherently formal, higher human ceiling"},
     "casual": {"ai_floor": 25, "human_ceil": 22, "description": "Casual/conversational — AI casual harder to detect"},
     "business": {"ai_floor": 35, "human_ceil": 25, "description": "Business communications"},
-    "creative": {"ai_floor": 22, "human_ceil": 22, "description": "Creative/fiction — AI creative is least detectable"},
+    "creative": {"ai_floor": 22, "human_ceil": 28, "description": "Creative/fiction — literary style triggers false positives"},
     "resume": {"ai_floor": 30, "human_ceil": 25, "description": "Resume/cover letter"},
+    "memoir": {"ai_floor": 25, "human_ceil": 30, "description": "Memoir/personal narrative — literary but personal"},
+    "poetry": {"ai_floor": 20, "human_ceil": 40, "description": "Poetry — highly variable style, many false positive triggers"},
+    "literary": {"ai_floor": 22, "human_ceil": 35, "description": "Literary fiction — classic and modern literary prose"},
 }
 
 HEURISTIC_WEIGHTS = {
-    # Phase 2.4 calibrated weights (optimized against 60-sample corpus, 2026-03-23)
-    # Top discriminators (boosted)
+    # Phase 3.4 calibrated weights (optimized against 116-sample corpus, 2026-03-23)
+    # Top discriminators — AI-ONLY patterns from corpus analysis
     "sentence_opener_pos": 1.0,     # Best discriminator: +17.9 AI-Human gap
     "contractions": 1.0,            # AI avoids contractions: +12.5 gap
     "entity_density": 1.0,          # AI lacks specifics: +10.3 gap
     "ai_opening_phrases": 1.0,      # "In today's world..." dead giveaway
     "buzzwords": 0.9,               # Hard-ban vocabulary stays high
     "compression_ratio": 0.8,       # AI text compresses more uniformly
-    # Good discriminators (kept or slightly adjusted)
+    "length_uniformity": 0.8,       # uniform_length is AI-ONLY (+0.46 disc)
+    "hedge_words": 0.8,             # AI-ONLY pattern (+0.46 disc)
+    # Good discriminators
     "dual_adjectives": 0.7, "false_dichotomy": 0.7, "synonym_treadmill": 0.7,
-    "length_uniformity": 0.7, "opening_diversity": 0.7, "yules_k": 0.7,
-    "function_word_deviation": 0.7,  # Fires broadly but still useful in combination
+    "opening_diversity": 0.7, "yules_k": 0.7,
     "adverb_density": 0.7, "digression_absence": 0.67,
-    "hedge_words": 0.6, "hedge_clusters": 0.6, "transition_stacks": 0.6,
-    "trailing_participial": 0.6, "emotional_exposition": 0.6,
+    "hedge_clusters": 0.6, "transition_stacks": 0.6,
+    "emotional_exposition": 0.6,
     "hapax_legomena": 0.6, "paragraph_uniformity": 0.6,
     # Moderate discriminators
-    "structural_patterns": 0.5, "confident_declarations": 0.5,
-    "self_contained_paragraphs": 0.5, "vocabulary_richness": 0.5,
+    "structural_patterns": 0.5,
+    "vocabulary_richness": 0.5,
     "transitions": 0.5, "char_ngram_profile": 0.5,
     "bullet_subheading_overuse": 0.5,
     "word_length_distribution": 0.48,
     "first_person": 0.35,           # Good gap but can fire on human casual text
-    "punctuation_fingerprint": 0.3,  # Fires broadly, modest discrimination
     "emoji_density": 0.3,
-    # Noise/harmful — crushed by optimizer (fire on both AI and human equally)
-    "zipf_deviation": 0.1,          # Fires 100% on both — no discrimination
-    "burrows_delta": 0.1,           # Fires 100% on both, scores human HIGHER
-    "em_dash_overuse": 0.1,         # Humans use more em dashes than AI
-    "passive_voice": 0.1,           # Near-zero discrimination
-    "mattr": 0.1,                   # Fires broadly, weak discrimination
-    "readability": 0.1,             # Near-zero discrimination
-    "sensory_checklist": 0.1,       # Rarely fires
-    "question_exclamation_absence": 0.1,  # Fires on both
-    "oxford_comma_consistency": 0.1,      # Rarely fires
-    "closing_summary": 0.1,         # Rarely fires
-    "consensus_middle": 0.1,        # Rarely fires
+    # Reduced — fire on human literary/memoir text too much
+    "trailing_participial": 0.3,    # Was 0.6 — fires 22 human vs 20 AI (+0.22 disc only)
+    "confident_declarations": 0.25, # Was 0.5 — fires more on human (-0.14 disc)
+    "self_contained_paragraphs": 0.2,  # Was 0.5 — fires on human memoir/lit (-0.059 disc)
+    "punctuation_fingerprint": 0.2, # Was 0.3 — fires broadly
+    # KILLED — zero or negative discrimination on 116-sample corpus
+    "zipf_deviation": 0.0,          # Fires 100% on ALL samples — zero discrimination
+    "function_word_deviation": 0.0,  # Fires 100% on ALL samples — zero discrimination
+    "burrows_delta": 0.0,           # Fires MORE on human (-0.185 disc) — actively harmful
+    "readability": 0.0,             # mid_range_readability fires equally — zero disc
+    "em_dash_overuse": 0.0,         # Fires 2x more on human (-0.031 disc)
+    "passive_voice": 0.0,           # high_passive_voice is FP-ONLY
+    "mattr": 0.0,                   # mattr_low is FP-ONLY, mattr_uniform weak
+    "sensory_checklist": 0.0,       # sensory_rotation is FP-ONLY
+    "question_exclamation_absence": 0.0,  # Fires on both
+    "oxford_comma_consistency": 0.0,      # Rarely fires
+    "closing_summary": 0.0,         # Rarely fires
+    "consensus_middle": 0.0,        # Rarely fires
 }
