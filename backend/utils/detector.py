@@ -758,54 +758,6 @@ def _check_punctuation_fingerprint(text: str) -> tuple:
     return min(50, score), patterns
 
 
-def _check_opening_diversity(sentences: list) -> tuple:
-    """Check sentence/paragraph opening word diversity — AI repeats openers."""
-    patterns = []
-    if len(sentences) < 5:
-        return 0, []
-
-    openers = []
-    for s in sentences:
-        words = s.strip().split()
-        if words:
-            openers.append(words[0].lower().rstrip(','))
-
-    # Check how many unique openers vs total
-    opener_counts = Counter(openers)
-    unique_ratio = len(opener_counts) / len(openers)
-
-    score = 0
-
-    # AI-typical openers
-    ai_openers = {"the", "this", "these", "those", "it", "in", "by", "with", "from", "as"}
-    ai_opener_count = sum(c for w, c in opener_counts.items() if w in ai_openers)
-    ai_opener_ratio = ai_opener_count / len(openers)
-
-    if unique_ratio < 0.4:
-        score = 40
-        most_common = opener_counts.most_common(3)
-        top_words = ", ".join(f"'{w}' ({c}x)" for w, c in most_common)
-        patterns.append({
-            "pattern": "repetitive_openers",
-            "detail": f"Only {unique_ratio:.0%} unique sentence openers — top: {top_words}"
-        })
-    elif unique_ratio < 0.55:
-        score = 20
-        patterns.append({
-            "pattern": "low_opener_diversity",
-            "detail": f"Low sentence opener diversity ({unique_ratio:.0%} unique)"
-        })
-
-    if ai_opener_ratio > 0.6:
-        score = min(50, score + 15)
-        patterns.append({
-            "pattern": "ai_typical_openers",
-            "detail": f"{ai_opener_ratio:.0%} of sentences start with AI-typical words (The, This, It, In...)"
-        })
-
-    return score, patterns
-
-
 def _check_hedge_clusters(sentences: list) -> tuple:
     """Check for hedge word clustering — AI stacks hedges in adjacent sentences."""
     patterns = []
