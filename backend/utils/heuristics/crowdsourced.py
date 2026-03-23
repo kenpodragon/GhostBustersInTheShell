@@ -19,6 +19,11 @@ def check_em_dash_overuse(text: str) -> tuple[float, list[dict]]:
         return 0, []
 
     em_dashes = text.count('\u2014') + text.count('--')
+
+    # Need at least 3 em dashes to flag — one or two is normal human usage
+    if em_dashes < 3:
+        return 0, []
+
     rate_per_1000 = (em_dashes / len(words)) * 1000
 
     patterns = []

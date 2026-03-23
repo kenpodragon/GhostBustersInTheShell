@@ -20,10 +20,11 @@ class TestEmDashOveruse:
 
     def test_em_dash_heavy_text_scores(self):
         text = (
-            "The project — which had been delayed — was finally complete. "
-            "Our team — consisting of engineers and designers — delivered "
-            "the solution — a robust platform — on time. The results — "
-            "both quantitative and qualitative — exceeded expectations."
+            "The project — which had been delayed for several months — was finally complete. "
+            "Our team — consisting of engineers and designers from multiple departments — delivered "
+            "the solution — a robust platform for managing customer data — on time and under budget. "
+            "The results — both quantitative and qualitative in their assessment — exceeded all "
+            "expectations that the leadership team had originally set for the initiative."
         )
         score, _ = check_em_dash_overuse(text)
         assert score > 0
@@ -52,6 +53,8 @@ class TestClosingSummary:
     def test_summary_detected(self):
         text = (
             "Some content here about the topic at hand. "
+            "The analysis reveals several important findings. "
+            "Multiple factors contribute to the overall outcome. "
             "In conclusion, by leveraging these strategies, organizations "
             "can position themselves for long-term success."
         )
