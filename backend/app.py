@@ -34,11 +34,13 @@ from routes.analyze import analyze_bp
 from routes.rewrite import rewrite_bp
 from routes.documents import documents_bp
 from routes.voice_profiles import voice_profiles_bp
+from routes.settings import settings_bp
 
 app.register_blueprint(analyze_bp, url_prefix="/api")
 app.register_blueprint(rewrite_bp, url_prefix="/api")
 app.register_blueprint(documents_bp, url_prefix="/api")
 app.register_blueprint(voice_profiles_bp, url_prefix="/api")
+app.register_blueprint(settings_bp, url_prefix="/api")
 
 
 def main():
@@ -49,6 +51,10 @@ def main():
 
     # Initialize DB pool
     init_pool()
+
+    # AI provider startup health check
+    from ai_providers.router import startup_health_check
+    startup_health_check()
 
     # Start MCP server in background thread
     if not args.no_mcp:

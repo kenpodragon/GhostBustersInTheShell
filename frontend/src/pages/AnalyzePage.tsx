@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 interface SentenceResult {
   index: number
@@ -11,6 +11,14 @@ interface AnalysisResult {
   overall_score: number
   sentences: SentenceResult[]
   detected_patterns: Array<{ pattern: string; detail: string }>
+  _analysis_mode?: string
+}
+
+interface AIStatus {
+  ai_enabled: boolean
+  ai_provider: string
+  ai_runtime_available: boolean
+  ai_runtime_error: string | null
 }
 
 function getScoreClass(score: number): string {
@@ -32,6 +40,44 @@ function AnalyzePage() {
   const [result, setResult] = useState<AnalysisResult | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [aiStatus, setAiStatus] = useState<AIStatus | null>(null)
+  const [togglingAi, setTogglingAi] = useState(false)
+
+  useEffect(() => {
+    fetchAiStatus()
+  }, [])
+
+  const fetchAiStatus = async () => {
+    try {
+      const res = await fetch('/api/settings')
+      if (res.ok) {
+        const data = await res.json()
+        setAiStatus(data)
+      }
+    } catch {
+      // Settings not available — AI status unknown
+    }
+  }
+
+  const toggleAi = async () => {
+    if (!aiStatus || togglingAi) return
+    setTogglingAi(true)
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ai_enabled: !aiStatus.ai_enabled }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setAiStatus(data)
+      }
+    } catch {
+      // ignore
+    } finally {
+      setTogglingAi(false)
+    }
+  }
 
   const handleAnalyze = async () => {
     if (!text.trim()) return
@@ -46,6 +92,7 @@ function AnalyzePage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Analysis failed')
       setResult(data)
+      fetchAiStatus()  // Refresh status in case of runtime disable
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error')
     } finally {
@@ -65,6 +112,7 @@ function AnalyzePage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Analysis failed')
       setResult(data)
+      fetchAiStatus()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error')
     } finally {
@@ -72,11 +120,50 @@ function AnalyzePage() {
     }
   }
 
+  const aiActive = aiStatus?.ai_enabled && aiStatus?.ai_runtime_available
+
   return (
     <div>
       <h1 style={{ fontSize: '1.1rem', marginBottom: '1.5rem' }}>
         {'>'} AI Detection Scanner_
       </h1>
+
+      {/* AI Status Indicator */}
+      {aiStatus && (
+        <div className="card" style={{ padding: '0.5rem 1rem', marginBottom: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <span style={{
+                display: 'inline-block',
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                backgroundColor: aiActive ? 'var(--green-glow)' : 'var(--text-muted)',
+                boxShadow: aiActive ? '0 0 6px var(--green-glow)' : 'none',
+              }} />
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-white)' }}>
+                AI Engine: {aiActive ? `ON (${aiStatus.ai_provider})` : 'OFF'}
+                {aiStatus.ai_enabled && !aiStatus.ai_runtime_available && (
+                  <span style={{ color: 'var(--red-alert)', marginLeft: '0.5rem' }}>
+                    [Runtime disabled: {aiStatus.ai_runtime_error}]
+                  </span>
+                )}
+              </span>
+              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                {aiActive ? 'Claude-powered analysis' : 'Heuristic analysis only'}
+              </span>
+            </div>
+            <button
+              className="btn"
+              onClick={toggleAi}
+              disabled={togglingAi}
+              style={{ padding: '0.25rem 0.75rem', fontSize: '0.75rem' }}
+            >
+              {togglingAi ? '...' : aiStatus.ai_enabled ? 'Disable AI' : 'Enable AI'}
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="card">
         <div className="card-header">Input Text</div>
@@ -118,6 +205,17 @@ function AnalyzePage() {
               <span style={{ color: 'var(--text-white)', fontSize: '0.85rem' }}>
                 {getScoreLabel(result.overall_score)}
               </span>
+              {result._analysis_mode && (
+                <span style={{
+                  fontSize: '0.7rem',
+                  color: result._analysis_mode === 'ai' ? 'var(--green-glow)' : 'var(--text-muted)',
+                  border: `1px solid ${result._analysis_mode === 'ai' ? 'var(--green-glow)' : 'var(--text-muted)'}`,
+                  padding: '0.1rem 0.4rem',
+                  borderRadius: '3px',
+                }}>
+                  {result._analysis_mode === 'ai' ? 'AI-powered' : 'Heuristic'}
+                </span>
+              )}
             </div>
           </div>
 

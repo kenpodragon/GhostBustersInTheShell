@@ -38,8 +38,10 @@ services:
       FLASK_PORT: 8066
       MCP_PORT: 8067
       AI_PROVIDER: ${AI_PROVIDER:-claude}
+      FASTMCP_PORT: 8067
     volumes:
       - ./backend:/app
+      - ${USERPROFILE:-.}/.claude:/root/.claude
     depends_on:
       postgres:
         condition: service_healthy

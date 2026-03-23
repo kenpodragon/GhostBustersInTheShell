@@ -11,6 +11,9 @@ def analyze_text():
     Accepts JSON body with 'text' field, or file upload (DOCX/PDF).
     Returns sentence-level AI scores and detected patterns.
     """
+    data = {}
+    use_ai = None
+
     # Handle file upload
     if request.files:
         file = request.files.get("file")
@@ -33,12 +36,13 @@ def analyze_text():
         if not data or "text" not in data:
             return jsonify({"error": "Provide 'text' in JSON body or upload a file"}), 400
         text = data["text"]
+        use_ai = data.get("use_ai")  # Per-request AI toggle (true/false/null)
 
     if not text or not text.strip():
         return jsonify({"error": "Empty text provided"}), 400
 
     from ai_providers.router import route_analysis
-    result = route_analysis(text)
+    result = route_analysis(text, use_ai=use_ai if 'use_ai' in (data or {}) else None)
     return jsonify(result)
 
 

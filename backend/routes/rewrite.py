@@ -17,9 +17,10 @@ def rewrite_text():
     text = data["text"]
     voice_profile_id = data.get("voice_profile_id")
     target_sentences = data.get("target_sentences")  # List of sentence indices to rewrite
+    use_ai = data.get("use_ai")  # Per-request AI toggle
 
     from ai_providers.router import route_rewrite
-    result = route_rewrite(text, voice_profile_id)
+    result = route_rewrite(text, voice_profile_id, use_ai=use_ai if "use_ai" in data else None)
 
     return jsonify(result)
 
@@ -32,6 +33,7 @@ def iterate_rewrite():
         return jsonify({"error": "Provide 'text' and 'section_index'"}), 400
 
     from ai_providers.router import route_rewrite
-    result = route_rewrite(data["text"], data.get("voice_profile_id"))
+    use_ai = data.get("use_ai")
+    result = route_rewrite(data["text"], data.get("voice_profile_id"), use_ai=use_ai if "use_ai" in data else None)
 
     return jsonify(result)
