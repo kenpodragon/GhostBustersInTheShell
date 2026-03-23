@@ -35,6 +35,7 @@ from utils.heuristics.structural import (
 )
 from utils.heuristics.stylometric import check_burrows_delta
 from utils.heuristics.scoring import combine_signals, estimate_confidence, detect_genre
+from utils.heuristics.reference_data import GENRE_BASELINES
 from utils.heuristics.crowdsourced import (
     check_em_dash_overuse, check_ai_opening_phrases,
     check_closing_summary, check_question_exclamation_absence,
@@ -81,8 +82,22 @@ def detect_ai_patterns(text: str) -> dict:
 
     overall = min(100, overall)
 
-    # Genre detection and confidence
+    # Genre detection and genre-aware score adjustment
     genre = detect_genre(text)
+    genre_baseline = GENRE_BASELINES.get(genre, GENRE_BASELINES["general"])
+    human_ceil = genre_baseline["human_ceil"]
+
+    # If score falls in the ambiguous zone between AI floor and human ceiling,
+    # adjust based on genre. Genres like poetry, literary, memoir, and academic
+    # have higher human ceilings — human writers in these genres naturally
+    # trigger more heuristic signals, so we dampen the score.
+    if human_ceil > 25 and overall < human_ceil + 10:
+        # Scale the score down proportionally to how much this genre's human
+        # ceiling exceeds the general baseline (25)
+        dampening = (human_ceil - 25) / 25  # e.g. poetry ceil=40 -> 0.6 dampening
+        dampened = overall * (1 - dampening * 0.3)  # max 18% reduction
+        overall = max(dampened, overall * 0.7)  # never reduce more than 30%
+
     word_count = len(re.findall(r"[a-z']+", text.lower()))
     signal_count = len(doc_signals) + len(set(
         p["pattern"] for s in sentence_results for p in s.get("patterns", [])
@@ -988,6 +1003,101 @@ def _check_self_contained_paragraphs(text: str) -> tuple:
         })
 
     return score, patterns
+
+
+def _split_paragraphs(text: str) -> list[str]:
+    """Split text into paragraphs on double newlines."""
+    parts = re.split(r'\n\s*\n', text.strip())
+    return [p.strip() for p in parts if p.strip()]
+
+
+def _score_paragraph(paragraph: str, para_index: int, total_paragraphs: int) -> tuple[float, list[dict], dict[str, float]]:
+    """Score a single paragraph for AI patterns.
+
+    Runs sentence-level scoring within the paragraph, then adds
+    paragraph-specific heuristics (transition stacking, hedge clustering,
+    sentence uniformity within paragraph, vocabulary richness).
+
+    Returns (score, patterns, signals_dict).
+    """
+    patterns = []
+    signals = {}
+
+    # Score sentences within this paragraph
+    sentences = _split_sentences(paragraph)
+    sent_scores = []
+    for sent in sentences:
+        score, pats = _score_sentence(sent, sentences)
+        sent_scores.append(score)
+        patterns.extend(pats)
+
+    # Sentence aggregate for this paragraph
+    if sent_scores:
+        para_sent_avg = _weighted_overall(sent_scores)
+    else:
+        para_sent_avg = 0
+
+    # Paragraph-specific: sentence length uniformity within paragraph
+    if len(sentences) >= 3:
+        lengths = [len(s.split()) for s in sentences]
+        mean_len = sum(lengths) / len(lengths)
+        if mean_len > 0:
+            variance = sum((slen - mean_len) ** 2 for slen in lengths) / len(lengths)
+            cv = math.sqrt(variance) / mean_len
+            if cv < 0.15:
+                signals["para_sent_uniformity"] = 40
+                patterns.append({"pattern": "para_uniform_sentences",
+                                 "detail": f"Paragraph {para_index+1}: sentence lengths very uniform (CV={cv:.2f})"})
+            elif cv < 0.25:
+                signals["para_sent_uniformity"] = 20
+
+    # Paragraph-specific: vocabulary richness within paragraph
+    words = re.findall(r'\b\w+\b', paragraph.lower())
+    if len(words) > 20:
+        ttr = len(set(words)) / len(words)
+        if ttr < 0.45:
+            signals["para_vocab_richness"] = 25
+            patterns.append({"pattern": "para_low_vocab",
+                             "detail": f"Paragraph {para_index+1}: low vocabulary diversity (TTR={ttr:.2f})"})
+
+    # Paragraph-specific: transition stacking within paragraph
+    stack_starters = {
+        "moreover", "furthermore", "additionally", "consequently", "subsequently",
+        "similarly", "likewise", "conversely", "nevertheless", "nonetheless",
+        "in addition", "as a result", "on the other hand", "in contrast",
+    }
+    if len(sentences) >= 2:
+        stack_count = sum(1 for s in sentences if any(s.strip().lower().startswith(t) for t in stack_starters))
+        ratio = stack_count / len(sentences)
+        if ratio > 0.4:
+            signals["para_transition_stacks"] = 40
+            patterns.append({"pattern": "para_transition_stacks",
+                             "detail": f"Paragraph {para_index+1}: {ratio:.0%} sentences open with transitions"})
+        elif ratio > 0.25:
+            signals["para_transition_stacks"] = 20
+
+    # Paragraph-specific: hedge clustering within paragraph
+    hedge_words_set = {
+        "however", "furthermore", "moreover", "additionally", "consequently",
+        "nevertheless", "notably", "importantly", "significantly", "ultimately",
+    }
+    hedge_sents = sum(1 for s in sentences if any(h in s.lower() for h in hedge_words_set))
+    if len(sentences) >= 2 and hedge_sents / len(sentences) > 0.5:
+        signals["para_hedge_density"] = 35
+        patterns.append({"pattern": "para_hedge_dense",
+                         "detail": f"Paragraph {para_index+1}: {hedge_sents}/{len(sentences)} sentences contain hedges"})
+
+    # Combine: paragraph sentence average + paragraph-specific signals
+    from utils.heuristics.scoring import combine_signals
+    para_specific = combine_signals(signals) if signals else 0
+
+    # Blend: 60% sentence aggregate, 40% paragraph-specific
+    if para_specific > 0:
+        combined = para_sent_avg * 0.6 + para_specific * 0.4
+    else:
+        combined = para_sent_avg
+
+    return round(min(100, combined), 1), patterns, signals
 
 
 def _document_level_patterns(text: str, sentences: list) -> tuple[list[dict], dict[str, float]]:
