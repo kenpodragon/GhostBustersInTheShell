@@ -24,6 +24,18 @@ try:
 except ImportError:
     HAS_TEXTSTAT = False
 
+from utils.heuristics.lexical import (
+    check_yules_k, check_hapax_legomena,
+    check_function_word_deviation, check_mattr,
+)
+from utils.heuristics.structural import (
+    check_zipf_deviation, check_compression_ratio,
+    check_sentence_opener_pos, check_word_length_distribution,
+    check_char_ngram_profile,
+)
+from utils.heuristics.stylometric import check_burrows_delta
+from utils.heuristics.scoring import combine_signals, estimate_confidence, detect_genre
+
 
 def detect_ai_patterns(text: str) -> dict:
     """Run all heuristic detectors on text. Returns sentence-level scores."""
@@ -48,75 +60,38 @@ def detect_ai_patterns(text: str) -> dict:
     scores = [s["score"] for s in sentence_results]
     sentence_overall = _weighted_overall(scores)
 
-    # Document-level patterns and scores
-    doc_patterns = _document_level_patterns(text, sentences)
+    # Document-level patterns and scores — single pass, no double-calling
+    doc_patterns, doc_signals = _document_level_patterns(text, sentences)
     all_patterns.extend(doc_patterns)
 
-    # Document-level score contributions
-    doc_scores = []
-    read_s, _ = _check_readability(text)
-    if read_s > 0:
-        doc_scores.append(read_s)
-    contr_s, _ = _check_contractions(text)
-    if contr_s > 0:
-        doc_scores.append(contr_s)
-    fp_s, _ = _check_first_person(text)
-    if fp_s > 0:
-        doc_scores.append(fp_s)
-    pass_s, _ = _check_passive_voice(text)
-    if pass_s > 0:
-        doc_scores.append(pass_s)
-    adv_s, _ = _check_adverb_density(text)
-    if adv_s > 0:
-        doc_scores.append(adv_s)
-    ent_s, _ = _check_entity_density(text)
-    if ent_s > 0:
-        doc_scores.append(ent_s)
-    punct_s, _ = _check_punctuation_fingerprint(text)
-    if punct_s > 0:
-        doc_scores.append(punct_s)
-    open_s, _ = _check_opening_diversity(sentences)
-    if open_s > 0:
-        doc_scores.append(open_s)
-    # Phase 2.2 document-level scores
-    hedge_cl_s, _ = _check_hedge_clusters(sentences)
-    if hedge_cl_s > 0:
-        doc_scores.append(hedge_cl_s)
-    trans_st_s, _ = _check_transition_stacks(sentences)
-    if trans_st_s > 0:
-        doc_scores.append(trans_st_s)
-    syn_s, _ = _check_synonym_treadmill(text)
-    if syn_s > 0:
-        doc_scores.append(syn_s)
-    emoji_s, _ = _check_emoji_density(text)
-    if emoji_s > 0:
-        doc_scores.append(emoji_s)
-    sensory_s, _ = _check_sensory_checklist(text)
-    if sensory_s > 0:
-        doc_scores.append(sensory_s)
-    self_s, _ = _check_self_contained_paragraphs(text)
-    if self_s > 0:
-        doc_scores.append(self_s)
+    # Use new scoring engine for document-level signals
+    doc_combined = combine_signals(doc_signals)
 
-    # Blend: 60% sentence-level, 40% document-level
-    if doc_scores:
-        doc_avg = sum(doc_scores) / len(doc_scores)
-        overall = sentence_overall * 0.6 + doc_avg * 0.4
+    # Blend sentence-level and document-level (keep existing 60/40 ratio)
+    if doc_signals:
+        overall = sentence_overall * 0.6 + doc_combined * 0.4
     else:
         overall = sentence_overall
 
-    # Deduplicate pattern names
-    unique_patterns = []
-    seen = set()
-    for p in all_patterns:
-        if p["pattern"] not in seen:
-            unique_patterns.append(p)
-            seen.add(p["pattern"])
+    overall = min(100, overall)
+
+    # Genre detection and confidence
+    genre = detect_genre(text)
+    word_count = len(re.findall(r"[a-z']+", text.lower()))
+    signal_count = len(doc_signals) + len(set(
+        p["pattern"] for s in sentence_results for p in s.get("patterns", [])
+    ))
+    confidence = estimate_confidence(overall, signal_count, word_count)
+
+    unique_patterns = list({p["pattern"]: p for p in all_patterns}.values())
 
     return {
         "overall_score": round(overall, 1),
         "sentences": sentence_results,
         "detected_patterns": unique_patterns,
+        "confidence": confidence,
+        "genre": genre,
+        "signal_count": signal_count,
     }
 
 
@@ -1040,9 +1015,52 @@ def _check_self_contained_paragraphs(text: str) -> tuple:
     return score, patterns
 
 
-def _document_level_patterns(text: str, sentences: list) -> list:
-    """Check for document-level AI patterns."""
+def _document_level_patterns(text: str, sentences: list) -> tuple[list[dict], dict[str, float]]:
+    """Run all document-level heuristics. Returns (patterns, named_signals)."""
     patterns = []
+    signals = {}
+
+    # All checks that take text as input
+    checks_on_text = [
+        ("readability", _check_readability),
+        ("contractions", _check_contractions),
+        ("first_person", _check_first_person),
+        ("passive_voice", _check_passive_voice),
+        ("adverb_density", _check_adverb_density),
+        ("entity_density", _check_entity_density),
+        ("punctuation_fingerprint", _check_punctuation_fingerprint),
+        ("synonym_treadmill", _check_synonym_treadmill),
+        ("emoji_density", _check_emoji_density),
+        ("sensory_checklist", _check_sensory_checklist),
+        ("self_contained_paragraphs", _check_self_contained_paragraphs),
+        # Phase 2.3
+        ("yules_k", check_yules_k),
+        ("hapax_legomena", check_hapax_legomena),
+        ("function_word_deviation", check_function_word_deviation),
+        ("mattr", check_mattr),
+        ("zipf_deviation", check_zipf_deviation),
+        ("compression_ratio", check_compression_ratio),
+        ("sentence_opener_pos", check_sentence_opener_pos),
+        ("word_length_distribution", check_word_length_distribution),
+        ("char_ngram_profile", check_char_ngram_profile),
+        ("burrows_delta", check_burrows_delta),
+    ]
+
+    for name, check_fn in checks_on_text:
+        score, pats = check_fn(text)
+        patterns.extend(pats)
+        if score > 0:
+            signals[name] = score
+
+    # Checks that take sentences
+    for name, check_fn in [
+        ("hedge_clusters", _check_hedge_clusters),
+        ("transition_stacks", _check_transition_stacks),
+    ]:
+        score, pats = check_fn(sentences)
+        patterns.extend(pats)
+        if score > 0:
+            signals[name] = score
 
     # Check paragraph length uniformity
     paragraphs = [p.strip() for p in text.split('\n\n') if p.strip()]
@@ -1053,11 +1071,13 @@ def _document_level_patterns(text: str, sentences: list) -> list:
             variance = sum((l - mean_len) ** 2 for l in para_lengths) / len(para_lengths)
             cv = math.sqrt(variance) / mean_len
             if cv < 0.2:
+                signals["paragraph_uniformity"] = 30
                 patterns.append({
                     "pattern": "uniform_paragraphs",
                     "detail": f"Paragraph length CV={cv:.2f} — suspiciously uniform (AI-typical)"
                 })
             elif cv < 0.3:
+                signals["paragraph_uniformity"] = 15
                 patterns.append({
                     "pattern": "low_paragraph_variance",
                     "detail": f"Paragraph length CV={cv:.2f} — below natural variation"
@@ -1077,70 +1097,13 @@ def _document_level_patterns(text: str, sentences: list) -> list:
     if len(words) > 50:
         ttr = len(set(words)) / len(words)
         if ttr < 0.4:
+            signals["vocabulary_richness"] = 25
             patterns.append({
                 "pattern": "low_vocabulary_richness",
                 "detail": f"Type-token ratio {ttr:.2f} suggests repetitive vocabulary"
             })
 
-    # Readability analysis (document-level)
-    read_score, read_patterns = _check_readability(text)
-    patterns.extend(read_patterns)
-
-    # Contraction analysis (document-level)
-    contr_score, contr_patterns = _check_contractions(text)
-    patterns.extend(contr_patterns)
-
-    # First-person pronoun analysis (document-level)
-    fp_score, fp_patterns = _check_first_person(text)
-    patterns.extend(fp_patterns)
-
-    # Passive voice analysis (document-level)
-    passive_score, passive_patterns = _check_passive_voice(text)
-    patterns.extend(passive_patterns)
-
-    # Adverb density (document-level)
-    adverb_score, adverb_patterns = _check_adverb_density(text)
-    patterns.extend(adverb_patterns)
-
-    # Entity density (document-level)
-    entity_score, entity_patterns = _check_entity_density(text)
-    patterns.extend(entity_patterns)
-
-    # Punctuation fingerprint (document-level)
-    punct_score, punct_patterns = _check_punctuation_fingerprint(text)
-    patterns.extend(punct_patterns)
-
-    # Opening word diversity (document-level)
-    opener_score, opener_patterns = _check_opening_diversity(sentences)
-    patterns.extend(opener_patterns)
-
-    # --- Phase 2.2 document-level patterns ---
-
-    # Hedge word clustering
-    hedge_cl_score, hedge_cl_patterns = _check_hedge_clusters(sentences)
-    patterns.extend(hedge_cl_patterns)
-
-    # Adverbial transition stacks
-    trans_st_score, trans_st_patterns = _check_transition_stacks(sentences)
-    patterns.extend(trans_st_patterns)
-
-    # Synonym treadmill / elegant variation
-    syn_score, syn_patterns = _check_synonym_treadmill(text)
-    patterns.extend(syn_patterns)
-
-    # Emoji density
-    emoji_score, emoji_patterns = _check_emoji_density(text)
-    patterns.extend(emoji_patterns)
-
-    # Sensory checklist
-    sensory_score, sensory_patterns = _check_sensory_checklist(text)
-    patterns.extend(sensory_patterns)
-
-    # Self-contained paragraphs
-    self_score, self_patterns = _check_self_contained_paragraphs(text)
-    patterns.extend(self_patterns)
-
-    return patterns
+    return patterns, signals
 
 
 def _weighted_overall(scores: list) -> float:
