@@ -41,6 +41,8 @@ services:
       FASTMCP_PORT: 8067
     volumes:
       - ./backend:/app
+      - ./tools:/tools
+      - ../local_data:/local_data
       - ${USERPROFILE:-.}/.claude:/root/.claude
     depends_on:
       postgres:
