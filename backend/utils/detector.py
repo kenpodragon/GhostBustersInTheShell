@@ -35,6 +35,7 @@ from utils.heuristics.structural import (
 )
 from utils.heuristics.stylometric import check_burrows_delta
 from utils.heuristics.scoring import combine_signals, composite_score, estimate_confidence, detect_genre
+from utils.heuristics.severity import classify_severity, apply_severity, compound_across_levels
 from utils.heuristics.reference_data import GENRE_BASELINES
 from utils.heuristics.crowdsourced import (
     check_em_dash_overuse, check_ai_opening_phrases,
@@ -45,10 +46,66 @@ from utils.heuristics.crowdsourced import (
 
 
 def detect_ai_patterns(text: str) -> dict:
+    """Public API — standard detection."""
+    return _detect_ai_patterns_inner(text, detail=False)
+
+
+def detect_ai_patterns_detailed(text: str) -> dict:
+    """Public API — detection with full transparency report."""
+    return _detect_ai_patterns_inner(text, detail=True)
+
+
+def _build_escalation_traces(sent_counts, para_signals_list, doc_signals):
+    """Build escalation traces showing how signals compound across levels."""
+    all_signals = set(sent_counts.keys())
+    if para_signals_list:
+        for ps in para_signals_list:
+            all_signals.update(ps.get("signals", {}).keys())
+    all_signals.update(doc_signals.keys())
+
+    traces = []
+    for signal in sorted(all_signals):
+        levels = {}
+        severities_for_compound = []
+
+        if signal in sent_counts:
+            sev = classify_severity(sent_counts[signal])
+            if sev:
+                levels["sentence"] = sev
+                severities_for_compound.append(sev)
+
+        para_count = 0
+        if para_signals_list:
+            for ps in para_signals_list:
+                if signal in ps.get("signals", {}):
+                    para_count += 1
+        if para_count > 0:
+            sev = classify_severity(para_count)
+            if sev:
+                levels["paragraph"] = sev
+                severities_for_compound.append(sev)
+
+        if signal in doc_signals:
+            sev = "strong" if doc_signals[signal] > 30 else "warning" if doc_signals[signal] > 15 else "caution"
+            levels["document"] = sev
+            severities_for_compound.append(sev)
+
+        if len(levels) >= 2:
+            compounded = compound_across_levels(severities_for_compound)
+            traces.append({
+                "signal": signal,
+                "levels": levels,
+                "compounded_severity": compounded,
+            })
+
+    return traces
+
+
+def _detect_ai_patterns_inner(text: str, detail: bool = False) -> dict:
     """Run all heuristic detectors on text. Returns 3-tier scores."""
     sentences = _split_sentences(text)
     if not sentences:
-        return {
+        result = {
             "overall_score": 0,
             "sentences": [],
             "paragraphs": [],
@@ -62,6 +119,13 @@ def detect_ai_patterns(text: str) -> dict:
                 "document_score": 0,
             },
         }
+        if detail:
+            result["report"] = {
+                "tier_breakdown": {"sentence": {}, "paragraph": {}, "document": {}},
+                "score_math": {},
+                "escalation_traces": [],
+            }
+        return result
 
     # --- TIER 1: Sentence-level ---
     sentence_results = []
@@ -84,6 +148,8 @@ def detect_ai_patterns(text: str) -> dict:
     paragraphs = _split_paragraphs(text)
     paragraph_results = []
     paragraph_signals_all = {}
+    # Collect per-paragraph signals for detail mode (no extra computation)
+    para_signals_list = [] if detail else None
 
     for i, para in enumerate(paragraphs):
         para_score, para_patterns, para_signals = _score_paragraph(
@@ -97,6 +163,12 @@ def detect_ai_patterns(text: str) -> dict:
         })
         all_patterns.extend(para_patterns)
         paragraph_signals_all.update(para_signals)
+        if detail:
+            para_signals_list.append({
+                "index": i,
+                "signals": dict(para_signals),
+                "score": para_score,
+            })
 
     if paragraph_results:
         para_scores = [p["score"] for p in paragraph_results]
@@ -142,7 +214,7 @@ def detect_ai_patterns(text: str) -> dict:
 
     unique_patterns = list({p["pattern"]: p for p in all_patterns}.values())
 
-    return {
+    result = {
         "overall_score": round(overall, 1),
         "sentences": sentence_results,
         "paragraphs": paragraph_results,
@@ -156,6 +228,52 @@ def detect_ai_patterns(text: str) -> dict:
             "document_score": round(doc_combined, 1),
         },
     }
+
+    if detail:
+        # Build sentence signal counts from already-computed patterns
+        sent_counts = {}
+        for sr in sentence_results:
+            for p in sr.get("patterns", []):
+                name = p["pattern"]
+                sent_counts[name] = sent_counts.get(name, 0) + 1
+
+        result["report"] = {
+            "tier_breakdown": {
+                "sentence": {
+                    "score": round(sentence_overall, 1),
+                    "signal_count": sentence_signal_count,
+                    "signals": sent_counts,
+                },
+                "paragraph": {
+                    "score": round(paragraph_overall, 1),
+                    "signal_count": paragraph_signal_count,
+                    "signals": dict(paragraph_signals_all),
+                    "per_paragraph": para_signals_list,
+                },
+                "document": {
+                    "score": round(doc_combined, 1),
+                    "signal_count": document_signal_count,
+                    "signals": dict(doc_signals),
+                },
+            },
+            "score_math": {
+                "sentence_overall": round(sentence_overall, 1),
+                "paragraph_overall": round(paragraph_overall, 1),
+                "document_combined": round(doc_combined, 1),
+                "raw_composite": round(min(100, composite_score(
+                    sentence_overall, paragraph_overall, doc_combined,
+                    sentence_signal_count, paragraph_signal_count, document_signal_count,
+                )), 1),
+                "genre": genre,
+                "genre_dampening_applied": human_ceil > 25 and overall < human_ceil + 10,
+                "final_score": round(overall, 1),
+            },
+            "escalation_traces": _build_escalation_traces(
+                sent_counts, para_signals_list, doc_signals
+            ),
+        }
+
+    return result
 
 
 def _split_sentences(text: str) -> list:
@@ -291,7 +409,10 @@ def _check_buzzwords(sentence: str) -> tuple:
 
     found = all_tokens & buzzwords
     # Hard-ban words score higher than before
-    score = min(90, len(found) * 30)
+    count = len(found)
+    severity = classify_severity(count)
+    base_score = min(90, count * 30)
+    score = apply_severity(base_score, severity) if severity else 0
     patterns = [{"pattern": "buzzword", "detail": f"AI-typical word: '{w}'"} for w in found]
     return score, patterns
 
@@ -304,7 +425,10 @@ def _check_hedge_words(sentence: str) -> tuple:
         r'\bsignificantly\b', r'\bundoubtedly\b', r'\bultimately\b',
     ]
     found = [h for h in hedges if re.search(h, sentence, re.IGNORECASE)]
-    score = min(60, len(found) * 20)
+    count = len(found)
+    severity = classify_severity(count)
+    base_score = min(60, count * 20)
+    score = apply_severity(base_score, severity) if severity else 0
     patterns = [{"pattern": "hedge_word", "detail": f"AI-typical hedge: {h}"} for h in found]
     return score, patterns
 
@@ -318,7 +442,10 @@ def _check_transitions(sentence: str) -> tuple:
         r'^(By (leveraging|utilizing|harnessing|implementing))',
     ]
     found = [t for t in transitions if re.search(t, sentence, re.IGNORECASE)]
-    score = min(70, len(found) * 35)
+    count = len(found)
+    severity = classify_severity(count)
+    base_score = min(70, count * 35)
+    score = apply_severity(base_score, severity) if severity else 0
     patterns = [{"pattern": "ai_transition", "detail": "AI-typical opening pattern"} for _ in found]
     return score, patterns
 
@@ -357,6 +484,10 @@ def _check_structural_patterns(sentence: str) -> tuple:
             patterns_found.append({"pattern": "front_loaded_description", "detail": "Heavy descriptive front-loading before action"})
             score += 10
 
+    pattern_count = len(patterns_found)
+    if pattern_count > 0:
+        severity = classify_severity(pattern_count)
+        score = apply_severity(score, severity) if severity else score
     return score, patterns_found
 
 

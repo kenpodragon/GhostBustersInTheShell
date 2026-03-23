@@ -71,3 +71,18 @@ class TestCompoundAcrossLevels:
     def test_empty_returns_none(self):
         result = compound_across_levels([])
         assert result is None
+
+
+class TestSeverityIntegration:
+    """Severity affects actual detection scores."""
+
+    def test_one_buzzword_scores_less_than_four(self):
+        from utils.detector import detect_ai_patterns
+        one_buzz = "We need to leverage our existing platform."
+        four_buzz = (
+            "We need to leverage our existing platform to streamline operations, "
+            "harness cutting-edge solutions, and foster innovative growth."
+        )
+        r1 = detect_ai_patterns(one_buzz)
+        r4 = detect_ai_patterns(four_buzz)
+        assert r4["overall_score"] > r1["overall_score"]
