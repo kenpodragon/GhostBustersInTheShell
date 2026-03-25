@@ -207,6 +207,7 @@ def generate_style_brief(
     voice_profile_id: int = None,
     model: str = "claude",
     is_second_pass: bool = False,
+    comment: str = None,
 ) -> str:
     """Build a complete rewrite prompt from detection output.
 
@@ -313,4 +314,9 @@ def generate_style_brief(
         "---",
     ])
 
-    return "\n".join(sections)
+    brief = "\n".join(sections)
+
+    if comment:
+        brief += f"\n\n## USER INSTRUCTIONS (highest priority)\n{comment}\n"
+
+    return brief

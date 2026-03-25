@@ -167,7 +167,7 @@ def route_analysis(text: str, use_ai: bool = None, use_lm_signals: bool = False)
     return heuristic_result
 
 
-def route_rewrite(text: str, voice_profile_id: int = None, use_ai: bool = None, threshold: int = 20, use_lm_signals: bool = False) -> dict:
+def route_rewrite(text: str, voice_profile_id: int = None, use_ai: bool = None, threshold: int = 20, use_lm_signals: bool = False, comment: str = None) -> dict:
     """Rewrite text to reduce AI detection signals.
 
     Pipeline (Phase 3.10):
@@ -203,7 +203,7 @@ def route_rewrite(text: str, voice_profile_id: int = None, use_ai: bool = None, 
     # Step 2: Generate style brief
     from utils.style_brief import generate_style_brief
     model_name = settings.get("ai_provider", "claude")
-    brief = generate_style_brief(detection, voice_profile_id, model=model_name)
+    brief = generate_style_brief(detection, voice_profile_id, model=model_name, comment=comment)
 
     try:
         # Step 3: AI rewrite
@@ -217,7 +217,7 @@ def route_rewrite(text: str, voice_profile_id: int = None, use_ai: bool = None, 
 
         # Step 5: Optional second pass
         if after_score > threshold:
-            brief2 = generate_style_brief(recheck, voice_profile_id, model=model_name, is_second_pass=True)
+            brief2 = generate_style_brief(recheck, voice_profile_id, model=model_name, is_second_pass=True, comment=comment)
             try:
                 rewritten2 = provider.rewrite(rewritten_text, style_brief=brief2)
                 rewritten_text2 = rewritten2.get("rewritten_text", rewritten_text)
@@ -236,10 +236,14 @@ def route_rewrite(text: str, voice_profile_id: int = None, use_ai: bool = None, 
 
         # Collect remaining signal names
         remaining = [p.get("pattern", "") for p in recheck.get("patterns", [])]
+        classification = recheck.get("classification", {})
 
         return {
             "rewritten_text": rewritten_text,
             "changes": rewritten.get("changes", []),
+            "score": round(after_score, 1),
+            "classification": classification,
+            "patterns": recheck.get("patterns", []),
             "_analysis_mode": "ai_guided",
             "_before_score": round(before_score, 1),
             "_after_score": round(after_score, 1),

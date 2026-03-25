@@ -18,9 +18,10 @@ def rewrite_text():
     voice_profile_id = data.get("voice_profile_id")
     target_sentences = data.get("target_sentences")  # List of sentence indices to rewrite
     use_ai = data.get("use_ai")  # Per-request AI toggle
+    comment = data.get("comment")  # Optional user instructions for the rewriter
 
     from ai_providers.router import route_rewrite
-    result = route_rewrite(text, voice_profile_id, use_ai=use_ai if "use_ai" in data else None)
+    result = route_rewrite(text, voice_profile_id, use_ai=use_ai if "use_ai" in data else None, comment=comment)
 
     return jsonify(result)
 
