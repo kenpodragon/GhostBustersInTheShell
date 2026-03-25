@@ -23,10 +23,6 @@ export default function SectionListView() {
   const cleanCount = sections.filter(s => s.classification?.category === 'Clean').length
   const touchedCount = sections.filter(s => s.classification?.category === 'Ghost Touched').length
   const writtenCount = sections.filter(s => s.classification?.category === 'Ghost Written').length
-  const avgScore = sections.length > 0
-    ? sections.reduce((sum, s) => sum + (s.score ?? 0), 0) / sections.length
-    : 0
-
   const handleFocus = (index: number) => {
     setFocusedSection(index)
     setView('focus')
@@ -49,7 +45,6 @@ export default function SectionListView() {
           {cleanCount > 0 && <span className="tag tag-clean">{cleanCount} Clean</span>}
           {touchedCount > 0 && <span className="tag tag-touched">{touchedCount} Ghost Touched</span>}
           {writtenCount > 0 && <span className="tag tag-written">{writtenCount} Ghost Written</span>}
-          <span className="text-muted"> | Overall: {avgScore.toFixed(1)}</span>
         </div>
         <div className="section-actions">
           <button
