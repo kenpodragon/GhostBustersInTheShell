@@ -6,7 +6,7 @@ import ScoreGauge from './ScoreGauge'
 export default function SectionListView() {
   const {
     sections, loading, analyzeAll, analyzeSection, rewriteSection, setView, setFocusedSection,
-    setRewritePanelOpen, updateSectionText, documentAnalysis, document: doc,
+    setRewritePanelOpen, updateSectionText, documentAnalysis, useAI, setUseAI, document: doc,
   } = useDocument()
 
   // Auto-analyze on mount (only if sections are unscored)
@@ -52,6 +52,13 @@ export default function SectionListView() {
           <span className="text-muted"> | Overall: {avgScore.toFixed(1)}</span>
         </div>
         <div className="section-actions">
+          <button
+            className={`toggle-btn ${useAI ? 'toggle-on' : 'toggle-off'}`}
+            onClick={() => setUseAI(!useAI)}
+            style={{ marginRight: '0.5rem' }}
+          >
+            AI {useAI ? '[ ON ]' : '[ OFF ]'}
+          </button>
           <button className="btn btn-small" onClick={analyzeAll} disabled={loading}>
             [ RE-ANALYZE ALL ]
           </button>

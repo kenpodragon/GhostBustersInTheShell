@@ -37,10 +37,10 @@
   --font-mono: 'JetBrains Mono', 'Share Tech Mono', 'Courier New', monospace;
 
   /* Scoring colors */
-  --score-low: #4ecdc4;      /* 0-30: likely human */
-  --score-medium: #ffd166;   /* 30-60: mixed */
-  --score-high: #ff8c42;     /* 60-80: likely AI */
-  --score-critical: #ff3366; /* 80-100: definitely AI */
+  --score-low: #4ecdc4;      /* 0-30: Clean */
+  --score-medium: #ffd166;   /* 30-40: Ghost Touched */
+  --score-high: #ff8c42;     /* unused, kept for compat */
+  --score-critical: #ff3366; /* 40-100: Ghost Written */
 
   /* Legacy aliases for components using old names */
   --green-primary: var(--teal-primary);

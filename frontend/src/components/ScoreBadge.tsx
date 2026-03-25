@@ -1,15 +1,20 @@
 import type { Classification } from '../types'
 
-function getScoreClass(score: number): string {
-  if (score < 20) return 'score-low'
-  if (score < 45) return 'score-medium'
-  if (score < 70) return 'score-high'
+function getScoreClass(score: number, classification?: Classification | null): string {
+  // Use backend classification if available, otherwise fall back to score thresholds
+  if (classification?.category) {
+    if (classification.category === 'clean') return 'score-low'
+    if (classification.category === 'ghost_touched') return 'score-medium'
+    return 'score-critical'
+  }
+  if (score <= 30) return 'score-low'
+  if (score < 40) return 'score-medium'
   return 'score-critical'
 }
 
 function getCategoryLabel(classification: Classification | null): string {
   if (!classification) return ''
-  return classification.category || ''
+  return classification.label || classification.category || ''
 }
 
 interface Props {
@@ -21,7 +26,7 @@ interface Props {
 export default function ScoreBadge({ score, classification, size = 'normal' }: Props) {
   if (score === null) return <span className="text-muted">—</span>
 
-  const cls = getScoreClass(score)
+  const cls = getScoreClass(score, classification)
   const category = getCategoryLabel(classification ?? null)
   const fontSize = size === 'small' ? '0.75rem' : '0.85rem'
 
