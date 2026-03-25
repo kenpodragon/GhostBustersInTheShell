@@ -11,9 +11,15 @@ export default function InputView() {
   useEffect(() => {
     fetch('/api/voice-profiles')
       .then(r => r.json())
-      .then(setProfiles)
+      .then((data: VoiceProfile[]) => {
+        setProfiles(data)
+        // Auto-select first profile if none selected
+        if (!selectedProfileId && data.length > 0) {
+          selectProfile(data[0].id)
+        }
+      })
       .catch(() => {})
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0
 
@@ -39,34 +45,35 @@ export default function InputView() {
         {'>'} GhostBusters Scanner_
       </h1>
 
-      {/* Voice Profile Selector */}
+      {/* Settings Row: Voice Profile + AI Toggle */}
       <div className="card" style={{ marginBottom: '1rem' }}>
-        <label className="card-header" style={{ display: 'block', marginBottom: '0.5rem' }}>
-          Voice Profile
-        </label>
-        <select
-          value={selectedProfileId ?? ''}
-          onChange={e => selectProfile(e.target.value ? Number(e.target.value) : null)}
-          className="select-input"
-        >
-          <option value="">None (default heuristics)</option>
-          {profiles.map(p => (
-            <option key={p.id} value={p.id}>{p.name}</option>
-          ))}
-        </select>
-      </div>
-
-      {/* AI Toggle */}
-      <div className="card" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <label className="card-header" style={{ margin: 0, border: 'none', paddingBottom: 0 }}>
-          AI-Enhanced Analysis
-        </label>
-        <button
-          className={`toggle-btn ${useAI ? 'toggle-on' : 'toggle-off'}`}
-          onClick={() => setUseAI(!useAI)}
-        >
-          {useAI ? '[ ON ]' : '[ OFF ]'}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+          <div style={{ flex: 1 }}>
+            <label className="text-muted" style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px', display: 'block', marginBottom: '0.3rem' }}>
+              Voice Profile
+            </label>
+            <select
+              value={selectedProfileId ?? ''}
+              onChange={e => selectProfile(e.target.value ? Number(e.target.value) : null)}
+              className="select-input"
+            >
+              {profiles.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <label className="text-muted" style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px', display: 'block', marginBottom: '0.3rem' }}>
+              AI Enhanced
+            </label>
+            <button
+              className={`toggle-btn ${useAI ? 'toggle-on' : 'toggle-off'}`}
+              onClick={() => setUseAI(!useAI)}
+            >
+              {useAI ? '[ ON ]' : '[ OFF ]'}
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Text Input */}
