@@ -158,7 +158,7 @@ export default function InputView() {
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
                 {analysis.patterns.map((p, i) => (
-                  <span key={i} className="pattern-chip">{typeof p === 'string' ? p : p.name || p.pattern || JSON.stringify(p)}</span>
+                  <span key={i} className="pattern-chip">{typeof p === 'string' ? p : p.pattern || JSON.stringify(p)}</span>
                 ))}
               </div>
             </div>
