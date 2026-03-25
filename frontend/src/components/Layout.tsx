@@ -1,12 +1,26 @@
+import { useState, useEffect } from 'react'
 import { Outlet, NavLink } from 'react-router-dom'
 
 function Layout() {
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('ghostbusters-theme') || 'dark'
+  })
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+    localStorage.setItem('ghostbusters-theme', theme)
+  }, [theme])
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'dark' ? 'light' : 'dark')
+  }
+
   return (
     <div className="app-container">
       <aside className="sidebar">
         <div className="sidebar-logo">
-          {'>'} GhostBusters<br />
-          {'  '}In The Shell_
+          <img src="/ghosted-guild.jpg" alt="Ghosted Guild" className="sidebar-icon" />
+          <span>GhostBusters<br />In The Shell_</span>
         </div>
         <ul className="sidebar-nav">
           <li>
@@ -20,7 +34,10 @@ function Layout() {
             </NavLink>
           </li>
         </ul>
-        <div style={{ marginTop: 'auto', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+        <button className="theme-toggle" onClick={toggleTheme}>
+          {theme === 'dark' ? '[ LIGHT MODE ]' : '[ DARK MODE ]'}
+        </button>
+        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
           v0.1.0 // local instance
         </div>
       </aside>
