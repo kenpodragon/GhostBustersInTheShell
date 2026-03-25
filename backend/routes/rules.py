@@ -17,14 +17,11 @@ def get_all_config():
     from db import query_all
 
     rows = query_all(
-        "SELECT section, config_data, updated_at FROM rule_configs WHERE is_default = false ORDER BY section"
+        "SELECT section, config_data FROM rule_configs WHERE is_default = false ORDER BY section"
     )
     result = {}
     for row in rows:
-        result[row["section"]] = {
-            "config_data": row["config_data"],
-            "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
-        }
+        result[row["section"]] = row["config_data"]
     return jsonify(result)
 
 
@@ -45,11 +42,7 @@ def get_section_config(section):
     if not row:
         return jsonify({"error": f"Section not found: {section}"}), 404
 
-    return jsonify({
-        "section": section,
-        "config_data": row["config_data"],
-        "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
-    })
+    return jsonify(row["config_data"])
 
 
 @rules_bp.route("/rules/config/<section>", methods=["PUT"])
@@ -64,7 +57,7 @@ def update_section_config(section):
     if data is None:
         return jsonify({"error": "No JSON body provided"}), 400
 
-    config_data = data.get("config_data", data)
+    config_data = data
 
     from db import execute
 
@@ -85,14 +78,11 @@ def get_defaults():
     from db import query_all
 
     rows = query_all(
-        "SELECT section, config_data, updated_at FROM rule_configs WHERE is_default = true ORDER BY section"
+        "SELECT section, config_data FROM rule_configs WHERE is_default = true ORDER BY section"
     )
     result = {}
     for row in rows:
-        result[row["section"]] = {
-            "config_data": row["config_data"],
-            "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
-        }
+        result[row["section"]] = row["config_data"]
     return jsonify(result)
 
 

@@ -33,8 +33,9 @@ class TestConfigCRUD:
         resp = client.get("/api/rules/config/heuristic_weights")
         assert resp.status_code == 200
         data = resp.get_json()
-        assert data["section"] == "heuristic_weights"
-        assert "config_data" in data
+        # Returns config_data directly (not wrapped)
+        assert isinstance(data, dict)
+        assert "sentence_opener_pos" in data
 
     def test_get_invalid_section(self, client):
         resp = client.get("/api/rules/config/nonexistent_section")
@@ -44,14 +45,14 @@ class TestConfigCRUD:
         # Get current value first
         resp = client.get("/api/rules/config/thresholds")
         assert resp.status_code == 200
-        original = resp.get_json()["config_data"]
+        original = resp.get_json()
 
         # Update with new data
         new_data = dict(original) if isinstance(original, dict) else {}
         new_data["_test_marker"] = True
         resp = client.put(
             "/api/rules/config/thresholds",
-            data=json.dumps({"config_data": new_data}),
+            data=json.dumps(new_data),
             content_type="application/json",
         )
         assert resp.status_code == 200
@@ -59,12 +60,12 @@ class TestConfigCRUD:
 
         # Verify persisted
         resp = client.get("/api/rules/config/thresholds")
-        assert resp.get_json()["config_data"]["_test_marker"] is True
+        assert resp.get_json()["_test_marker"] is True
 
         # Restore original
         client.put(
             "/api/rules/config/thresholds",
-            data=json.dumps({"config_data": original}),
+            data=json.dumps(original),
             content_type="application/json",
         )
 
@@ -87,7 +88,7 @@ class TestConfigCRUD:
         # Modify a section
         client.put(
             "/api/rules/config/thresholds",
-            data=json.dumps({"config_data": {"_revert_test": True}}),
+            data=json.dumps({"_revert_test": True}),
             content_type="application/json",
         )
 
@@ -98,7 +99,7 @@ class TestConfigCRUD:
 
         # Verify reverted — should no longer have the test marker
         resp = client.get("/api/rules/config/thresholds")
-        assert "_revert_test" not in resp.get_json()["config_data"]
+        assert "_revert_test" not in resp.get_json()
 
 
 class TestSnapshots:
