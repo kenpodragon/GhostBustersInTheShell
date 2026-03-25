@@ -614,3 +614,137 @@ input:focus, select:focus {
 .pattern-name {
   color: var(--yellow-warn);
 }
+
+/* Rewrite panel */
+.rewrite-panel {
+  border: 1px solid var(--green-primary);
+  background: var(--bg-card);
+  padding: 1rem;
+  margin-top: 1rem;
+  position: relative;
+}
+
+.rewrite-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+}
+
+.rewrite-split {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.rewrite-side {
+  flex: 1;
+  border: 1px solid var(--border-color);
+  padding: 0.5rem;
+}
+
+.rewrite-side-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-primary);
+}
+
+.rewrite-text {
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--text-primary);
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.rewrite-edit-area {
+  width: 100%;
+  min-height: 150px;
+  resize: vertical;
+}
+
+.rewrite-comment {
+  margin-bottom: 0.5rem;
+}
+
+.rewrite-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.btn-accept {
+  border-color: var(--green-primary);
+  color: var(--green-primary);
+}
+
+.btn-reject {
+  border-color: var(--red-alert);
+  color: var(--red-alert);
+}
+
+.auto-optimize {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.threshold-input {
+  width: 3rem;
+  padding: 0.2rem;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+/* Preview view */
+.preview-view {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.preview-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.preview-section {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.preview-original {
+  opacity: 0.7;
+}
+
+.preview-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.preview-section-text {
+  font-size: 0.9rem;
+  line-height: 1.8;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+}

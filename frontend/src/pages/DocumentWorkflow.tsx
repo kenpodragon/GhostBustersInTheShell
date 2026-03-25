@@ -2,6 +2,7 @@ import { DocumentProvider, useDocument } from '../context/DocumentContext'
 import InputView from '../components/InputView'
 import SectionListView from '../components/SectionListView'
 import FocusView from '../components/FocusView'
+import PreviewView from '../components/PreviewView'
 
 function WorkflowContent() {
   const { activeView } = useDocument()
@@ -14,7 +15,7 @@ function WorkflowContent() {
     case 'focus':
       return <FocusView />
     case 'preview':
-      return <div className="card"><p className="text-muted">Preview coming soon...</p></div>
+      return <PreviewView />
   }
 }
 

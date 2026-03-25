@@ -1,10 +1,11 @@
 import { useDocument } from '../context/DocumentContext'
 import ScoreBadge from './ScoreBadge'
+import RewritePanel from './RewritePanel'
 
 export default function FocusView() {
   const {
     sections, focusedSectionIndex, setFocusedSection,
-    setView, setRewritePanelOpen,
+    setView, setRewritePanelOpen, rewritePanelOpen,
   } = useDocument()
 
   const index = focusedSectionIndex ?? 0
@@ -112,6 +113,8 @@ export default function FocusView() {
           </div>
         </div>
       )}
+
+      {rewritePanelOpen && <RewritePanel />}
     </div>
   )
 }
