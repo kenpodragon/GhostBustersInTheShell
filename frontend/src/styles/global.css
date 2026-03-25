@@ -381,3 +381,236 @@ input:focus, select:focus {
   border: 1px solid var(--red-alert);
   background: rgba(255, 0, 64, 0.1);
 }
+
+/* ── Task 9: Section List ─────────────────────────────────────────── */
+
+.section-list-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.section-list-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.section-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+}
+
+.section-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.section-list-body {
+  display: flex;
+  gap: 1rem;
+}
+
+/* TOC sidebar */
+.section-toc {
+  width: 220px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 1rem;
+  align-self: flex-start;
+  border: 1px solid var(--border-color);
+  padding: 0.5rem;
+  background: var(--bg-card);
+}
+
+.toc-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.2rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.toc-item:last-child {
+  border-bottom: none;
+}
+
+.toc-item:hover {
+  background: rgba(0, 255, 65, 0.05);
+}
+
+.toc-heading {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-primary);
+}
+
+.toc-status {
+  color: var(--green-primary);
+  font-size: 0.75rem;
+}
+
+/* Section cards */
+.section-cards {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.section-card {
+  position: relative;
+}
+
+.section-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.section-heading {
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+.section-preview {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+  line-height: 1.4;
+}
+
+.section-patterns {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+.pattern-chip {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.4rem;
+  border: 1px solid var(--yellow-warn);
+  color: var(--yellow-warn);
+  background: rgba(255, 204, 0, 0.05);
+}
+
+.section-card-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.btn-small {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.rewrite-status {
+  font-size: 0.75rem;
+  margin-left: auto;
+}
+
+.status-accepted { color: var(--green-primary); }
+.status-rejected { color: var(--red-alert); }
+.status-editing { color: var(--yellow-warn); }
+
+.loading-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--green-primary);
+  animation: loading-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes loading-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+/* Tags */
+.tag {
+  font-size: 0.7rem;
+  padding: 0.1rem 0.3rem;
+  border: 1px solid;
+}
+
+.tag-clean { border-color: var(--green-primary); color: var(--green-primary); }
+.tag-touched { border-color: var(--yellow-warn); color: var(--yellow-warn); }
+.tag-written { border-color: var(--red-alert); color: var(--red-alert); }
+
+/* Category label in score badge */
+.category-label {
+  font-size: 0.7rem;
+  margin-left: 0.3rem;
+  opacity: 0.8;
+}
+
+/* ── Task 10: Focus Mode ──────────────────────────────────────────── */
+
+.focus-view {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.focus-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.focus-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.focus-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.focus-text {
+  line-height: 1.8;
+  font-size: 0.9rem;
+}
+
+.focus-breakdown {
+  font-size: 0.85rem;
+}
+
+.breakdown-grid {
+  display: flex;
+  gap: 2rem;
+  margin-top: 0.5rem;
+}
+
+.breakdown-grid div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.pattern-row {
+  padding: 0.2rem 0;
+  font-size: 0.8rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.pattern-name {
+  color: var(--yellow-warn);
+}
