@@ -114,7 +114,7 @@ export default function SectionListView() {
                 el?.scrollIntoView({ behavior: 'smooth' })
               }}
             >
-              <ScoreBadge score={s.score} size="small" />
+              <ScoreBadge score={s.score} classification={s.classification} size="small" />
               <span className="toc-heading">{s.heading}</span>
               {s.rewrite.status === 'accepted' && <span className="toc-status">✓</span>}
             </div>
