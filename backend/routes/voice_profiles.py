@@ -77,10 +77,8 @@ def update_profile(profile_id):
 
 @voice_profiles_bp.route("/voice-profiles/onboard", methods=["POST"])
 def onboard_voice():
-    """Generate a voice profile from uploaded content samples.
-
-    Requires at least 2000 words of sample content to generate
-    a meaningful voice profile.
+    """Generate a voice profile from writing samples.
+    If preview_only=true, returns proposed rules without saving.
     """
     data = request.get_json()
     if not data or "sample_content" not in data:
@@ -91,12 +89,21 @@ def onboard_voice():
     if word_count < 500:
         return jsonify({
             "error": f"Need at least 500 words for voice profiling. Got {word_count}.",
-            "recommendation": "Provide 2000+ words for best results. Include emails, writing samples, or documents."
+            "recommendation": "Provide 2000+ words for best results."
         }), 400
 
     from utils.voice_generator import generate_voice_profile
+    import json
     rules = generate_voice_profile(content)
 
+    # Preview mode: return rules without saving
+    if data.get("preview_only"):
+        return jsonify({
+            "rules": json.loads(rules) if isinstance(rules, str) else rules,
+            "word_count": word_count,
+        })
+
+    # Normal mode: save to DB
     name = data.get("name", "Auto-generated Profile")
     from db import query_one
     profile = query_one(
@@ -105,3 +112,39 @@ def onboard_voice():
         (name, f"Auto-generated from {word_count} words of sample content", rules, content)
     )
     return jsonify(profile), 201
+
+
+@voice_profiles_bp.route("/voice-profiles/defaults", methods=["GET"])
+def get_defaults():
+    """Return the default voice guide rules for comparison."""
+    from db import query_all
+    rules = query_all(
+        "SELECT * FROM voice_rules WHERE voice_profile_id = 1 ORDER BY part, id"
+    )
+    return jsonify({"rules": rules, "profile_name": "Default - Anti-AI Voice Guide"})
+
+
+@voice_profiles_bp.route("/voice-profiles/<int:profile_id>/preview", methods=["POST"])
+def preview_profile(profile_id):
+    """Run sample AI text through a profile's rules, return before/after."""
+    data = request.get_json()
+    if not data or "text" not in data:
+        return jsonify({"error": "Provide 'text' to preview"}), 400
+
+    from db import query_one
+    profile = query_one("SELECT * FROM voice_profiles WHERE id = %s", (profile_id,))
+    if not profile:
+        return jsonify({"error": "Profile not found"}), 404
+
+    from utils.detector import detect_ai_patterns
+    from utils.voice_checker import check_voice_compliance
+
+    analysis = detect_ai_patterns(data["text"])
+    voice_check = check_voice_compliance(data["text"], profile_id)
+
+    return jsonify({
+        "score": analysis.get("overall_score", 0),
+        "classification": analysis.get("classification"),
+        "patterns": analysis.get("patterns", []),
+        "voice_violations": voice_check.get("violations", []),
+    })
