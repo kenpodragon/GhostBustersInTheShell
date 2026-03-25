@@ -5,6 +5,7 @@ interface DocumentContextValue {
   document: Document | null
   sections: Section[]
   selectedProfileId: number | null
+  useAI: boolean
   loading: boolean
   error: string | null
   activeView: ActiveView
@@ -23,6 +24,7 @@ interface DocumentContextValue {
   regenerateRewrite: (index: number) => Promise<void>
   autoOptimize: (index: number, threshold: number, comment?: string) => Promise<void>
   selectProfile: (id: number | null) => void
+  setUseAI: (enabled: boolean) => void
   setView: (view: ActiveView) => void
   setFocusedSection: (index: number | null) => void
   setRewritePanelOpen: (open: boolean) => void
@@ -47,6 +49,7 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
   const [document, setDocument] = useState<Document | null>(null)
   const [sections, setSections] = useState<Section[]>([])
   const [selectedProfileId, setSelectedProfileId] = useState<number | null>(null)
+  const [useAI, setUseAI] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [activeView, setActiveView] = useState<ActiveView>('input')
@@ -124,7 +127,7 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
       const res = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: sections[index].text }),
+        body: JSON.stringify({ text: sections[index].text, use_ai: useAI }),
       })
       if (!res.ok) throw new Error('Analysis failed')
       const data = await res.json()
@@ -138,7 +141,7 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
     } catch {
       updateSection(index, { loading: false })
     }
-  }, [sections, updateSection])
+  }, [sections, useAI, updateSection])
 
   const analyzeAll = useCallback(async () => {
     setLoading(true)
@@ -261,12 +264,12 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
 
   return (
     <DocumentContext.Provider value={{
-      document, sections, selectedProfileId, loading, error,
+      document, sections, selectedProfileId, useAI, loading, error,
       activeView, focusedSectionIndex, rewritePanelOpen,
       submitText, uploadFile, analyzeSection, analyzeAll,
       rewriteSection, acceptRewrite, rejectRewrite,
       updateEditedText, updateComment, regenerateRewrite, autoOptimize,
-      selectProfile: setSelectedProfileId, setView: setActiveView,
+      selectProfile: setSelectedProfileId, setUseAI, setView: setActiveView,
       setFocusedSection: setFocusedSectionIndex,
       setRewritePanelOpen, exportMarkdown, reset,
     }}>

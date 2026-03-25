@@ -3,8 +3,9 @@ import { useState, useEffect } from 'react'
 
 interface VoiceRule {
   id: number
-  part: string
-  rule_type: string
+  part: number | string
+  part_title: string
+  category: string
   rule_text: string
   weight: number
 }
@@ -25,12 +26,24 @@ export default function RulesEditor({ profileId, onClose }: Props) {
       fetch(`/api/voice-profiles/${profileId}`).then(r => r.json()),
       fetch('/api/voice-profiles/defaults').then(r => r.json()),
     ]).then(([profile, defaultData]) => {
-      // Parse rules from profile
-      const parsed = typeof profile.rules_json === 'string'
-        ? JSON.parse(profile.rules_json)
-        : profile.rules_json
-      setRules(Array.isArray(parsed) ? parsed : [])
-      setDefaults(defaultData.rules || [])
+      // Use structured voice_rules rows from API
+      const profileRules = profile.rules || []
+      setRules(profileRules.map((r: any) => ({
+        id: r.id,
+        part: r.part ?? r.part_title ?? 'custom',
+        part_title: r.part_title || `Part ${r.part}`,
+        category: r.category || r.subcategory || '',
+        rule_text: r.rule_text || '',
+        weight: r.weight ?? 1.0,
+      })))
+      setDefaults(defaultData.rules?.map((r: any) => ({
+        id: r.id,
+        part: r.part ?? r.part_title ?? 'custom',
+        part_title: r.part_title || `Part ${r.part}`,
+        category: r.category || r.subcategory || '',
+        rule_text: r.rule_text || '',
+        weight: r.weight ?? 1.0,
+      })) || [])
       setLoading(false)
     }).catch(() => setLoading(false))
   }, [profileId])
@@ -44,7 +57,7 @@ export default function RulesEditor({ profileId, onClose }: Props) {
   }
 
   const handleAddRule = () => {
-    setRules(prev => [...prev, { id: 0, part: 'custom', rule_type: 'banned_word', rule_text: '', weight: 1.0 }])
+    setRules(prev => [...prev, { id: 0, part: 'custom', part_title: 'Custom Rules', category: '', rule_text: '', weight: 1.0 }])
   }
 
   const handleRuleTextChange = (index: number, text: string) => {
@@ -68,7 +81,7 @@ export default function RulesEditor({ profileId, onClose }: Props) {
 
   // Group rules by part/category
   const grouped = rules.reduce((acc: Record<string, Array<VoiceRule & { _index: number }>>, rule, index) => {
-    const key = rule.part || 'uncategorized'
+    const key = rule.part_title || String(rule.part) || 'uncategorized'
     if (!acc[key]) acc[key] = []
     acc[key].push({ ...rule, _index: index })
     return acc

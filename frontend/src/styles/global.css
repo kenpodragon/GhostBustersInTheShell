@@ -292,6 +292,31 @@ input:focus, select:focus {
   background: rgba(0, 255, 65, 0.08);
 }
 
+/* Toggle button */
+.toggle-btn {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  padding: 0.3rem 0.8rem;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+  letter-spacing: 1px;
+}
+
+.toggle-on {
+  border-color: var(--teal-primary, var(--green-primary));
+  color: var(--teal-primary, var(--green-primary));
+  text-shadow: 0 0 5px var(--teal-glow, var(--green-glow));
+}
+
+.toggle-off {
+  border-color: var(--text-muted);
+  color: var(--text-muted);
+}
+
 /* Terminal-style output */
 .terminal-output {
   background: var(--bg-primary);

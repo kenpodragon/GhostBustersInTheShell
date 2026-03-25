@@ -3,7 +3,7 @@ import { useDocument } from '../context/DocumentContext'
 import type { VoiceProfile } from '../types'
 
 export default function InputView() {
-  const { submitText, uploadFile, selectProfile, selectedProfileId, loading, error } = useDocument()
+  const { submitText, uploadFile, selectProfile, selectedProfileId, useAI, setUseAI, loading, error } = useDocument()
   const [text, setText] = useState('')
   const [profiles, setProfiles] = useState<VoiceProfile[]>([])
   const fileRef = useRef<HTMLInputElement>(null)
@@ -54,6 +54,19 @@ export default function InputView() {
             <option key={p.id} value={p.id}>{p.name}</option>
           ))}
         </select>
+      </div>
+
+      {/* AI Toggle */}
+      <div className="card" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <label className="card-header" style={{ margin: 0, border: 'none', paddingBottom: 0 }}>
+          AI-Enhanced Analysis
+        </label>
+        <button
+          className={`toggle-btn ${useAI ? 'toggle-on' : 'toggle-off'}`}
+          onClick={() => setUseAI(!useAI)}
+        >
+          {useAI ? '[ ON ]' : '[ OFF ]'}
+        </button>
       </div>
 
       {/* Text Input */}

@@ -40,10 +40,15 @@ def create_profile():
 @voice_profiles_bp.route("/voice-profiles/<int:profile_id>", methods=["GET"])
 def get_profile(profile_id):
     """Get a specific voice profile with full rules."""
-    from db import query_one
+    from db import query_one, query_all
     profile = query_one("SELECT * FROM voice_profiles WHERE id = %s", (profile_id,))
     if not profile:
         return jsonify({"error": "Profile not found"}), 404
+    # Include structured voice_rules rows
+    profile["rules"] = query_all(
+        "SELECT * FROM voice_rules WHERE voice_profile_id = %s ORDER BY part, id",
+        (profile_id,)
+    )
     return jsonify(profile)
 
 
