@@ -36,7 +36,8 @@ export default function WordListsTab({ config, defaults, onUpdate }: Props) {
   const defaultWords = useMemo(() => {
     if (!defaults || !selected) return new Set<string>()
     const section = (defaults as any)[selected.section] as Record<string, string[]> | undefined
-    return new Set(section?.[selected.category] || [])
+    const words = section?.[selected.category]
+    return new Set(Array.isArray(words) ? words : [])
   }, [defaults, selected])
 
   const filteredWords = useMemo(() => {
