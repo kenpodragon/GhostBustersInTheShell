@@ -132,8 +132,18 @@ export default function InputView() {
         </div>
       </div>
 
+      {/* Loading spinner */}
+      {(analyzing || docLoading) && (
+        <div className="card" style={{ marginTop: '1rem', textAlign: 'center', padding: '2rem' }}>
+          <div className="spinner" />
+          <div className="text-muted" style={{ marginTop: '0.75rem' }}>
+            {docLoading ? 'Splitting into sections...' : 'Analyzing text...'}
+          </div>
+        </div>
+      )}
+
       {/* Analysis Results — shown inline below text */}
-      {analysis && (
+      {analysis && !analyzing && (
         <div className="card" style={{ marginTop: '1rem' }}>
           <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span>Analysis Results</span>
