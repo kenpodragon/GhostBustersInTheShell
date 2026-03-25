@@ -52,6 +52,11 @@ def main():
     # Initialize DB pool
     init_pool()
 
+    # Seed rule_configs if empty, then load config singleton
+    from utils.rules_config import rules_config
+    rules_config.seed_db()
+    rules_config.load()
+
     # AI provider startup health check
     from ai_providers.router import startup_health_check
     startup_health_check()

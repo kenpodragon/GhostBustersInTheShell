@@ -148,10 +148,12 @@ class RulesConfig:
 
             # Update settings table with version info
             cur.execute(
-                """INSERT INTO settings (key, value)
-                   VALUES ('rules_version', %s)
-                   ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value""",
-                (json.dumps({"version": version}),),
+                """UPDATE settings
+                   SET rules_version = %s,
+                       rules_version_date = %s,
+                       updated_at = CURRENT_TIMESTAMP
+                   WHERE id = 1""",
+                (version, data.get("date", "2026-03-25")),
             )
 
     # -- internals --
