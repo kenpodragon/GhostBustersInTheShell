@@ -20,7 +20,9 @@ function Layout() {
       <aside className="sidebar">
         <div className="sidebar-logo">
           <img src="/ghosted-guild.jpg" alt="Ghosted Guild" className="sidebar-icon" />
-          <span>GhostBusters<br />In The Shell_</span>
+          <a href="https://discord.gg/Y8UxRmaAXw" target="_blank" rel="noopener noreferrer" className="sidebar-title-link">
+            GhostBusters<br />In The Shell_
+          </a>
         </div>
         <ul className="sidebar-nav">
           <li>
