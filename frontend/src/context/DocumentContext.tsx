@@ -72,7 +72,7 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
       setSections(data.sections.map((s: any) => ({
         id: s.id,
         heading: s.heading,
-        text: s.text,
+        text: s.original_text || s.text,
         score: null,
         classification: null,
         patterns: [],
@@ -102,7 +102,7 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
       setSections(data.sections.map((s: any) => ({
         id: s.id,
         heading: s.heading,
-        text: s.text,
+        text: s.original_text || s.text,
         score: null,
         classification: null,
         patterns: [],
