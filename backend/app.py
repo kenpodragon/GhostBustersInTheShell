@@ -35,12 +35,14 @@ from routes.rewrite import rewrite_bp
 from routes.documents import documents_bp
 from routes.voice_profiles import voice_profiles_bp
 from routes.settings import settings_bp
+from routes.rules import rules_bp
 
 app.register_blueprint(analyze_bp, url_prefix="/api")
 app.register_blueprint(rewrite_bp, url_prefix="/api")
 app.register_blueprint(documents_bp, url_prefix="/api")
 app.register_blueprint(voice_profiles_bp, url_prefix="/api")
 app.register_blueprint(settings_bp, url_prefix="/api")
+app.register_blueprint(rules_bp, url_prefix="/api")
 
 
 def main():
