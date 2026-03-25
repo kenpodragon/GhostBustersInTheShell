@@ -55,18 +55,18 @@ def load_corpus() -> list[dict]:
     return data["samples"]
 
 
-def score_corpus(samples: list[dict]) -> list[dict]:
+def score_corpus(samples: list[dict], use_lm_signals: bool = False) -> list[dict]:
     """Run detector on every sample, return enriched results."""
     results = []
     for sample in samples:
         text = sample["text"]
-        detection = detect_ai_patterns(text)
+        detection = detect_ai_patterns(text, use_lm_signals=use_lm_signals)
 
         # Extract document-level signals by re-running the internal function
         # We need the raw signals for per-heuristic analysis
         from utils.detector import _document_level_patterns, _split_sentences
         sentences = _split_sentences(text)
-        _, doc_signals = _document_level_patterns(text, sentences)
+        _, doc_signals = _document_level_patterns(text, sentences, use_lm_signals=use_lm_signals)
 
         results.append({
             "id": sample["id"],
@@ -522,14 +522,17 @@ def save_results(results: list[dict], optimized_weights: dict = None):
 
 def main():
     command = sys.argv[1] if len(sys.argv) > 1 else "score"
+    use_lm_signals = "--use-lm-signals" in sys.argv
 
     print(f"Loading corpus from {CORPUS_PATH}...")
     samples = load_corpus()
     print(f"Loaded {len(samples)} samples")
+    if use_lm_signals:
+        print("  LM signals: ENABLED")
     print()
 
     print("Scoring all samples...")
-    results = score_corpus(samples)
+    results = score_corpus(samples, use_lm_signals=use_lm_signals)
     print(f"Scored {len(results)} samples")
     print()
 

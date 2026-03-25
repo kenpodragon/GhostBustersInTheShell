@@ -17,27 +17,20 @@ def _strip_code_fences(text: str) -> str:
     return text.strip()
 
 
-ANALYZE_PROMPT = """You are an AI text detection expert. Analyze this text for AI-generated content patterns.
-For each sentence, provide an AI probability score (0-100).
-Also identify specific patterns that suggest AI generation (buzzwords, hedge words, passive voice, uniform sentence length, etc.).
+ANALYZE_PROMPT = """Determine if this text is AI-generated or human-written. Score 0-100 (0=human, 100=AI).
 
-Return ONLY valid JSON matching this exact schema:
-{{
-  "overall_score": 0-100,
-  "sentences": [
-    {{"text": "the sentence", "score": 0-100, "patterns": [{{"pattern": "name", "detail": "description"}}]}}
-  ],
-  "detected_patterns": [
-    {{"pattern": "name", "detail": "description"}}
-  ]
-}}
+Be calibrated: most AI text scores 60-90. Most human text scores 0-25. Don't cluster around 50.
+Judge the STYLE, not the TOPIC. A paper about AI written by a human is still human.
+Look for: buzzword density, sentence uniformity, missing first-person/contractions/questions, em dash overuse, triadic lists, trailing -ing phrases, self-contained paragraphs, no digressions.
+Human tells: contractions, first-person, specific names/dates, irregular punctuation, tangents, emotional shifts.
 
-Text to analyze:
+Return ONLY valid JSON:
+{{"overall_score": 0-100, "detected_patterns": [{{"pattern": "name", "detail": "description"}}], "reasoning": "one sentence"}}
+
+Text:
 ---
 {text}
----
-
-Return ONLY the JSON object, no explanation."""
+---"""
 
 REWRITE_PROMPT = """You are a text humanizer. Rewrite this text to sound naturally human-written, not AI-generated.
 Preserve the meaning but change: sentence structure, vocabulary, rhythm, and flow.
@@ -96,27 +89,42 @@ class ClaudeProvider(AIProvider):
             raise RuntimeError("Claude CLI timed out after 120s")
 
     def analyze(self, text: str) -> dict:
-        """Use Claude to analyze text for AI patterns."""
+        """Use Claude to analyze text for AI patterns (A_v3 calibrated prompt)."""
         prompt = ANALYZE_PROMPT.format(text=text)
         result = self._run_cli(prompt)
-        for key in ("overall_score", "sentences", "detected_patterns"):
-            if key not in result:
-                raise RuntimeError(f"Claude analyze missing key: {key}")
+        if "overall_score" not in result:
+            raise RuntimeError("Claude analyze missing key: overall_score")
+        # Normalize: ensure detected_patterns exists
+        if "detected_patterns" not in result:
+            result["detected_patterns"] = []
+        # Ensure score is numeric and clamped
+        score = result["overall_score"]
+        if isinstance(score, (int, float)):
+            result["overall_score"] = max(0, min(100, float(score)))
+        else:
+            raise RuntimeError(f"Claude returned non-numeric score: {score}")
         return result
 
-    def rewrite(self, text: str, voice_profile_id: int = None) -> dict:
-        """Use Claude to rewrite text to sound more human."""
-        voice_context = ""
-        if voice_profile_id:
-            from db import query_one
-            profile = query_one(
-                "SELECT name, rules_json FROM voice_profiles WHERE id = %s",
-                (voice_profile_id,)
-            )
-            if profile:
-                voice_context = f"\nVoice profile '{profile['name']}' rules:\n{profile['rules_json']}"
+    def rewrite(self, text: str, voice_profile_id: int = None, style_brief: str = None) -> dict:
+        """Use Claude to rewrite text to sound more human.
 
-        prompt = REWRITE_PROMPT.format(text=text, voice_context=voice_context)
+        If style_brief is provided, uses it as the prompt (from style brief generator).
+        Otherwise falls back to static REWRITE_PROMPT.
+        """
+        if style_brief:
+            prompt = style_brief.replace("{text}", text)
+        else:
+            voice_context = ""
+            if voice_profile_id:
+                from db import query_one
+                profile = query_one(
+                    "SELECT name, rules_json FROM voice_profiles WHERE id = %s",
+                    (voice_profile_id,)
+                )
+                if profile:
+                    voice_context = f"\nVoice profile '{profile['name']}' rules:\n{profile['rules_json']}"
+            prompt = REWRITE_PROMPT.format(text=text, voice_context=voice_context)
+
         result = self._run_cli(prompt)
         if "rewritten_text" not in result:
             raise RuntimeError("Claude rewrite missing key: rewritten_text")

@@ -10,7 +10,7 @@ def get_settings():
     from db import query_one
     from ai_providers.router import get_ai_status
 
-    row = query_one("SELECT ai_enabled, ai_provider, preferences, updated_at FROM settings WHERE id = 1")
+    row = query_one("SELECT ai_enabled, ai_provider, lm_signals_enabled, preferences, updated_at FROM settings WHERE id = 1")
     if not row:
         return jsonify({"error": "Settings not initialized"}), 500
 
@@ -28,7 +28,7 @@ def update_settings():
     if not data:
         return jsonify({"error": "No data provided"}), 400
 
-    allowed = {"ai_enabled", "ai_provider"}
+    allowed = {"ai_enabled", "ai_provider", "lm_signals_enabled"}
     updates = {k: v for k, v in data.items() if k in allowed}
     if not updates:
         return jsonify({"error": f"No valid fields. Allowed: {allowed}"}), 400

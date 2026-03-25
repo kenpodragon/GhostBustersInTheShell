@@ -126,11 +126,11 @@ def classify_category(result: dict) -> dict:
         category = "clean"
 
     # --- Rule 2: Ghost Written (AI) ---
-    # Score ≥ 45: ghost written regardless
-    # Score ≥ 35: ghost written if weak human tells (<2) AND 3+ AI signal types
-    elif score >= 45:
+    # Score ≥ 40: ghost written regardless (lowered from 45 after Phase 3.12 dedup)
+    # Score ≥ 32: ghost written if weak human tells (<2) AND 3+ AI signal types
+    elif score >= 40:
         category = "ghost_written"
-    elif score >= 35 and human_tells < 2 and ai_signal_count >= 3:
+    elif score >= 32 and human_tells < 2 and ai_signal_count >= 3:
         category = "ghost_written"
 
     # --- Rule 3: Ghost Touched (Assisted) — everything else ---

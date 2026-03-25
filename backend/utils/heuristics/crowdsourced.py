@@ -62,6 +62,12 @@ def check_ai_opening_phrases(text: str) -> tuple[float, list[dict]]:
         r"^It'?s no (secret|surprise|coincidence) that\b",
         r"^Have you ever (wondered|thought|considered)\b",
         r"^In (recent years|today's society|the modern world)\b",
+        # Phase 3.12 expansion
+        r"^Now more than ever\b",
+        r"^Imagine a world where\b",
+        r"^.{1,30}\s+is more than just\b",
+        r"^In a world that is (constantly|always|ever)\b",
+        r"^It goes without saying\b",
     ]
 
     found_count = 0
@@ -98,7 +104,11 @@ def check_ai_opening_phrases(text: str) -> tuple[float, list[dict]]:
 
 
 def check_closing_summary(text: str) -> tuple[float, list[dict]]:
-    """Detect AI-typical closing/summary patterns."""
+    """Detect AI-typical closing/summary patterns with tone-contrast logic.
+
+    Phase 3.12 B4: Re-enabled with optimistic-escalation-close detection.
+    Flags harder when body is critical/neutral but closing is aspirational.
+    """
     sentences = split_sentences(text)
     if len(sentences) < 3:
         return 0, []
@@ -114,23 +124,49 @@ def check_closing_summary(text: str) -> tuple[float, list[dict]]:
         r"(paramount|essential|crucial|vital) to (achieving|ensuring|driving)",
         r"the (key|path|road|journey) to (success|growth)",
         r"moving forward", r"at the end of the day", r"all things considered",
+        # Phase 3.12 expansion
+        r"only time will tell",
+        r"the possibilities are (endless|limitless|vast)",
+        r"one thing is (certain|clear|sure)",
+        r"as we continue to\b",
+        r"it'?s clear that\b",
+        r"in the final analysis",
     ]
 
     found = [p for p in closing_patterns if re.search(p, last_sentences)]
+    if not found:
+        return 0, []
+
     patterns = []
     score = 0
 
+    # Phase 3.12 B4: Tone-contrast detection — critical body + aspirational close
+    body_text = ' '.join(sentences[:-2]).lower() if len(sentences) > 2 else ''
+    negative_markers = re.findall(
+        r'\b(challenge|risk|problem|issue|concern|difficult|fail|threat|'
+        r'drawback|limitation|obstacle|barrier|downside|danger|crisis)\b',
+        body_text
+    )
+    aspirational_close = re.search(
+        r'(bright future|promising|opportunity|unlock|potential|success|'
+        r'transform|thrive|flourish|embrace|empower|the right approach)',
+        last_sentences
+    )
+    has_tone_contrast = len(negative_markers) >= 2 and aspirational_close is not None
+
     if len(found) >= 2:
-        score = 40
+        score = 45 if has_tone_contrast else 35
         patterns.append({
             "pattern": "closing_summary_heavy",
             "detail": "Multiple AI-typical closing phrases in final sentences"
+                + (" — with optimistic escalation after critical body" if has_tone_contrast else "")
         })
     elif len(found) == 1:
-        score = 20
+        score = 30 if has_tone_contrast else 18
         patterns.append({
             "pattern": "closing_summary",
             "detail": "AI-typical closing/summary phrase detected"
+                + (" — optimistic pivot after critical body" if has_tone_contrast else "")
         })
 
     return score, patterns

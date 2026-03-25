@@ -31,6 +31,65 @@ GENRE_BASELINES = {
     "literary": {"ai_floor": 22, "human_ceil": 35, "description": "Literary fiction — classic and modern literary prose"},
 }
 
+# Hard-ban buzzword lists (moved from detector.py Phase 3.12 A5)
+HARD_BAN_VERBS = {
+    "delve", "navigate", "foster", "leverage", "harness", "empower",
+    "unlock", "catalyze", "galvanize", "utilize", "spearhead", "synergize",
+    "operationalize", "revolutionize", "supercharge", "elevate", "amplify",
+    "streamline", "champion", "evangelize", "pioneer", "facilitate",
+    "optimize", "incentivize", "conceptualize", "contextualize",
+    "problematize", "underscore", "showcase", "illuminate",
+    # Crowdsourced additions
+    "bolster", "reimagine", "transcend", "demystify",
+    "unpack", "unravel", "embark", "endeavor", "resonate",
+    "captivate", "cultivate", "envision", "propel",
+    "augment", "orchestrate", "curate", "architect", "ideate",
+    # Phase 3.12 expansion (web research + Claude/Gemini cross-ref)
+    "accelerate", "align", "democratize", "deploy", "elucidate",
+    "enable", "iterate", "reshape", "synthesize", "tackle",
+}
+
+HARD_BAN_ADJ = {
+    "robust", "holistic", "paramount", "transformative", "cutting-edge",
+    "seamless", "innovative", "groundbreaking", "comprehensive", "dynamic",
+    "game-changing", "best-in-class", "world-class", "state-of-the-art",
+    "mission-critical", "enterprise-grade", "multifaceted", "nuanced",
+    "pivotal", "compelling", "invaluable", "indispensable", "unparalleled",
+    "unprecedented", "myriad",
+    # Crowdsourced additions
+    "meticulous", "intricate", "vibrant", "bustling", "nestled",
+    "thoughtful", "noteworthy", "commendable", "remarkable", "insightful",
+    "profound", "impactful", "actionable", "scalable", "bespoke",
+    "granular", "overarching", "undeniable", "instrumental",
+    "versatile", "ubiquitous", "burgeoning", "nascent",
+    "seminal", "salient", "cogent", "astute", "discerning",
+    # Phase 3.12 expansion
+    "crucial", "data-driven", "disruptive", "ever-evolving", "integral",
+    "proactive", "purpose-driven", "resilient", "strategic",
+}
+
+HARD_BAN_FILLER = {
+    "furthermore", "moreover", "additionally", "consequently", "nevertheless",
+    "paradigm", "ecosystem", "synergy", "landscape", "realm", "tapestry",
+    "underpinning", "bedrock", "cornerstone", "linchpin", "crucible",
+    "zeitgeist", "ethos", "nexus", "interplay", "juxtaposition",
+    # Crowdsourced additions
+    "plethora", "gamut", "spectrum",
+    "confluence", "dichotomy", "trajectory", "framework", "methodology",
+    "stakeholder", "deliverable", "bandwidth", "synergistic", "proactive",
+    "aforementioned", "henceforth", "notwithstanding", "thereof", "whereby",
+}
+
+# Multi-word filler phrases (checked separately via regex in detector)
+HARD_BAN_FILLER_PHRASES = [
+    "a testament to", "as such", "at its core", "at the forefront",
+    "best practices", "building blocks", "deep dive", "double-edged sword",
+    "in essence", "in light of", "key takeaway", "moving forward",
+    "to this end", "what's more",
+]
+
+BUZZWORDS = HARD_BAN_VERBS | HARD_BAN_ADJ | HARD_BAN_FILLER
+
 HEURISTIC_WEIGHTS = {
     # Phase 3.4 calibrated weights (optimized against 116-sample corpus, 2026-03-23)
     # Top discriminators — AI-ONLY patterns from corpus analysis
@@ -54,6 +113,12 @@ HEURISTIC_WEIGHTS = {
     "structural_patterns": 0.5,
     "vocabulary_richness": 0.5,
     "transitions": 0.5, "char_ngram_profile": 0.5,
+    "tricolon_density": 0.5,       # Phase 3.12 B2: rule-of-three aggregation
+    "buzzword_density": 0.6,        # Phase 3.12 B3: unique buzzwords per 100 words
+    "rhetorical_question_chain": 0.5,  # Phase 3.12 C1
+    "circular_repetition": 0.4,        # Phase 3.12 C2
+    "hollow_informality": 0.3,         # Phase 3.12 C3
+    "as_you_know_exposition": 0.4,     # Phase 3.12 C4 (fiction only)
     "bullet_subheading_overuse": 0.5,
     "word_length_distribution": 0.48,
     "first_person": 0.35,           # Good gap but can fire on human casual text
@@ -74,6 +139,17 @@ HEURISTIC_WEIGHTS = {
     "sensory_checklist": 0.0,       # sensory_rotation is FP-ONLY
     "question_exclamation_absence": 0.0,  # Fires on both
     "oxford_comma_consistency": 0.0,      # Rarely fires
-    "closing_summary": 0.0,         # Rarely fires
+    "closing_summary": 0.4,         # Re-enabled Phase 3.12 B4 with tone-contrast logic
     "consensus_middle": 0.0,        # Rarely fires
+    # Phase 3.8: LM signals (active only when use_lm_signals=true)
+    # Calibration 3.8.1: all set to 0.0 — n-gram corpus too coarse to discriminate.
+    # Infrastructure kept for future improvement (neural perplexity, better corpus).
+    "compression_ratio_sentence": 0.0,  # A1: fires broadly, no discrimination
+    "compression_ratio_document": 0.0,  # A2: fires 100% AI, 93.9% human — noise
+    "repetition_density": 0.0,          # A3: no discrimination
+    "ngram_perplexity": 0.0,            # B1: slight signal but raises human scores
+    "ngram_burstiness": 0.0,            # B2: barely fires (2.6% AI, 1.2% human)
+    "zipf_deviation_v2": 0.0,           # C1: HARMFUL — fires more on human (-2.3 disc)
+    "mattr_v2": 0.0,                    # C2: no discrimination
+    "ttr_variance": 0.0,                # C3: no discrimination
 }

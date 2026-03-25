@@ -19,6 +19,13 @@ HEURISTIC_LEVELS = {
     "synonym_treadmill": "document",
     "emoji_density": "document",
     "bullet_subheading_overuse": "document",
+    "tricolon_density": "document",      # Phase 3.12 B2
+    "buzzword_density": "document",      # Phase 3.12 B3
+    "closing_summary": "document",       # Phase 3.12 B4 (re-enabled)
+    "rhetorical_question_chain": "document",  # Phase 3.12 C1
+    "circular_repetition": "document",        # Phase 3.12 C2
+    "hollow_informality": "document",         # Phase 3.12 C3
+    "as_you_know_exposition": "sentence",     # Phase 3.12 C4 (fiction only)
 
     # Paragraph-level: per-paragraph analysis
     "paragraph_uniformity": "paragraph",
@@ -51,6 +58,16 @@ HEURISTIC_LEVELS = {
     "ai_opening_phrases": "cross",
     "opening_diversity": "cross",
     "adverb_density": "cross",
+
+    # Phase 3.8: LM signals
+    "compression_ratio_sentence": "sentence",
+    "compression_ratio_document": "document",
+    "repetition_density": "paragraph",
+    "ngram_perplexity": "sentence",
+    "ngram_burstiness": "document",
+    "zipf_deviation_v2": "document",
+    "mattr_v2": "paragraph",
+    "ttr_variance": "paragraph",
 }
 
 

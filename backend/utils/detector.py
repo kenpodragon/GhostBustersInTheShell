@@ -36,7 +36,9 @@ from utils.heuristics.structural import (
 from utils.heuristics.stylometric import check_burrows_delta
 from utils.heuristics.scoring import combine_signals, composite_score, estimate_confidence, detect_genre
 from utils.heuristics.severity import classify_severity, apply_severity, compound_across_levels
-from utils.heuristics.reference_data import GENRE_BASELINES
+from utils.heuristics.reference_data import (
+    GENRE_BASELINES, HEURISTIC_WEIGHTS, BUZZWORDS, HARD_BAN_FILLER_PHRASES,
+)
 from utils.heuristics.crowdsourced import (
     check_em_dash_overuse, check_ai_opening_phrases,
     check_closing_summary, check_question_exclamation_absence,
@@ -47,14 +49,14 @@ from utils.heuristics.ai_phrases import check_ai_phrases, check_ai_phrases_sente
 from utils.heuristics.classification import classify_category
 
 
-def detect_ai_patterns(text: str) -> dict:
+def detect_ai_patterns(text: str, use_lm_signals: bool = False) -> dict:
     """Public API — standard detection."""
-    return _detect_ai_patterns_inner(text, detail=False)
+    return _detect_ai_patterns_inner(text, detail=False, use_lm_signals=use_lm_signals)
 
 
-def detect_ai_patterns_detailed(text: str) -> dict:
+def detect_ai_patterns_detailed(text: str, use_lm_signals: bool = False) -> dict:
     """Public API — detection with full transparency report."""
-    return _detect_ai_patterns_inner(text, detail=True)
+    return _detect_ai_patterns_inner(text, detail=True, use_lm_signals=use_lm_signals)
 
 
 def _build_escalation_traces(sent_counts, para_signals_list, doc_signals):
@@ -103,7 +105,7 @@ def _build_escalation_traces(sent_counts, para_signals_list, doc_signals):
     return traces
 
 
-def _detect_ai_patterns_inner(text: str, detail: bool = False) -> dict:
+def _detect_ai_patterns_inner(text: str, detail: bool = False, use_lm_signals: bool = False) -> dict:
     """Run all heuristic detectors on text. Returns 3-tier scores."""
     sentences = _split_sentences(text)
     if not sentences:
@@ -135,7 +137,7 @@ def _detect_ai_patterns_inner(text: str, detail: bool = False) -> dict:
     all_patterns = []
 
     for i, sentence in enumerate(sentences):
-        score, patterns = _score_sentence(sentence, sentences)
+        score, patterns = _score_sentence(sentence, sentences, use_lm_signals=use_lm_signals)
         sentence_results.append({
             "index": i,
             "text": sentence,
@@ -156,7 +158,7 @@ def _detect_ai_patterns_inner(text: str, detail: bool = False) -> dict:
 
     for i, para in enumerate(paragraphs):
         para_score, para_patterns, para_signals = _score_paragraph(
-            para, i, len(paragraphs)
+            para, i, len(paragraphs), use_lm_signals=use_lm_signals
         )
         paragraph_results.append({
             "index": i,
@@ -180,7 +182,7 @@ def _detect_ai_patterns_inner(text: str, detail: bool = False) -> dict:
         paragraph_overall = 0.0
 
     # --- TIER 3: Document-level ---
-    doc_patterns, doc_signals = _document_level_patterns(text, sentences)
+    doc_patterns, doc_signals = _document_level_patterns(text, sentences, use_lm_signals=use_lm_signals)
     all_patterns.extend(doc_patterns)
     doc_combined = combine_signals(doc_signals)
 
@@ -289,7 +291,7 @@ def _split_sentences(text: str) -> list:
     return [p.strip() for p in parts if p.strip()]
 
 
-def _score_sentence(sentence: str, all_sentences: list) -> tuple:
+def _score_sentence(sentence: str, all_sentences: list, use_lm_signals: bool = False) -> tuple:
     """Score a single sentence for AI likelihood. Returns (score, patterns)."""
     scores = []
     patterns = []
@@ -356,6 +358,24 @@ def _score_sentence(sentence: str, all_sentences: list) -> tuple:
         scores.append(phrase_score)
         patterns.extend(phrase_patterns)
 
+    # 12-13. LM signals (Phase 3.8) — gated behind feature flag
+    if use_lm_signals:
+        from utils.heuristics.lm_signals import check_compression_ratio_sentence, check_ngram_perplexity, load_corpus
+
+        # A1: Compression ratio (sentence)
+        cr_score, cr_patterns = check_compression_ratio_sentence(sentence)
+        if cr_score > 0:
+            scores.append(cr_score)
+            patterns.extend(cr_patterns)
+
+        # B1: N-gram perplexity
+        corpus = load_corpus("combined")
+        if corpus:
+            ppl_score, ppl_patterns = check_ngram_perplexity(sentence, corpus)
+            if ppl_score > 0:
+                scores.append(ppl_score)
+                patterns.extend(ppl_patterns)
+
     # Combine scores: only count non-zero signals to avoid dilution
     nonzero = [s for s in scores if s > 0]
     if nonzero:
@@ -369,57 +389,20 @@ def _score_sentence(sentence: str, all_sentences: list) -> tuple:
 
 
 def _check_buzzwords(sentence: str) -> tuple:
-    """Check for AI-typical buzzwords (expanded from Voice Guide)."""
-    # Hard-ban verbs (Voice Guide Part 1)
-    hard_ban_verbs = {
-        "delve", "navigate", "foster", "leverage", "harness", "empower",
-        "unlock", "catalyze", "galvanize", "utilize", "spearhead", "synergize",
-        "operationalize", "revolutionize", "supercharge", "elevate", "amplify",
-        "streamline", "champion", "evangelize", "pioneer", "facilitate",
-        "optimize", "incentivize", "conceptualize", "contextualize",
-        "problematize", "underscore", "showcase", "illuminate",
-        # Crowdsourced additions
-        "bolster", "reimagine", "transcend", "demystify",
-        "unpack", "unravel", "embark", "endeavor", "resonate",
-        "captivate", "cultivate", "envision", "propel",
-        "augment", "orchestrate", "curate", "architect", "ideate",
-    }
-    # Hard-ban adjectives (Voice Guide Part 1)
-    hard_ban_adj = {
-        "robust", "holistic", "paramount", "transformative", "cutting-edge",
-        "seamless", "innovative", "groundbreaking", "comprehensive", "dynamic",
-        "game-changing", "best-in-class", "world-class", "state-of-the-art",
-        "mission-critical", "enterprise-grade", "multifaceted", "nuanced",
-        "pivotal", "compelling", "invaluable", "indispensable", "unparalleled",
-        "unprecedented", "myriad",
-        # Crowdsourced additions
-        "meticulous", "intricate", "vibrant", "bustling", "nestled",
-        "thoughtful", "noteworthy", "commendable", "remarkable", "insightful",
-        "profound", "impactful", "actionable", "scalable", "bespoke",
-        "granular", "overarching", "undeniable", "instrumental",
-        "versatile", "ubiquitous", "burgeoning", "nascent",
-        "seminal", "salient", "cogent", "astute", "discerning",
-    }
-    # Hard-ban filler / connector words (Voice Guide Part 1-2)
-    hard_ban_filler = {
-        "furthermore", "moreover", "additionally", "consequently", "nevertheless",
-        "paradigm", "ecosystem", "synergy", "landscape", "realm", "tapestry",
-        "underpinning", "bedrock", "cornerstone", "linchpin", "crucible",
-        "zeitgeist", "ethos", "nexus", "interplay", "juxtaposition",
-        # Crowdsourced additions
-        "plethora", "gamut", "spectrum",
-        "confluence", "dichotomy", "trajectory", "framework", "methodology",
-        "stakeholder", "deliverable", "bandwidth", "synergistic", "proactive",
-        "aforementioned", "henceforth", "notwithstanding", "thereof", "whereby",
-    }
-    buzzwords = hard_ban_verbs | hard_ban_adj | hard_ban_filler
-
+    """Check for AI-typical buzzwords (expanded from Voice Guide).
+    Buzzword lists are in reference_data.py (BUZZWORDS).
+    """
     words = set(re.findall(r'\b\w+\b', sentence.lower()))
     # Also check hyphenated forms
     hyphenated = set(re.findall(r'\b\w+-\w+(?:-\w+)?\b', sentence.lower()))
     all_tokens = words | hyphenated
 
-    found = all_tokens & buzzwords
+    found = all_tokens & BUZZWORDS
+    # Also check multi-word filler phrases (Phase 3.12)
+    sentence_lower = sentence.lower()
+    for phrase in HARD_BAN_FILLER_PHRASES:
+        if phrase in sentence_lower:
+            found.add(phrase)
     # Hard-ban words score higher than before
     count = len(found)
     severity = classify_severity(count)
@@ -435,6 +418,12 @@ def _check_hedge_words(sentence: str) -> tuple:
         r'\bhowever\b', r'\bfurthermore\b', r'\bmoreover\b', r'\badditionally\b',
         r'\bconsequently\b', r'\bnevertheless\b', r'\bnotably\b', r'\bimportantly\b',
         r'\bsignificantly\b', r'\bundoubtedly\b', r'\bultimately\b',
+        # Phase 3.12 expansion — multi-word hedges
+        r"\bit'?s fair to say\b", r'\bit bears mentioning\b',
+        r'\bit stands to reason\b', r'\bgenerally speaking\b',
+        r'\bbroadly speaking\b', r'\bby and large\b',
+        r'\bmore often than not\b', r'\bneedless to say\b',
+        r'\bgiven the circumstances\b',
     ]
     found = [h for h in hedges if re.search(h, sentence, re.IGNORECASE)]
     count = len(found)
@@ -937,15 +926,8 @@ def _check_punctuation_fingerprint(text: str) -> tuple:
     word_count = len(words)
     score = 0
 
-    # Em dash overuse (AI loves em dashes)
-    em_dashes = len(re.findall(r'[—–]', text))
-    em_ratio = em_dashes / word_count
-    if em_ratio > 0.015:
-        score += 25
-        patterns.append({
-            "pattern": "em_dash_overuse",
-            "detail": f"Em dash density {em_ratio:.1%} — AI overuses em dashes"
-        })
+    # NOTE: Em dash check removed (Phase 3.12 A3) — canonical source is
+    # check_em_dash_overuse() in crowdsourced.py
 
     # Comma density (AI tends toward high, regular comma usage)
     commas = text.count(',')
@@ -1020,6 +1002,26 @@ def _check_hedge_clusters(sentences: list) -> tuple:
             "pattern": "hedge_cluster",
             "detail": f"{max_run} consecutive hedged sentences — above natural frequency"
         })
+
+    # Phase 3.12 B5: Qualifier injection interval — check spacing regularity
+    if len(sentences) >= 6:
+        hedge_indices = [i for i, count in enumerate(hedge_per_sent) if count > 0]
+        if len(hedge_indices) >= 3:
+            # Calculate intervals between hedge appearances
+            intervals = [hedge_indices[i+1] - hedge_indices[i] for i in range(len(hedge_indices)-1)]
+            mean_interval = sum(intervals) / len(intervals)
+            if mean_interval > 0:
+                variance = sum((iv - mean_interval) ** 2 for iv in intervals) / len(intervals)
+                cv = math.sqrt(variance) / mean_interval if mean_interval > 0 else 999
+                # Low CV = evenly spaced = systematic AI injection
+                if cv < 0.3 and len(hedge_indices) >= 4:
+                    score = max(score, 40)
+                    patterns.append({
+                        "pattern": "hedge_regular_spacing",
+                        "detail": f"Hedge words evenly spaced (CV={cv:.2f}) — systematic AI injection pattern"
+                    })
+                elif cv < 0.5 and len(hedge_indices) >= 3:
+                    score = max(score, 20)
 
     return score, patterns
 
@@ -1196,7 +1198,7 @@ def _split_paragraphs(text: str) -> list[str]:
     return [p.strip() for p in parts if p.strip()]
 
 
-def _score_paragraph(paragraph: str, para_index: int, total_paragraphs: int) -> tuple[float, list[dict], dict[str, float]]:
+def _score_paragraph(paragraph: str, para_index: int, total_paragraphs: int, use_lm_signals: bool = False) -> tuple[float, list[dict], dict[str, float]]:
     """Score a single paragraph for AI patterns.
 
     Runs sentence-level scoring within the paragraph, then adds
@@ -1212,7 +1214,7 @@ def _score_paragraph(paragraph: str, para_index: int, total_paragraphs: int) -> 
     sentences = _split_sentences(paragraph)
     sent_scores = []
     for sent in sentences:
-        score, pats = _score_sentence(sent, sentences)
+        score, pats = _score_sentence(sent, sentences, use_lm_signals=use_lm_signals)
         sent_scores.append(score)
         patterns.extend(pats)
 
@@ -1245,32 +1247,36 @@ def _score_paragraph(paragraph: str, para_index: int, total_paragraphs: int) -> 
             patterns.append({"pattern": "para_low_vocab",
                              "detail": f"Paragraph {para_index+1}: low vocabulary diversity (TTR={ttr:.2f})"})
 
-    # Paragraph-specific: transition stacking within paragraph
-    stack_starters = {
-        "moreover", "furthermore", "additionally", "consequently", "subsequently",
-        "similarly", "likewise", "conversely", "nevertheless", "nonetheless",
-        "in addition", "as a result", "on the other hand", "in contrast",
-    }
-    if len(sentences) >= 2:
-        stack_count = sum(1 for s in sentences if any(s.strip().lower().startswith(t) for t in stack_starters))
-        ratio = stack_count / len(sentences)
-        if ratio > 0.4:
-            signals["para_transition_stacks"] = 40
-            patterns.append({"pattern": "para_transition_stacks",
-                             "detail": f"Paragraph {para_index+1}: {ratio:.0%} sentences open with transitions"})
-        elif ratio > 0.25:
-            signals["para_transition_stacks"] = 20
+    # NOTE: Transition counting removed from paragraph level (Phase 3.12 A2)
+    # Transitions are scored at sentence level (_check_transitions) and
+    # document level (_check_transition_stacks) — paragraph was redundant
 
-    # Paragraph-specific: hedge clustering within paragraph
-    hedge_words_set = {
-        "however", "furthermore", "moreover", "additionally", "consequently",
-        "nevertheless", "notably", "importantly", "significantly", "ultimately",
-    }
-    hedge_sents = sum(1 for s in sentences if any(h in s.lower() for h in hedge_words_set))
-    if len(sentences) >= 2 and hedge_sents / len(sentences) > 0.5:
-        signals["para_hedge_density"] = 35
-        patterns.append({"pattern": "para_hedge_dense",
-                         "detail": f"Paragraph {para_index+1}: {hedge_sents}/{len(sentences)} sentences contain hedges"})
+    # NOTE: Hedge counting removed from paragraph level (Phase 3.12 A1)
+    # Hedges are scored at sentence level (_check_hedge_words) and
+    # document level (_check_hedge_clusters) — paragraph was redundant
+
+    # LM signals (Phase 3.8) — gated behind feature flag
+    if use_lm_signals:
+        from utils.heuristics.lm_signals import check_repetition_density, check_mattr_v2, check_ttr_variance, get_genre_baselines
+        from utils.heuristics.scoring import detect_genre as _detect_genre_para
+
+        _genre = _detect_genre_para(paragraph)
+        _baselines = get_genre_baselines()
+
+        rep_score, rep_patterns = check_repetition_density(paragraph)
+        if rep_score > 0:
+            signals["repetition_density"] = rep_score
+            patterns.extend(rep_patterns)
+
+        mattr_score, mattr_patterns = check_mattr_v2(paragraph, _baselines, _genre)
+        if mattr_score > 0:
+            signals["mattr_v2"] = mattr_score
+            patterns.extend(mattr_patterns)
+
+        ttr_score, ttr_patterns = check_ttr_variance(paragraph)
+        if ttr_score > 0:
+            signals["ttr_variance"] = ttr_score
+            patterns.extend(ttr_patterns)
 
     # Combine: paragraph sentence average + paragraph-specific signals
     from utils.heuristics.scoring import combine_signals
@@ -1285,10 +1291,13 @@ def _score_paragraph(paragraph: str, para_index: int, total_paragraphs: int) -> 
     return round(min(100, combined), 1), patterns, signals
 
 
-def _document_level_patterns(text: str, sentences: list) -> tuple[list[dict], dict[str, float]]:
+def _document_level_patterns(text: str, sentences: list, use_lm_signals: bool = False) -> tuple[list[dict], dict[str, float]]:
     """Run all document-level heuristics. Returns (patterns, named_signals)."""
     patterns = []
     signals = {}
+
+    # Signals superseded by LM v2 variants when use_lm_signals is on
+    _lm_skip = {"compression_ratio", "zipf_deviation", "mattr"} if use_lm_signals else set()
 
     # All checks that take text as input
     checks_on_text = [
@@ -1328,6 +1337,12 @@ def _document_level_patterns(text: str, sentences: list) -> tuple[list[dict], di
     ]
 
     for name, check_fn in checks_on_text:
+        # Skip heuristics with weight=0.0 — they're disabled (Phase 3.12 A4)
+        if HEURISTIC_WEIGHTS.get(name, 0.5) <= 0:
+            continue
+        # Skip old signals superseded by LM v2 variants (Phase 3.8)
+        if name in _lm_skip:
+            continue
         score, pats = check_fn(text)
         patterns.extend(pats)
         if score > 0:
@@ -1342,6 +1357,123 @@ def _document_level_patterns(text: str, sentences: list) -> tuple[list[dict], di
         patterns.extend(pats)
         if score > 0:
             signals[name] = score
+
+    # C1: Rhetorical question chain — 2+ consecutive "?" sentences (Phase 3.12)
+    max_q_run = 0
+    current_q_run = 0
+    for s in sentences:
+        if s.strip().endswith('?'):
+            current_q_run += 1
+            max_q_run = max(max_q_run, current_q_run)
+        else:
+            current_q_run = 0
+    if max_q_run >= 2:
+        q_score = min(75, 25 * (max_q_run - 1))
+        signals["rhetorical_question_chain"] = q_score
+        patterns.append({
+            "pattern": "rhetorical_question_chain",
+            "detail": f"{max_q_run} consecutive questions — AI uses rhetorical question chains"
+        })
+
+    # C2: Circular phrase repetition — trigram overlap intro vs conclusion (Phase 3.12)
+    if len(sentences) >= 5:
+        intro_text = ' '.join(sentences[:max(1, len(sentences)//5)]).lower()
+        outro_text = ' '.join(sentences[-max(1, len(sentences)//5):]).lower()
+        intro_words = re.findall(r'\b\w+\b', intro_text)
+        outro_words = re.findall(r'\b\w+\b', outro_text)
+        if len(intro_words) >= 3 and len(outro_words) >= 3:
+            intro_trigrams = {tuple(intro_words[i:i+3]) for i in range(len(intro_words)-2)}
+            outro_trigrams = {tuple(outro_words[i:i+3]) for i in range(len(outro_words)-2)}
+            if intro_trigrams and outro_trigrams:
+                overlap = intro_trigrams & outro_trigrams
+                overlap_ratio = len(overlap) / min(len(intro_trigrams), len(outro_trigrams))
+                if overlap_ratio > 0.10:
+                    signals["circular_repetition"] = 30
+                    patterns.append({
+                        "pattern": "circular_repetition",
+                        "detail": f"Intro/conclusion trigram overlap {overlap_ratio:.0%} — AI circles back to opening phrases"
+                    })
+
+    # C3: Hollow informality — casual markers without personal follow-through (Phase 3.12)
+    casual_markers = re.findall(
+        r'\b(honestly|look,|here\'?s the thing|basically|you know|frankly|truth be told)\b',
+        text, re.IGNORECASE
+    )
+    if len(casual_markers) >= 2:
+        hollow_count = 0
+        for m in re.finditer(
+            r'\b(honestly|look,|here\'?s the thing|basically|you know|frankly|truth be told)\b',
+            text, re.IGNORECASE
+        ):
+            # Check next 150 chars for first-person or proper nouns
+            after = text[m.end():m.end()+150]
+            has_personal = bool(re.search(r'\b(I|me|my|we|our)\b', after))
+            has_proper = bool(re.search(r'\b[A-Z][a-z]{2,}\b', after))
+            if not has_personal and not has_proper:
+                hollow_count += 1
+        if hollow_count > len(casual_markers) * 0.5:
+            signals["hollow_informality"] = 25
+            patterns.append({
+                "pattern": "hollow_informality",
+                "detail": f"{hollow_count}/{len(casual_markers)} casual markers lack personal follow-through — AI fakes informality"
+            })
+
+    # C4: As-you-know exposition — dialogue exposition dumps, fiction only (Phase 3.12)
+    from utils.heuristics.scoring import detect_genre
+    genre = detect_genre(text)
+    if genre in ("creative", "literary"):
+        exposition_in_dialogue = re.findall(
+            r'"[^"]*\b(as you know|as I\'?m sure you\'?re aware|you remember when|'
+            r'as we both know|you\'?ll recall)\b[^"]*"',
+            text, re.IGNORECASE
+        )
+        if len(exposition_in_dialogue) >= 1:
+            signals["as_you_know_exposition"] = 30
+            patterns.append({
+                "pattern": "as_you_know_exposition",
+                "detail": f"{len(exposition_in_dialogue)} dialogue exposition dump(s) — AI disguises info-dumps as dialogue"
+            })
+
+    # B2: Tricolon density — count rule_of_three across all sentences (Phase 3.12)
+    tricolon_count = 0
+    for s in sentences:
+        if re.search(r'\w+, \w+, and \w+', s):
+            tricolon_count += 1
+    word_count_doc = len(re.findall(r'\b\w+\b', text))
+    if word_count_doc > 50:
+        tricolon_per_100 = (tricolon_count / word_count_doc) * 100
+        if tricolon_per_100 >= 1.5:
+            signals["tricolon_density"] = 35
+            patterns.append({
+                "pattern": "tricolon_density",
+                "detail": f"{tricolon_count} triadic lists ({tricolon_per_100:.1f}/100 words) — AI overuses rule of three"
+            })
+        elif tricolon_per_100 >= 0.8 and tricolon_count >= 3:
+            signals["tricolon_density"] = 18
+            patterns.append({
+                "pattern": "tricolon_density",
+                "detail": f"{tricolon_count} triadic lists — elevated rule-of-three usage"
+            })
+
+    # B3: Buzzword stack density — unique buzzwords per 100 words (Phase 3.12)
+    doc_words = set(re.findall(r'\b\w+\b', text.lower()))
+    doc_hyphenated = set(re.findall(r'\b\w+-\w+(?:-\w+)?\b', text.lower()))
+    all_doc_tokens = doc_words | doc_hyphenated
+    unique_buzzes = all_doc_tokens & BUZZWORDS
+    if word_count_doc > 50:
+        buzz_density = (len(unique_buzzes) / word_count_doc) * 100
+        if buzz_density >= 3.0:
+            signals["buzzword_density"] = 40
+            patterns.append({
+                "pattern": "buzzword_density",
+                "detail": f"{len(unique_buzzes)} unique buzzwords ({buzz_density:.1f}/100 words) — saturated AI vocabulary"
+            })
+        elif buzz_density >= 1.5:
+            signals["buzzword_density"] = 20
+            patterns.append({
+                "pattern": "buzzword_density",
+                "detail": f"{len(unique_buzzes)} unique buzzwords ({buzz_density:.1f}/100 words) — elevated AI vocabulary density"
+            })
 
     # Check paragraph length uniformity
     paragraphs = [p.strip() for p in text.split('\n\n') if p.strip()]
@@ -1383,6 +1515,28 @@ def _document_level_patterns(text: str, sentences: list) -> tuple[list[dict], di
                 "pattern": "low_vocabulary_richness",
                 "detail": f"Type-token ratio {ttr:.2f} suggests repetitive vocabulary"
             })
+
+    # LM document-level signals (Phase 3.8) — gated behind feature flag
+    if use_lm_signals:
+        from utils.heuristics.lm_signals import check_compression_ratio_document, check_ngram_burstiness, check_zipf_deviation_v2, load_corpus
+
+        corpus = load_corpus("combined")
+
+        cr_doc_score, cr_doc_patterns = check_compression_ratio_document(text)
+        if cr_doc_score > 0:
+            signals["compression_ratio_document"] = cr_doc_score
+            patterns.extend(cr_doc_patterns)
+
+        if corpus:
+            burst_score, burst_patterns = check_ngram_burstiness(text, corpus)
+            if burst_score > 0:
+                signals["ngram_burstiness"] = burst_score
+                patterns.extend(burst_patterns)
+
+        zipf_score, zipf_patterns = check_zipf_deviation_v2(text)
+        if zipf_score > 0:
+            signals["zipf_deviation_v2"] = zipf_score
+            patterns.extend(zipf_patterns)
 
     return patterns, signals
 

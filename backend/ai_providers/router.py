@@ -100,48 +100,163 @@ def should_use_ai(use_ai_param: bool = None) -> bool:
     return _ai_runtime_available
 
 
-def route_analysis(text: str, use_ai: bool = None) -> dict:
-    """Analyze text for AI patterns. AI-first, Python fallback."""
-    if should_use_ai(use_ai):
-        settings = _get_settings()
-        provider = _get_provider(settings.get("ai_provider"))
-        if provider:
-            try:
-                result = provider.analyze(text)
-                result["_analysis_mode"] = "ai"
-                return result
-            except Exception as e:
-                if _is_token_error(e):
-                    _disable_runtime(str(e))
-                # Fall through to heuristics
+def route_analysis(text: str, use_ai: bool = None, use_lm_signals: bool = False) -> dict:
+    """Analyze text for AI patterns.
 
-    # Fallback to Python heuristics
+    Architecture (Phase 3.11 A_v3):
+    - Always run Python heuristics (fast, free, always-on)
+    - If AI available, also run AI analysis in parallel pipeline
+    - Combine: final = AI * 0.6 + Heuristic * 0.4
+    - If AI unavailable or errors: heuristic-only
+    """
     from utils.detector import detect_ai_patterns
-    result = detect_ai_patterns(text)
-    result["_analysis_mode"] = "heuristic"
-    return result
+    from utils.heuristics.classification import classify_category
 
+    # Step 1: Always run heuristics
+    heuristic_result = detect_ai_patterns(text, use_lm_signals=use_lm_signals)
+    heuristic_score = heuristic_result.get("overall_score", 0)
 
-def route_rewrite(text: str, voice_profile_id: int = None, use_ai: bool = None) -> dict:
-    """Rewrite text to sound human. AI-first, Python fallback."""
+    # Step 2: Try AI if available
+    ai_result = None
+    ai_score = None
     if should_use_ai(use_ai):
         settings = _get_settings()
         provider = _get_provider(settings.get("ai_provider"))
         if provider:
             try:
-                result = provider.rewrite(text, voice_profile_id)
-                result["_analysis_mode"] = "ai"
-                return result
+                ai_result = provider.analyze(text)
+                ai_score = ai_result.get("overall_score")
             except Exception as e:
                 if _is_token_error(e):
                     _disable_runtime(str(e))
-                # Fall through to heuristics
+                print(f"[AI Router] AI analysis failed: {e}")
+                # Continue with heuristic-only
 
-    # Fallback to Python heuristics
-    from utils.rewriter import heuristic_rewrite
-    result = heuristic_rewrite(text, voice_profile_id)
-    result["_analysis_mode"] = "heuristic"
-    return result
+    # Step 3: Combine scores
+    if ai_score is not None:
+        combined_score = round(ai_score * 0.6 + heuristic_score * 0.4, 1)
+
+        # Merge patterns from both sources
+        ai_patterns = ai_result.get("detected_patterns", [])
+        heuristic_patterns = heuristic_result.get("patterns", [])
+        # Tag AI patterns with source
+        for p in ai_patterns:
+            p["source"] = "ai"
+        for p in heuristic_patterns:
+            p["source"] = "heuristic"
+        all_patterns = heuristic_patterns + ai_patterns
+
+        result = {
+            "overall_score": combined_score,
+            "patterns": all_patterns,
+            "sentences": heuristic_result.get("sentences", []),
+            "_analysis_mode": "combined",
+            "_ai_score": round(ai_score, 1),
+            "_heuristic_score": round(heuristic_score, 1),
+            "_ai_reasoning": ai_result.get("reasoning", ""),
+        }
+        # Preserve tier breakdown from heuristics
+        if "tiers" in heuristic_result:
+            result["tiers"] = heuristic_result["tiers"]
+        # Reclassify with combined score
+        result["classification"] = classify_category(result)
+        return result
+
+    # Heuristic-only fallback
+    heuristic_result["_analysis_mode"] = "heuristic"
+    return heuristic_result
+
+
+def route_rewrite(text: str, voice_profile_id: int = None, use_ai: bool = None, threshold: int = 20, use_lm_signals: bool = False) -> dict:
+    """Rewrite text to reduce AI detection signals.
+
+    Pipeline (Phase 3.10):
+    1. Analyze original text (heuristic-only, fast)
+    2. Generate style brief from detection results
+    3. AI rewrite using the brief
+    4. Re-analyze rewritten text
+    5. Optional second pass if score still > threshold
+    """
+    from utils.detector import detect_ai_patterns
+
+    # Step 1: Analyze original
+    detection = detect_ai_patterns(text, use_lm_signals=use_lm_signals)
+    before_score = detection.get("overall_score", 0)
+
+    # If AI unavailable, fall back to heuristic rewrite
+    if not should_use_ai(use_ai):
+        from utils.rewriter import heuristic_rewrite
+        result = heuristic_rewrite(text, voice_profile_id)
+        result["_analysis_mode"] = "heuristic"
+        result["_before_score"] = round(before_score, 1)
+        return result
+
+    settings = _get_settings()
+    provider = _get_provider(settings.get("ai_provider"))
+    if not provider:
+        from utils.rewriter import heuristic_rewrite
+        result = heuristic_rewrite(text, voice_profile_id)
+        result["_analysis_mode"] = "heuristic"
+        result["_before_score"] = round(before_score, 1)
+        return result
+
+    # Step 2: Generate style brief
+    from utils.style_brief import generate_style_brief
+    model_name = settings.get("ai_provider", "claude")
+    brief = generate_style_brief(detection, voice_profile_id, model=model_name)
+
+    try:
+        # Step 3: AI rewrite
+        rewritten = provider.rewrite(text, style_brief=brief)
+        rewritten_text = rewritten.get("rewritten_text", text)
+
+        # Step 4: Re-analyze
+        recheck = detect_ai_patterns(rewritten_text, use_lm_signals=use_lm_signals)
+        after_score = recheck.get("overall_score", 0)
+        passes = 1
+
+        # Step 5: Optional second pass
+        if after_score > threshold:
+            brief2 = generate_style_brief(recheck, voice_profile_id, model=model_name, is_second_pass=True)
+            try:
+                rewritten2 = provider.rewrite(rewritten_text, style_brief=brief2)
+                rewritten_text2 = rewritten2.get("rewritten_text", rewritten_text)
+                recheck2 = detect_ai_patterns(rewritten_text2, use_lm_signals=use_lm_signals)
+                after_score2 = recheck2.get("overall_score", 0)
+
+                # Regression guard: only use second pass if it improved
+                if after_score2 < after_score:
+                    rewritten_text = rewritten_text2
+                    rewritten = rewritten2
+                    recheck = recheck2
+                    after_score = after_score2
+                    passes = 2
+            except Exception as e2:
+                print(f"[AI Router] Second rewrite pass failed: {e2}")
+
+        # Collect remaining signal names
+        remaining = [p.get("pattern", "") for p in recheck.get("patterns", [])]
+
+        return {
+            "rewritten_text": rewritten_text,
+            "changes": rewritten.get("changes", []),
+            "_analysis_mode": "ai_guided",
+            "_before_score": round(before_score, 1),
+            "_after_score": round(after_score, 1),
+            "_passes": passes,
+            "_remaining_signals": remaining,
+            "_brief": brief,
+        }
+
+    except Exception as e:
+        if _is_token_error(e):
+            _disable_runtime(str(e))
+        print(f"[AI Router] Rewrite failed: {e}")
+        from utils.rewriter import heuristic_rewrite
+        result = heuristic_rewrite(text, voice_profile_id)
+        result["_analysis_mode"] = "heuristic"
+        result["_before_score"] = round(before_score, 1)
+        return result
 
 
 def startup_health_check():

@@ -5,15 +5,22 @@ mcp = FastMCP("ghostbusters")
 
 
 @mcp.tool()
-def analyze_text(text: str, use_ai: bool = None) -> dict:
+def analyze_text(text: str, use_ai: bool = None, use_lm_signals: bool = None) -> dict:
     """Analyze text for AI-generated content patterns.
 
     Returns sentence-level scores and an overall AI probability score.
     Set use_ai=true to force AI analysis, use_ai=false for heuristics only,
     or omit to use the saved setting.
+    Set use_lm_signals=true to use language-model statistical signals,
+    or omit to use the saved setting.
     """
+    # Resolve use_lm_signals from DB settings if not provided
+    if use_lm_signals is None:
+        from db import query_one
+        settings = query_one("SELECT lm_signals_enabled FROM settings WHERE id = 1")
+        use_lm_signals = settings["lm_signals_enabled"] if settings else False
     from ai_providers.router import route_analysis
-    return route_analysis(text, use_ai=use_ai)
+    return route_analysis(text, use_ai=use_ai, use_lm_signals=use_lm_signals)
 
 
 @mcp.tool()
@@ -29,14 +36,21 @@ def rewrite_text(text: str, voice_profile_id: int = None, use_ai: bool = None) -
 
 
 @mcp.tool()
-def get_score(text: str) -> dict:
+def get_score(text: str, use_lm_signals: bool = None) -> dict:
     """Quick AI detection score for a block of text (heuristics only).
 
     Returns overall_score (0-100, higher = more likely AI),
     sentence_scores, and detected patterns. Always uses Python heuristics.
+    Set use_lm_signals=true to use language-model statistical signals,
+    or omit to use the saved setting.
     """
+    # Resolve use_lm_signals from DB settings if not provided
+    if use_lm_signals is None:
+        from db import query_one
+        settings = query_one("SELECT lm_signals_enabled FROM settings WHERE id = 1")
+        use_lm_signals = settings["lm_signals_enabled"] if settings else False
     from utils.detector import detect_ai_patterns
-    return detect_ai_patterns(text)
+    return detect_ai_patterns(text, use_lm_signals=use_lm_signals)
 
 
 @mcp.tool()

@@ -13,6 +13,7 @@ def analyze_text():
     """
     data = {}
     use_ai = None
+    use_lm_signals = None
 
     # Handle file upload
     if request.files:
@@ -37,12 +38,19 @@ def analyze_text():
             return jsonify({"error": "Provide 'text' in JSON body or upload a file"}), 400
         text = data["text"]
         use_ai = data.get("use_ai")  # Per-request AI toggle (true/false/null)
+        use_lm_signals = data.get("use_lm_signals")  # Per-request LM signals toggle
+
+    # Resolve use_lm_signals from DB settings if not provided
+    if use_lm_signals is None:
+        from db import query_one
+        settings = query_one("SELECT lm_signals_enabled FROM settings WHERE id = 1")
+        use_lm_signals = settings["lm_signals_enabled"] if settings else False
 
     if not text or not text.strip():
         return jsonify({"error": "Empty text provided"}), 400
 
     from ai_providers.router import route_analysis
-    result = route_analysis(text, use_ai=use_ai if 'use_ai' in (data or {}) else None)
+    result = route_analysis(text, use_ai=use_ai if 'use_ai' in (data or {}) else None, use_lm_signals=use_lm_signals)
     return jsonify(result)
 
 
@@ -53,11 +61,18 @@ def quick_score():
     if not data or "text" not in data:
         return jsonify({"error": "Provide 'text' in JSON body"}), 400
 
+    # Resolve use_lm_signals from request or DB settings
+    use_lm_signals = data.get("use_lm_signals")
+    if use_lm_signals is None:
+        from db import query_one
+        settings = query_one("SELECT lm_signals_enabled FROM settings WHERE id = 1")
+        use_lm_signals = settings["lm_signals_enabled"] if settings else False
+
     detail = data.get("detail")
     if detail == "full":
         from utils.detector import detect_ai_patterns_detailed
-        result = detect_ai_patterns_detailed(data["text"])
+        result = detect_ai_patterns_detailed(data["text"], use_lm_signals=use_lm_signals)
     else:
         from utils.detector import detect_ai_patterns
-        result = detect_ai_patterns(data["text"])
+        result = detect_ai_patterns(data["text"], use_lm_signals=use_lm_signals)
     return jsonify(result)

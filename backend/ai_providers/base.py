@@ -17,12 +17,16 @@ class AIProvider(ABC):
     @abstractmethod
     def analyze(self, text: str) -> dict:
         """Analyze text for AI-generated patterns.
-        Returns: {"overall_score": float, "sentences": [], "detected_patterns": []}
+        Returns: {"overall_score": float, "detected_patterns": [], "reasoning": str}
         """
 
     @abstractmethod
-    def rewrite(self, text: str, voice_profile_id: int = None) -> dict:
+    def rewrite(self, text: str, voice_profile_id: int = None, style_brief: str = None) -> dict:
         """Rewrite text to sound human.
+
+        If style_brief is provided, use it as the rewrite prompt (from style brief
+        generator). voice_profile_id is ignored when style_brief is set.
+
         Returns: {"rewritten_text": str, "changes": []}
         """
 

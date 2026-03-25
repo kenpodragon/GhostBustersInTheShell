@@ -166,6 +166,37 @@ HEDGING_FILLERS = [
     "with that said",
 ]
 
+# Phase 3.12: False-insider phrases — fake relatability/empathy
+FALSE_INSIDER = [
+    "if you're like most",
+    "if you are like most",
+    "we've all been there",
+    "we have all been there",
+    "let's be honest",
+    "let us be honest",
+    "let's face it",
+    "let us face it",
+    "here's the thing",
+    "here is the thing",
+    "no one talks about this",
+    "nobody talks about this",
+    "you're not alone",
+    "you are not alone",
+    "whether you're a",
+    "whether you are a",
+    "here's what nobody tells you",
+    "here is what nobody tells you",
+    "i get it",
+    "i understand your frustration",
+    "i hear you",
+    "that's a great question",
+    "that is a great question",
+    "we all know",
+    "as we all understand",
+    "i hope this email finds you well",
+    "i wanted to reach out",
+]
+
 # Flatten all categories into a single list with metadata
 AI_PHRASES = []
 _CATEGORIES = {
@@ -174,6 +205,7 @@ _CATEGORIES = {
     "metaphor_cliche": METAPHOR_CLICHES,
     "corporate_action": CORPORATE_ACTION,
     "hedging_filler": HEDGING_FILLERS,
+    "false_insider": FALSE_INSIDER,
 }
 
 for category, phrases in _CATEGORIES.items():

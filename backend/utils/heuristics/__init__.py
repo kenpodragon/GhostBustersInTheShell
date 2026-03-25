@@ -25,6 +25,12 @@ from utils.heuristics.crowdsourced import (
 )
 from utils.heuristics.ai_phrases import check_ai_phrases, check_ai_phrases_sentence
 from utils.heuristics.classification import classify_category, CATEGORIES
+from utils.heuristics.lm_signals import (
+    check_compression_ratio_sentence, check_compression_ratio_document,
+    check_repetition_density, check_ngram_perplexity, check_ngram_burstiness,
+    check_zipf_deviation_v2, check_mattr_v2, check_ttr_variance,
+    load_corpus, get_genre_baselines,
+)
 
 __all__ = [
     "check_yules_k", "check_hapax_legomena",
@@ -39,4 +45,8 @@ __all__ = [
     "check_digression_absence", "check_consensus_middle",
     "check_ai_phrases", "check_ai_phrases_sentence",
     "classify_category", "CATEGORIES",
+    "check_compression_ratio_sentence", "check_compression_ratio_document",
+    "check_repetition_density", "check_ngram_perplexity", "check_ngram_burstiness",
+    "check_zipf_deviation_v2", "check_mattr_v2", "check_ttr_variance",
+    "load_corpus", "get_genre_baselines",
 ]
