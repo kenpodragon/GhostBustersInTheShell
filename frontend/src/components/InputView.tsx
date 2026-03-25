@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useDocument } from '../context/DocumentContext'
 import ScoreBadge from './ScoreBadge'
+import ScoreGauge from './ScoreGauge'
 import type { VoiceProfile, Pattern, SentenceResult } from '../types'
 
 interface AnalysisResult {
@@ -149,6 +150,7 @@ export default function InputView() {
             <span>Analysis Results</span>
             <ScoreBadge score={analysis.overall_score} classification={analysis.classification} />
           </div>
+          <ScoreGauge score={analysis.overall_score} />
 
           {/* Detected Patterns */}
           {analysis.patterns.length > 0 && (

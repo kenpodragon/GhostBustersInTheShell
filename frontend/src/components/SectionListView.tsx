@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useDocument } from '../context/DocumentContext'
 import ScoreBadge from './ScoreBadge'
+import ScoreGauge from './ScoreGauge'
 
 export default function SectionListView() {
   const {
@@ -72,6 +73,7 @@ export default function SectionListView() {
             <span>Document Summary (Full-Text Analysis)</span>
             <ScoreBadge score={documentAnalysis.overall_score} classification={documentAnalysis.classification} />
           </div>
+          <ScoreGauge score={documentAnalysis.overall_score} />
           {documentAnalysis.patterns.length > 0 && (
             <div>
               <div className="text-muted" style={{ fontSize: '0.75rem', marginBottom: '0.5rem', textTransform: 'uppercase' }}>
@@ -125,6 +127,7 @@ export default function SectionListView() {
                 <span className="section-heading">{s.heading}</span>
                 <ScoreBadge score={s.score} classification={s.classification} />
               </div>
+              <ScoreGauge score={s.score} />
 
               <textarea
                 className="section-edit-text"

@@ -114,6 +114,70 @@ body {
   margin: 0 auto;
 }
 
+/* Score Gauge */
+.score-gauge {
+  margin-top: 0.4rem;
+  width: 100%;
+  max-width: 300px;
+}
+
+.score-gauge-bar {
+  position: relative;
+  display: flex;
+  height: 8px;
+  border-radius: 4px;
+  overflow: visible;
+}
+
+.score-gauge-zone {
+  height: 100%;
+}
+
+.gauge-clean {
+  width: 30%;
+  background: var(--score-low);
+  border-radius: 4px 0 0 4px;
+  opacity: 0.4;
+}
+
+.gauge-touched {
+  width: 30%;
+  background: var(--score-medium);
+  opacity: 0.4;
+}
+
+.gauge-written {
+  width: 40%;
+  background: var(--score-critical);
+  border-radius: 0 4px 4px 0;
+  opacity: 0.4;
+}
+
+.score-gauge-marker {
+  position: absolute;
+  top: -3px;
+  width: 4px;
+  height: 14px;
+  background: var(--text-white);
+  border-radius: 2px;
+  transform: translateX(-2px);
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.5);
+  transition: left 0.3s ease;
+}
+
+.score-gauge-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.2rem;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.gauge-label-clean { color: var(--score-low); }
+.gauge-label-touched { color: var(--score-medium); text-align: center; }
+.gauge-label-written { color: var(--score-critical); text-align: right; }
+
 .spinner-small {
   width: 16px;
   height: 16px;
