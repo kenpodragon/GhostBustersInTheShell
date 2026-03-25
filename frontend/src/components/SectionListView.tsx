@@ -5,7 +5,7 @@ import ScoreBadge from './ScoreBadge'
 export default function SectionListView() {
   const {
     sections, loading, analyzeAll, analyzeSection, rewriteSection, setView, setFocusedSection,
-    setRewritePanelOpen, updateSectionText, document: doc,
+    setRewritePanelOpen, updateSectionText, documentAnalysis, document: doc,
   } = useDocument()
 
   // Auto-analyze on mount (only if sections are unscored)
@@ -64,6 +64,38 @@ export default function SectionListView() {
           </button>
         </div>
       </div>
+
+      {/* Document-level aggregate analysis */}
+      {documentAnalysis && (
+        <div className="card" style={{ marginBottom: '1rem' }}>
+          <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>Document Summary (Full-Text Analysis)</span>
+            <ScoreBadge score={documentAnalysis.overall_score} classification={documentAnalysis.classification} />
+          </div>
+          {documentAnalysis.patterns.length > 0 && (
+            <div>
+              <div className="text-muted" style={{ fontSize: '0.75rem', marginBottom: '0.5rem', textTransform: 'uppercase' }}>
+                Cross-Section Patterns ({documentAnalysis.patterns.length})
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
+                {documentAnalysis.patterns.map((p: any, i: number) => (
+                  <span key={i} className="pattern-chip">
+                    {typeof p === 'string' ? p : p.pattern || p.name || JSON.stringify(p)}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+      {loading && !documentAnalysis && (
+        <div className="card" style={{ marginBottom: '1rem', textAlign: 'center', padding: '1.5rem' }}>
+          <div className="spinner" />
+          <div className="text-muted" style={{ marginTop: '0.5rem' }}>
+            Analyzing full document...
+          </div>
+        </div>
+      )}
 
       <div className="section-list-body">
         {/* Left TOC */}

@@ -1,9 +1,17 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
 import type { Document, Section, ActiveView, SectionRewrite } from '../types'
 
+interface DocumentAnalysis {
+  overall_score: number
+  classification: { category: string; label: string; confidence: string } | null
+  patterns: any[]
+  sentences: any[]
+}
+
 interface DocumentContextValue {
   document: Document | null
   sections: Section[]
+  documentAnalysis: DocumentAnalysis | null
   selectedProfileId: number | null
   useAI: boolean
   loading: boolean
@@ -49,6 +57,7 @@ const emptyRewrite: SectionRewrite = {
 export function DocumentProvider({ children }: { children: ReactNode }) {
   const [document, setDocument] = useState<Document | null>(null)
   const [sections, setSections] = useState<Section[]>([])
+  const [documentAnalysis, setDocumentAnalysis] = useState<DocumentAnalysis | null>(null)
   const [selectedProfileId, setSelectedProfileId] = useState<number | null>(null)
   const [useAI, setUseAI] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -146,10 +155,32 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
 
   const analyzeAll = useCallback(async () => {
     setLoading(true)
+    setDocumentAnalysis(null)
+    // Analyze each section individually (results stream in as they complete)
     const promises = sections.map((_, i) => analyzeSection(i))
     await Promise.allSettled(promises)
+
+    // Run aggregate analysis on full document text
+    try {
+      const fullText = sections.map((s: Section) => s.text).join('\n\n')
+      const res = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: fullText, use_ai: useAI }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setDocumentAnalysis({
+          overall_score: data.overall_score,
+          classification: data.classification || null,
+          patterns: data.detected_patterns || data.patterns || [],
+          sentences: data.sentences || [],
+        })
+      }
+    } catch { /* aggregate is best-effort */ }
+
     setLoading(false)
-  }, [sections, analyzeSection])
+  }, [sections, analyzeSection, useAI])
 
   const rewriteSection = useCallback(async (index: number) => {
     updateSection(index, { loading: true })
@@ -263,6 +294,7 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
   const reset = useCallback(() => {
     setDocument(null)
     setSections([])
+    setDocumentAnalysis(null)
     setError(null)
     setActiveView('input')
     setFocusedSectionIndex(null)
@@ -271,7 +303,7 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
 
   return (
     <DocumentContext.Provider value={{
-      document, sections, selectedProfileId, useAI, loading, error,
+      document, sections, documentAnalysis, selectedProfileId, useAI, loading, error,
       activeView, focusedSectionIndex, rewritePanelOpen,
       submitText, uploadFile, analyzeSection, analyzeAll,
       rewriteSection, acceptRewrite, rejectRewrite,
