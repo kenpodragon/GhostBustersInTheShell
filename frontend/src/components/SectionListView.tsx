@@ -83,7 +83,7 @@ export default function SectionListView() {
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
                 {documentAnalysis.patterns.map((p: any, i: number) => (
-                  <span key={i} className="pattern-chip">
+                  <span key={i} className="pattern-chip" title={typeof p === 'string' ? '' : p.detail || ''}>
                     {typeof p === 'string' ? p : p.pattern || JSON.stringify(p)}
                   </span>
                 ))}
@@ -141,7 +141,7 @@ export default function SectionListView() {
               {s.patterns.length > 0 && (
                 <div className="section-patterns">
                   {s.patterns.slice(0, 3).map((p, j) => (
-                    <span key={j} className="pattern-chip">{typeof p === 'string' ? p : p.pattern}</span>
+                    <span key={j} className="pattern-chip" title={typeof p === 'string' ? '' : p.detail || ''}>{typeof p === 'string' ? p : p.pattern}</span>
                   ))}
                   {s.patterns.length > 3 && (
                     <span className="text-muted">+{s.patterns.length - 3} more</span>

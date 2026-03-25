@@ -12,7 +12,8 @@ export interface SentenceResult {
 }
 
 export interface Classification {
-  category: string        // Clean | Ghost Touched | Ghost Written
+  category: string        // clean | ghost_touched | ghost_written
+  label: string           // Clean | Ghost Touched | Ghost Written
   confidence: string      // high | medium | low
 }
 

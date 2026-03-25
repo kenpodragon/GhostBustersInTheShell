@@ -36,9 +36,13 @@ function Layout() {
             </NavLink>
           </li>
         </ul>
-        <button className="theme-toggle" onClick={toggleTheme}>
-          {theme === 'dark' ? '[ LIGHT MODE ]' : '[ DARK MODE ]'}
-        </button>
+        <div className="theme-switch" onClick={toggleTheme}>
+          <span className={`theme-icon ${theme === 'light' ? 'theme-active' : ''}`}>&#9788;</span>
+          <div className={`theme-track ${theme === 'light' ? 'theme-track-light' : ''}`}>
+            <div className={`theme-thumb ${theme === 'light' ? 'theme-thumb-light' : ''}`} />
+          </div>
+          <span className={`theme-icon ${theme === 'dark' ? 'theme-active' : ''}`}>&#9790;</span>
+        </div>
         <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
           v0.1.0 // local instance
         </div>

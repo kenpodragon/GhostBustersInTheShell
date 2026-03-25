@@ -1,7 +1,6 @@
 import type { Classification } from '../types'
 
 function getScoreClass(score: number, classification?: Classification | null): string {
-  // Use backend classification if available, otherwise fall back to score thresholds
   if (classification?.category) {
     if (classification.category === 'clean') return 'score-low'
     if (classification.category === 'ghost_touched') return 'score-medium'
@@ -17,6 +16,17 @@ function getCategoryLabel(classification: Classification | null): string {
   return classification.label || classification.category || ''
 }
 
+function getTooltip(classification: Classification | null, score: number): string {
+  const cat = classification?.category
+  if (cat === 'clean' || (!cat && score <= 30)) {
+    return 'Clean — Appears to be entirely human-written'
+  }
+  if (cat === 'ghost_touched' || (!cat && score < 40)) {
+    return 'Ghost Touched — Likely written with AI assistance'
+  }
+  return 'Ghost Written — Likely heavily AI-generated with little human editing'
+}
+
 interface Props {
   score: number | null
   classification?: Classification | null
@@ -28,10 +38,11 @@ export default function ScoreBadge({ score, classification, size = 'normal' }: P
 
   const cls = getScoreClass(score, classification)
   const category = getCategoryLabel(classification ?? null)
+  const tooltip = getTooltip(classification ?? null, score)
   const fontSize = size === 'small' ? '0.75rem' : '0.85rem'
 
   return (
-    <span className={`score-badge ${cls}`} style={{ fontSize }}>
+    <span className={`score-badge ${cls}`} style={{ fontSize }} title={tooltip}>
       {score.toFixed(1)}
       {category && <span className="category-label"> {category}</span>}
     </span>
