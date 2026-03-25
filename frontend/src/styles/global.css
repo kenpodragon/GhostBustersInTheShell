@@ -1407,26 +1407,62 @@ input:focus, select:focus {
   background: rgba(78, 205, 196, 0.1);
 }
 
-.word-chip-active {
+.word-chip-on {
   border-color: var(--teal-primary);
   color: var(--teal-primary);
 }
 
-.word-chip-disabled {
-  border-color: var(--text-muted);
+.word-chip-off {
+  border-color: var(--red-alert);
   color: var(--text-muted);
-  opacity: 0.5;
+  opacity: 0.6;
+  text-decoration: line-through;
 }
 
-.word-chip-delete {
+.word-chip-off:hover {
+  opacity: 0.8;
+  background: rgba(255, 107, 107, 0.08);
+}
+
+.word-chip-x {
+  color: var(--red-alert);
+  font-size: 0.65rem;
+  font-weight: bold;
+}
+
+.word-chip-custom {
+  border-style: dashed;
+}
+
+.word-chip-trash {
   background: none;
   border: none;
-  color: var(--red-alert);
-  font-family: var(--font-mono);
   font-size: 0.7rem;
   cursor: pointer;
   padding: 0;
   line-height: 1;
+  margin-left: 0.15rem;
+  opacity: 0.5;
+  transition: opacity 0.15s;
+}
+
+.word-chip-trash:hover {
+  opacity: 1;
+}
+
+.word-section-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-top: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.word-divider {
+  border: none;
+  border-top: 1px solid var(--border-color);
+  margin: 0.75rem 0 0.25rem;
 }
 
 /* Weights Tab */

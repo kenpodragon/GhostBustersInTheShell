@@ -11,7 +11,6 @@ interface CategoryEntry {
   section: string
   category: string
   label: string
-  words: string[]
 }
 
 export default function WordListsTab({ config, defaults, onUpdate }: Props) {
@@ -22,8 +21,8 @@ export default function WordListsTab({ config, defaults, onUpdate }: Props) {
   const categories = useMemo(() => {
     const result: CategoryEntry[] = []
     const addSection = (sectionKey: string, label: string, data: Record<string, string[]>) => {
-      for (const [cat, words] of Object.entries(data || {})) {
-        result.push({ section: sectionKey, category: cat, label: `${label} > ${cat}`, words })
+      for (const cat of Object.keys(data || {})) {
+        result.push({ section: sectionKey, category: cat, label: `${label} > ${cat}` })
       }
     }
     addSection('buzzwords', 'Buzzwords', config.buzzwords)
@@ -33,6 +32,16 @@ export default function WordListsTab({ config, defaults, onUpdate }: Props) {
   }, [config.buzzwords, config.ai_phrases, config.word_lists])
 
   const selected = categories[selectedIdx] || null
+
+  // Active words = what's currently in the config array
+  const activeWords = useMemo(() => {
+    if (!selected) return new Set<string>()
+    const section = (config as any)[selected.section] as Record<string, string[]> | undefined
+    const words = section?.[selected.category]
+    return new Set(Array.isArray(words) ? words : [])
+  }, [config, selected])
+
+  // Default words = what shipped with the app
   const defaultWords = useMemo(() => {
     if (!defaults || !selected) return new Set<string>()
     const section = (defaults as any)[selected.section] as Record<string, string[]> | undefined
@@ -40,24 +49,28 @@ export default function WordListsTab({ config, defaults, onUpdate }: Props) {
     return new Set(Array.isArray(words) ? words : [])
   }, [defaults, selected])
 
-  const filteredWords = useMemo(() => {
-    if (!selected) return []
-    if (!search) return selected.words
+  // Built-in words: everything in defaults (always shown, toggle on/off)
+  const builtInWords = useMemo(() => {
+    const words = Array.from(defaultWords).sort()
+    if (!search) return words
     const q = search.toLowerCase()
-    return selected.words.filter(w => w.toLowerCase().includes(q))
-  }, [selected, search])
+    return words.filter(w => w.toLowerCase().includes(q))
+  }, [defaultWords, search])
 
-  const searchResults = useMemo(() => {
-    if (!search) return null
+  // Custom words: in active but NOT in defaults
+  const customWords = useMemo(() => {
+    const words = Array.from(activeWords).filter(w => !defaultWords.has(w)).sort()
+    if (!search) return words
     const q = search.toLowerCase()
-    const results: { idx: number; word: string }[] = []
-    categories.forEach((cat, idx) => {
-      cat.words.forEach(w => {
-        if (w.toLowerCase().includes(q)) results.push({ idx, word: w })
-      })
-    })
-    return results
-  }, [search, categories])
+    return words.filter(w => w.toLowerCase().includes(q))
+  }, [activeWords, defaultWords, search])
+
+  // Count for sidebar
+  const getCategoryCount = (cat: CategoryEntry) => {
+    const section = (config as any)[cat.section] as Record<string, string[]> | undefined
+    const words = section?.[cat.category]
+    return Array.isArray(words) ? words.length : 0
+  }
 
   const toggleWord = (word: string) => {
     if (!selected) return
@@ -65,9 +78,9 @@ export default function WordListsTab({ config, defaults, onUpdate }: Props) {
     const words = [...(sectionData[selected.category] || [])]
     const idx = words.indexOf(word)
     if (idx >= 0) {
-      words.splice(idx, 1)
+      words.splice(idx, 1) // turn off
     } else {
-      words.push(word)
+      words.push(word) // turn on
     }
     sectionData[selected.category] = words
     onUpdate(selected.section, sectionData)
@@ -76,17 +89,18 @@ export default function WordListsTab({ config, defaults, onUpdate }: Props) {
   const addWord = () => {
     const word = newWord.trim().toLowerCase()
     if (!word || !selected) return
-    const sectionData = { ...(config as any)[selected.section] } as Record<string, string[]>
-    const words = [...(sectionData[selected.category] || [])]
-    if (!words.includes(word)) {
-      words.push(word)
-      sectionData[selected.category] = words
-      onUpdate(selected.section, sectionData)
+    if (activeWords.has(word)) {
+      setNewWord('')
+      return
     }
+    const sectionData = { ...(config as any)[selected.section] } as Record<string, string[]>
+    const words = [...(sectionData[selected.category] || []), word]
+    sectionData[selected.category] = words
+    onUpdate(selected.section, sectionData)
     setNewWord('')
   }
 
-  const removeWord = (word: string) => {
+  const deleteWord = (word: string) => {
     if (!selected) return
     const sectionData = { ...(config as any)[selected.section] } as Record<string, string[]>
     const words = (sectionData[selected.category] || []).filter(w => w !== word)
@@ -115,7 +129,7 @@ export default function WordListsTab({ config, defaults, onUpdate }: Props) {
                 onClick={() => { setSelectedIdx(idx); setSearch('') }}
               >
                 <span className="category-name">{cat.label}</span>
-                <span className="category-count">{cat.words.length}</span>
+                <span className="category-count">{getCategoryCount(cat)}</span>
               </div>
             ))}
           </div>
@@ -127,7 +141,7 @@ export default function WordListsTab({ config, defaults, onUpdate }: Props) {
               <div className="word-add-row">
                 <input
                   type="text"
-                  placeholder="Add word..."
+                  placeholder="Add custom word..."
                   value={newWord}
                   onChange={e => setNewWord(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && addWord()}
@@ -137,39 +151,61 @@ export default function WordListsTab({ config, defaults, onUpdate }: Props) {
                 </button>
               </div>
 
-              {search && searchResults && searchResults.length > 0 && (
-                <div className="search-results-info text-muted">
-                  {searchResults.length} match{searchResults.length !== 1 ? 'es' : ''} across {new Set(searchResults.map(r => r.idx)).size} categories
-                </div>
-              )}
-
+              {/* Built-in words */}
+              <div className="word-section-label">Built-in ({builtInWords.length})</div>
               <div className="word-chips">
-                {filteredWords.map(word => {
-                  const isDefault = defaultWords.has(word)
-                  const isActive = selected.words.includes(word)
+                {builtInWords.map(word => {
+                  const isOn = activeWords.has(word)
                   return (
                     <span
                       key={word}
-                      className={`word-chip ${isActive ? 'word-chip-active' : 'word-chip-disabled'}`}
-                      onClick={() => isDefault ? toggleWord(word) : undefined}
+                      className={`word-chip ${isOn ? 'word-chip-on' : 'word-chip-off'}`}
+                      onClick={() => toggleWord(word)}
+                      title={isOn ? 'Click to disable' : 'Click to enable'}
                     >
                       {word}
-                      {!isDefault && (
-                        <button
-                          className="word-chip-delete"
-                          onClick={e => { e.stopPropagation(); removeWord(word) }}
-                          title="Remove custom word"
-                        >
-                          x
-                        </button>
-                      )}
+                      {!isOn && <span className="word-chip-x">✕</span>}
                     </span>
                   )
                 })}
-                {filteredWords.length === 0 && (
-                  <span className="text-muted">No words {search ? 'match' : 'in this category'}.</span>
+                {builtInWords.length === 0 && (
+                  <span className="text-muted">No built-in words {search ? 'match' : 'in this category'}.</span>
                 )}
               </div>
+
+              {/* Custom words */}
+              {(customWords.length > 0 || !search) && (
+                <>
+                  <hr className="word-divider" />
+                  <div className="word-section-label">Custom ({customWords.length})</div>
+                  <div className="word-chips">
+                    {customWords.map(word => {
+                      const isOn = activeWords.has(word)
+                      return (
+                        <span
+                          key={word}
+                          className={`word-chip word-chip-custom ${isOn ? 'word-chip-on' : 'word-chip-off'}`}
+                          onClick={() => toggleWord(word)}
+                          title={isOn ? 'Click to disable' : 'Click to enable'}
+                        >
+                          {word}
+                          {!isOn && <span className="word-chip-x">✕</span>}
+                          <button
+                            className="word-chip-trash"
+                            onClick={e => { e.stopPropagation(); deleteWord(word) }}
+                            title="Delete custom word"
+                          >
+                            🗑
+                          </button>
+                        </span>
+                      )
+                    })}
+                    {customWords.length === 0 && !search && (
+                      <span className="text-muted">No custom words yet. Use the input above to add.</span>
+                    )}
+                  </div>
+                </>
+              )}
             </>
           )}
         </div>
