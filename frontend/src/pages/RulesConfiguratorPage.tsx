@@ -59,16 +59,15 @@ export default function RulesConfiguratorPage() {
   }, [])
 
   const handleUpdate = useCallback(async (section: string, data: any) => {
-    // Optimistic update — apply immediately for responsive UI
-    setConfig(prev => prev ? { ...prev, [section]: data } : prev)
     try {
       await rulesApi.updateSection(section, data)
+      // Reload config from server to ensure UI matches DB
+      const cfg = await rulesApi.getAllConfig()
+      setConfig(cfg)
     } catch {
-      // Revert on failure by reloading from server
       setError('Failed to save changes.')
-      loadAll()
     }
-  }, [loadAll])
+  }, [])
 
   if (loading) {
     return (
