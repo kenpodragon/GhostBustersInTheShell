@@ -88,6 +88,9 @@ HARD_BAN_FILLER_PHRASES = [
     "to this end", "what's more",
 ]
 
+# NOTE: BUZZWORDS and HEURISTIC_WEIGHTS are also available via rules_config singleton
+# (from utils.rules_config import rules_config). These constants are kept for backward
+# compatibility during migration. Prefer rules_config in new code.
 BUZZWORDS = HARD_BAN_VERBS | HARD_BAN_ADJ | HARD_BAN_FILLER
 
 HEURISTIC_WEIGHTS = {

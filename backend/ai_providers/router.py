@@ -7,6 +7,7 @@ Runtime state: AI can be auto-disabled on token/rate errors and
 re-enabled on next startup if the user's saved preference is 'on'.
 """
 from config import config
+from utils.rules_config import rules_config
 
 # Runtime flag — set False on token/rate errors, checked on each request.
 # Reset to True on startup if DB setting ai_enabled=True and health check passes.
@@ -134,7 +135,7 @@ def route_analysis(text: str, use_ai: bool = None, use_lm_signals: bool = False)
 
     # Step 3: Combine scores
     if ai_score is not None:
-        combined_score = round(ai_score * 0.6 + heuristic_score * 0.4, 1)
+        combined_score = round(ai_score * rules_config.pipeline.get("ai_weight", 0.6) + heuristic_score * rules_config.pipeline.get("heuristic_weight", 0.4), 1)
 
         # Merge patterns from both sources
         ai_patterns = ai_result.get("detected_patterns", [])

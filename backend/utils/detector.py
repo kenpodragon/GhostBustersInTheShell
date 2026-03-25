@@ -39,6 +39,7 @@ from utils.heuristics.severity import classify_severity, apply_severity, compoun
 from utils.heuristics.reference_data import (
     GENRE_BASELINES, HEURISTIC_WEIGHTS, BUZZWORDS, HARD_BAN_FILLER_PHRASES,
 )
+from utils.rules_config import rules_config
 from utils.heuristics.crowdsourced import (
     check_em_dash_overuse, check_ai_opening_phrases,
     check_closing_summary, check_question_exclamation_absence,
@@ -205,7 +206,8 @@ def _detect_ai_patterns_inner(text: str, detail: bool = False, use_lm_signals: b
 
     # Genre detection and genre-aware score adjustment
     genre = detect_genre(text)
-    genre_baseline = GENRE_BASELINES.get(genre, GENRE_BASELINES["general"])
+    _genre_baselines = rules_config.thresholds.get("genre_baselines", GENRE_BASELINES)
+    genre_baseline = _genre_baselines.get(genre, _genre_baselines.get("general", GENRE_BASELINES["general"]))
     human_ceil = genre_baseline["human_ceil"]
 
     if human_ceil > 25 and overall < human_ceil + 10:
@@ -397,10 +399,10 @@ def _check_buzzwords(sentence: str) -> tuple:
     hyphenated = set(re.findall(r'\b\w+-\w+(?:-\w+)?\b', sentence.lower()))
     all_tokens = words | hyphenated
 
-    found = all_tokens & BUZZWORDS
+    found = all_tokens & (rules_config.all_buzzwords or BUZZWORDS)
     # Also check multi-word filler phrases (Phase 3.12)
     sentence_lower = sentence.lower()
-    for phrase in HARD_BAN_FILLER_PHRASES:
+    for phrase in (rules_config.hard_ban_filler_phrases or HARD_BAN_FILLER_PHRASES):
         if phrase in sentence_lower:
             found.add(phrase)
     # Hard-ban words score higher than before
@@ -1338,7 +1340,7 @@ def _document_level_patterns(text: str, sentences: list, use_lm_signals: bool = 
 
     for name, check_fn in checks_on_text:
         # Skip heuristics with weight=0.0 — they're disabled (Phase 3.12 A4)
-        if HEURISTIC_WEIGHTS.get(name, 0.5) <= 0:
+        if (rules_config.weights or HEURISTIC_WEIGHTS).get(name, 0.5) <= 0:
             continue
         # Skip old signals superseded by LM v2 variants (Phase 3.8)
         if name in _lm_skip:
@@ -1459,7 +1461,7 @@ def _document_level_patterns(text: str, sentences: list, use_lm_signals: bool = 
     doc_words = set(re.findall(r'\b\w+\b', text.lower()))
     doc_hyphenated = set(re.findall(r'\b\w+-\w+(?:-\w+)?\b', text.lower()))
     all_doc_tokens = doc_words | doc_hyphenated
-    unique_buzzes = all_doc_tokens & BUZZWORDS
+    unique_buzzes = all_doc_tokens & (rules_config.all_buzzwords or BUZZWORDS)
     if word_count_doc > 50:
         buzz_density = (len(unique_buzzes) / word_count_doc) * 100
         if buzz_density >= 3.0:

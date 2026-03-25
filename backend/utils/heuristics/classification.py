@@ -10,6 +10,7 @@ Categories:
 
 Designed for expansion to finer categories later (e.g., Polished vs Paraphrased).
 """
+from utils.rules_config import rules_config
 
 # --- Category definitions ---
 
@@ -118,19 +119,25 @@ def classify_category(result: dict) -> dict:
     human_absence_count = _count_human_absence(patterns)
 
     # --- Rule 1: Clean (Human Only) ---
-    # Score ≤ 20: clean regardless
-    # Score ≤ 30: clean if strong human tells (3+ present)
-    if score <= 20:
+    # Score ≤ clean_upper: clean regardless
+    # Score ≤ clean_upper_with_tells: clean if strong human tells (3+ present)
+    _cls = rules_config.classification
+    clean_upper = _cls.get("clean_upper", 20)
+    clean_upper_with_tells = _cls.get("clean_upper_with_tells", 30)
+    ghost_written_lower = _cls.get("ghost_written_lower", 40)
+    ghost_written_lower_weak = _cls.get("ghost_written_lower_weak", 32)
+
+    if score <= clean_upper:
         category = "clean"
-    elif score <= 30 and human_tells >= 3:
+    elif score <= clean_upper_with_tells and human_tells >= 3:
         category = "clean"
 
     # --- Rule 2: Ghost Written (AI) ---
-    # Score ≥ 40: ghost written regardless (lowered from 45 after Phase 3.12 dedup)
-    # Score ≥ 32: ghost written if weak human tells (<2) AND 3+ AI signal types
-    elif score >= 40:
+    # Score ≥ ghost_written_lower: ghost written regardless
+    # Score ≥ ghost_written_lower_weak: ghost written if weak human tells (<2) AND 3+ AI signal types
+    elif score >= ghost_written_lower:
         category = "ghost_written"
-    elif score >= 32 and human_tells < 2 and ai_signal_count >= 3:
+    elif score >= ghost_written_lower_weak and human_tells < 2 and ai_signal_count >= 3:
         category = "ghost_written"
 
     # --- Rule 3: Ghost Touched (Assisted) — everything else ---

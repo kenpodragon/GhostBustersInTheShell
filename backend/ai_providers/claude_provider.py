@@ -4,6 +4,7 @@ import json
 import re
 
 from .base import AIProvider
+from utils.rules_config import rules_config
 
 
 def _strip_code_fences(text: str) -> str:
@@ -90,7 +91,8 @@ class ClaudeProvider(AIProvider):
 
     def analyze(self, text: str) -> dict:
         """Use Claude to analyze text for AI patterns (A_v3 calibrated prompt)."""
-        prompt = ANALYZE_PROMPT.format(text=text)
+        _prompt_template = rules_config.ai_prompt or ANALYZE_PROMPT
+        prompt = _prompt_template.format(text=text)
         result = self._run_cli(prompt)
         if "overall_score" not in result:
             raise RuntimeError("Claude analyze missing key: overall_score")

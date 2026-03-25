@@ -7,6 +7,7 @@ Converts raw instance counts into tiered severity levels:
 
 Severity compounds across analysis levels (sentence -> paragraph -> document).
 """
+from utils.rules_config import rules_config
 
 # Severity multipliers: how much of the raw score to apply
 SEVERITY_MULTIPLIERS = {
@@ -38,7 +39,8 @@ def apply_severity(raw_score: float, severity: str | None) -> float:
     """Scale a raw heuristic score by its severity tier."""
     if severity is None:
         return 0
-    return raw_score * SEVERITY_MULTIPLIERS[severity]
+    _multipliers = rules_config.severity.get("multipliers", SEVERITY_MULTIPLIERS)
+    return raw_score * _multipliers.get(severity, SEVERITY_MULTIPLIERS.get(severity, 1.0))
 
 
 def compound_across_levels(severities: list[str]) -> str | None:
@@ -53,7 +55,8 @@ def compound_across_levels(severities: list[str]) -> str | None:
     if not severities:
         return None
 
-    total_points = sum(SEVERITY_POINTS.get(s, 0) for s in severities)
+    _points = rules_config.severity.get("points", SEVERITY_POINTS)
+    total_points = sum(_points.get(s, SEVERITY_POINTS.get(s, 0)) for s in severities)
 
     if total_points >= 3:
         return "strong"

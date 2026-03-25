@@ -5,6 +5,7 @@ genre-aware baselines, and confidence interval estimation.
 """
 import re
 from utils.heuristics.reference_data import HEURISTIC_WEIGHTS, GENRE_BASELINES
+from utils.rules_config import rules_config
 
 
 def combine_signals(signals: dict[str, float]) -> float:
@@ -22,7 +23,7 @@ def combine_signals(signals: dict[str, float]) -> float:
     # Filter out signals with zero weight (killed heuristics)
     active = {}
     for k, v in signals.items():
-        if v > 0 and HEURISTIC_WEIGHTS.get(k, 0.5) > 0:
+        if v > 0 and (rules_config.weights or HEURISTIC_WEIGHTS).get(k, 0.5) > 0:
             active[k] = v
 
     if not active:
@@ -31,7 +32,7 @@ def combine_signals(signals: dict[str, float]) -> float:
     weighted_sum = 0
     weight_total = 0
     for name, score in active.items():
-        w = HEURISTIC_WEIGHTS.get(name, 0.5)
+        w = (rules_config.weights or HEURISTIC_WEIGHTS).get(name, 0.5)
         weighted_sum += score * w
         weight_total += w
 
@@ -43,12 +44,12 @@ def combine_signals(signals: dict[str, float]) -> float:
     # Signal count bonus: convergence of evidence
     # Only count signals with meaningful weight (>= 0.3) to avoid
     # inflating scores from many weak/noisy signals
-    meaningful_signals = [n for n in active if HEURISTIC_WEIGHTS.get(n, 0) >= 0.3]
+    meaningful_signals = [n for n in active if (rules_config.weights or HEURISTIC_WEIGHTS).get(n, 0) >= 0.3]
     count_bonus = min(15, max(0, len(meaningful_signals) - 2) * 3)
 
     # Extra boost when multiple high-confidence signals agree
     high_conf_signals = [s for n, s in active.items()
-                         if HEURISTIC_WEIGHTS.get(n, 0) >= 0.7]
+                         if (rules_config.weights or HEURISTIC_WEIGHTS).get(n, 0) >= 0.7]
     if len(high_conf_signals) >= 3:
         avg_high = sum(high_conf_signals) / len(high_conf_signals)
         if avg_high > 30:
@@ -204,10 +205,11 @@ def composite_score(
         return 0.0
 
     # Weighted blend
+    _pipe = rules_config.pipeline
     weighted = (
-        sentence_score * 0.45 +
-        paragraph_score * 0.30 +
-        document_score * 0.25
+        sentence_score * _pipe.get("sentence_tier_weight", 0.45) +
+        paragraph_score * _pipe.get("paragraph_tier_weight", 0.30) +
+        document_score * _pipe.get("document_tier_weight", 0.25)
     )
 
     # Convergence bonus: all tiers agreeing boosts confidence
