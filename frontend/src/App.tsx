@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
-import AnalyzePage from './pages/AnalyzePage'
-import DocumentsPage from './pages/DocumentsPage'
+import DocumentWorkflow from './pages/DocumentWorkflow'
 import VoiceProfilesPage from './pages/VoiceProfilesPage'
 
 function App() {
@@ -9,8 +8,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route element={<Layout />}>
-          <Route path="/" element={<AnalyzePage />} />
-          <Route path="/documents" element={<DocumentsPage />} />
+          <Route path="/" element={<DocumentWorkflow />} />
           <Route path="/voice-profiles" element={<VoiceProfilesPage />} />
         </Route>
       </Routes>

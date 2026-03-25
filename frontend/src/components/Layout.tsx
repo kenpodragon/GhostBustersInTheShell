@@ -11,17 +11,12 @@ function Layout() {
         <ul className="sidebar-nav">
           <li>
             <NavLink to="/" className={({ isActive }) => isActive ? 'active' : ''}>
-              [0] Analyze
-            </NavLink>
-          </li>
-          <li>
-            <NavLink to="/documents" className={({ isActive }) => isActive ? 'active' : ''}>
-              [1] Documents
+              [0] Scanner
             </NavLink>
           </li>
           <li>
             <NavLink to="/voice-profiles" className={({ isActive }) => isActive ? 'active' : ''}>
-              [2] Voice Profiles
+              [1] Voice Profiles
             </NavLink>
           </li>
         </ul>

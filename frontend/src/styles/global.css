@@ -349,3 +349,35 @@ input:focus, select:focus {
 .status-dot.online { background: var(--green-primary); box-shadow: 0 0 5px var(--green-glow); }
 .status-dot.offline { background: var(--red-alert); }
 .status-dot.warning { background: var(--yellow-warn); }
+
+/* Select input */
+.select-input {
+  width: 100%;
+  padding: 0.5rem;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+}
+
+.select-input:focus {
+  outline: none;
+  border-color: var(--green-primary);
+  box-shadow: 0 0 5px var(--green-glow);
+}
+
+/* Text muted helper */
+.text-muted {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+/* Error message */
+.error-message {
+  color: var(--red-alert);
+  font-size: 0.85rem;
+  padding: 0.5rem;
+  border: 1px solid var(--red-alert);
+  background: rgba(255, 0, 64, 0.1);
+}
