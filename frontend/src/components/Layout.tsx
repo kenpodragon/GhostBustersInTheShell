@@ -35,6 +35,11 @@ function Layout() {
               [1] Voice Profiles
             </NavLink>
           </li>
+          <li>
+            <NavLink to="/rules" className={({ isActive }) => isActive ? 'active' : ''}>
+              [2] Rules
+            </NavLink>
+          </li>
         </ul>
         <div className="theme-switch" onClick={toggleTheme}>
           <span className={`theme-icon ${theme === 'light' ? 'theme-active' : ''}`}>&#9788;</span>

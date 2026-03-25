@@ -62,3 +62,40 @@ export interface AIStatus {
   ai_runtime_available: boolean
   ai_runtime_error: string | null
 }
+
+export interface RulesConfig {
+  heuristic_weights: Record<string, number>
+  buzzwords: Record<string, string[]>
+  ai_phrases: Record<string, string[]>
+  word_lists: Record<string, string[]>
+  thresholds: Record<string, any>
+  classification: Record<string, number>
+  severity: Record<string, any>
+  pipeline: Record<string, number>
+  ai_prompt: string
+}
+
+export interface ConfigSnapshot {
+  id: number
+  name: string
+  created_at: string
+}
+
+export interface UpdateCheckResult {
+  status: 'update_available' | 'up_to_date' | 'error'
+  current_version: string
+  current_date: string | null
+  remote_version: string
+  remote_date: string
+  changelog: string
+  app_update_required: boolean
+  min_app_version: string
+  app_version: string
+  error?: string
+}
+
+export interface VersionInfo {
+  app_version: string
+  rules_version: string
+  rules_version_date: string | null
+}
