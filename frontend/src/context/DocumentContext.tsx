@@ -23,6 +23,7 @@ interface DocumentContextValue {
   updateComment: (index: number, comment: string) => void
   regenerateRewrite: (index: number) => Promise<void>
   autoOptimize: (index: number, threshold: number, comment?: string) => Promise<void>
+  updateSectionText: (index: number, text: string) => void
   selectProfile: (id: number | null) => void
   setUseAI: (enabled: boolean) => void
   setView: (view: ActiveView) => void
@@ -194,6 +195,12 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
     ))
   }, [])
 
+  const updateSectionText = useCallback((index: number, text: string) => {
+    setSections(prev => prev.map((s, i) =>
+      i === index ? { ...s, text } : s
+    ))
+  }, [])
+
   const updateEditedText = useCallback((index: number, text: string) => {
     setSections(prev => prev.map((s, i) =>
       i === index ? { ...s, rewrite: { ...s.rewrite, editedText: text } } : s
@@ -268,7 +275,7 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
       activeView, focusedSectionIndex, rewritePanelOpen,
       submitText, uploadFile, analyzeSection, analyzeAll,
       rewriteSection, acceptRewrite, rejectRewrite,
-      updateEditedText, updateComment, regenerateRewrite, autoOptimize,
+      updateSectionText, updateEditedText, updateComment, regenerateRewrite, autoOptimize,
       selectProfile: setSelectedProfileId, setUseAI, setView: setActiveView,
       setFocusedSection: setFocusedSectionIndex,
       setRewritePanelOpen, exportMarkdown, reset,

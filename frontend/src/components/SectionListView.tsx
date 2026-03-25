@@ -4,8 +4,8 @@ import ScoreBadge from './ScoreBadge'
 
 export default function SectionListView() {
   const {
-    sections, loading, analyzeAll, rewriteSection, setView, setFocusedSection,
-    setRewritePanelOpen, document: doc,
+    sections, loading, analyzeAll, analyzeSection, rewriteSection, setView, setFocusedSection,
+    setRewritePanelOpen, updateSectionText, document: doc,
   } = useDocument()
 
   // Auto-analyze on mount (only if sections are unscored)
@@ -94,14 +94,17 @@ export default function SectionListView() {
                 <ScoreBadge score={s.score} classification={s.classification} />
               </div>
 
-              <p className="section-preview">
-                {s.text.slice(0, 200)}{s.text.length > 200 ? '...' : ''}
-              </p>
+              <textarea
+                className="section-edit-text"
+                value={s.text}
+                onChange={e => updateSectionText(i, e.target.value)}
+                rows={Math.min(8, Math.max(3, Math.ceil(s.text.length / 80)))}
+              />
 
               {s.patterns.length > 0 && (
                 <div className="section-patterns">
                   {s.patterns.slice(0, 3).map((p, j) => (
-                    <span key={j} className="pattern-chip">{p.pattern}</span>
+                    <span key={j} className="pattern-chip">{typeof p === 'string' ? p : p.pattern || p.name}</span>
                   ))}
                   {s.patterns.length > 3 && (
                     <span className="text-muted">+{s.patterns.length - 3} more</span>
@@ -110,6 +113,9 @@ export default function SectionListView() {
               )}
 
               <div className="section-card-actions">
+                <button className="btn btn-small" onClick={() => analyzeSection(i)} disabled={s.loading}>
+                  {s.loading ? 'Analyzing...' : '[ RE-ANALYZE ]'}
+                </button>
                 <button className="btn btn-small" onClick={() => handleFocus(i)}>
                   [ FOCUS ]
                 </button>
