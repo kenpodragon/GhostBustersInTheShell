@@ -624,11 +624,11 @@ export default function VoiceProfilesPage() {
               </div>
             </div>
 
-            <div className="rules-tab-bar">
+            <div className="rules-tabs">
               {TABS.map(t => (
                 <button
                   key={t.id}
-                  className={`tab-btn ${activeTab === t.id ? 'active' : ''}`}
+                  className={`rules-tab ${activeTab === t.id ? 'rules-tab-active' : ''}`}
                   onClick={() => setActiveTab(t.id)}
                 >
                   {t.label}
