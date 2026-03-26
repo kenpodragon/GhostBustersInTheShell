@@ -311,7 +311,7 @@ def seed_database(conn, parts, voice_guide_text):
     """Insert voice profile, profile_elements, profile_prompts, and detection_rules."""
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-    profile_name = "Default - Anti-AI Voice Guide"
+    profile_name = "Baseline"
 
     # Idempotent: delete existing profile (CASCADE removes elements + prompts)
     cur.execute("SELECT id FROM voice_profiles WHERE name = %s", (profile_name,))

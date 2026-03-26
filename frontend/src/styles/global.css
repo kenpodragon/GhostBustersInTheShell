@@ -1084,23 +1084,63 @@ input:focus, select:focus {
   gap: 0.4rem;
 }
 
-.vp-element-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.3rem 0;
+.vp-element-card {
+  padding: 0.4rem 0;
   border-bottom: 1px solid var(--border-color);
-  flex-wrap: wrap;
 }
 
-.vp-element-row:last-child {
+.vp-element-card:last-child {
   border-bottom: none;
 }
 
+.vp-element-card.vp-element-off {
+  opacity: 0.4;
+}
+
+.vp-element-card.vp-element-off .vp-element-name {
+  text-decoration: line-through;
+}
+
+.vp-element-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.vp-element-check {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.vp-element-check input[type="checkbox"] {
+  accent-color: var(--cyan-info);
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
 .vp-element-name {
-  min-width: 140px;
   font-size: 0.8rem;
   color: var(--text-white);
+  font-weight: 600;
+}
+
+.vp-element-desc {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: 1px;
+  line-height: 1.3;
+}
+
+.vp-element-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.3rem;
+  padding-left: 1.6rem;
 }
 
 .vp-select-sm {
@@ -1199,6 +1239,106 @@ input:focus, select:focus {
 .vp-modal {
   width: 400px;
   max-width: 90vw;
+}
+
+/* Scoped overlay — covers right panel only, doesn't block sidebar */
+/* Scanner mode toggle (Scan <-> Generate) */
+.scanner-mode-toggle {
+  display: inline-flex;
+  border: 1px solid var(--cyan-info);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.scanner-mode-btn {
+  padding: 0.35rem 1.2rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  background: transparent;
+  color: var(--cyan-info);
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.scanner-mode-btn:hover:not(.scanner-mode-active):not(:disabled) {
+  background: rgba(0, 180, 216, 0.1);
+}
+
+.scanner-mode-btn.scanner-mode-active {
+  background: var(--cyan-info);
+  color: var(--bg-main);
+}
+
+.scanner-mode-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.vp-panel-modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  border-radius: inherit;
+}
+
+/* Element add dropdown */
+.vp-add-element-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.vp-add-element-menu {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  max-height: 240px;
+  overflow-y: auto;
+  z-index: 50;
+  min-width: 250px;
+  margin-bottom: 4px;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.vp-add-element-menu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.4rem 0.75rem;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.vp-add-element-menu button:hover {
+  background: rgba(0, 180, 216, 0.15);
+}
+
+.vp-add-element-menu .vp-dropdown-cat {
+  padding: 0.3rem 0.75rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
+  margin-top: 0.2rem;
+}
+
+.vp-add-element-menu .vp-dropdown-cat:first-child {
+  border-top: none;
+  margin-top: 0;
 }
 
 /* Profile selector in scanner (Task 17) */
