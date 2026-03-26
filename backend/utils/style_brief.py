@@ -120,14 +120,14 @@ def map_patterns_to_rules(patterns: list[dict]) -> list[str]:
     return rules
 
 
-def build_banned_words(detection_result: dict, voice_profile_id: int = None) -> list[str]:
+def build_banned_words(detection_result: dict, voice_profile_id: int = None, voice_elements: list = None) -> list[str]:
     """Build a merged, deduplicated banned word list.
 
     Sources:
     1. Global BUZZWORDS set from reference_data.py
     2. Multi-word filler phrases from reference_data.py
     3. Buzzwords actually found in this text (from detection patterns)
-    4. Voice profile banned words from DB (if voice_profile_id provided)
+    4. Voice profile banned words from DB (if voice_profile_id provided, legacy)
     """
     banned = set(BUZZWORDS)
     banned.update(HARD_BAN_FILLER_PHRASES)
@@ -140,8 +140,8 @@ def build_banned_words(detection_result: dict, voice_profile_id: int = None) -> 
             if match:
                 banned.add(match.group(1).lower())
 
-    # Voice profile banned words (from rules_json in voice_profiles table)
-    if voice_profile_id:
+    # Voice profile banned words (legacy: from rules_json in voice_profiles table)
+    if voice_profile_id and not voice_elements:
         try:
             import json as _json
             from db import query_one
@@ -168,12 +168,12 @@ def get_tone_reference(genre: str) -> str:
     return TONE_REFERENCES.get(genre, TONE_REFERENCES["general"])
 
 
-def _get_style_example(voice_profile_id: int = None) -> str:
+def _get_style_example(voice_profile_id: int = None, voice_elements: list = None) -> str:
     """Get a style example paragraph for Gemini prompts.
 
     Pulls from voice profile if available, otherwise returns built-in default.
     """
-    if voice_profile_id:
+    if voice_profile_id and not voice_elements:
         try:
             import json as _json
             from db import query_one
@@ -208,12 +208,21 @@ def generate_style_brief(
     model: str = "claude",
     is_second_pass: bool = False,
     comment: str = None,
+    voice_elements: list = None,
+    voice_prompts: list = None,
 ) -> str:
     """Build a complete rewrite prompt from detection output.
 
     detection_result: dict from detect_ai_patterns() — expects keys:
         "overall_score", "patterns" (list of {"pattern": str, "detail": str}),
         "sentences", "classification". Genre from detection_result.get("genre").
+
+    voice_elements: resolved list of element dicts from VoiceProfileService stack.
+        When provided, uses translate_elements_to_english() to generate style instructions.
+    voice_prompts: list of prompt dicts with "prompt_text" key from the active stack.
+        Each prompt's text is appended to the brief.
+    voice_profile_id: legacy param — if provided and new params are not, fetches from
+        old rules_json schema for backward compatibility.
 
     Returns a prompt string with {text} placeholder for the original text.
     """
@@ -222,12 +231,18 @@ def generate_style_brief(
 
     # Build components
     detected_rules = map_patterns_to_rules(patterns)
-    banned = build_banned_words(detection_result, voice_profile_id)
+    banned = build_banned_words(detection_result, voice_profile_id, voice_elements)
     tone = get_tone_reference(genre)
 
-    # Voice profile extra rules (from rules_json)
+    # Voice instructions — new schema: translate elements to English
     voice_rules_text = ""
-    if voice_profile_id:
+    if voice_elements:
+        from utils.weight_translator import translate_elements_to_english
+        translated = translate_elements_to_english(voice_elements)
+        if translated:
+            voice_rules_text = translated
+    elif voice_profile_id:
+        # Legacy: fetch from rules_json
         try:
             import json as _json
             from db import query_one
@@ -296,9 +311,18 @@ def generate_style_brief(
         sections.append("VOICE PROFILE RULES (highest priority — follow these above all else):")
         sections.append(voice_rules_text)
 
+    # Voice prompts (free-form instructions from the active stack)
+    if voice_prompts:
+        sections.append("")
+        sections.append("ADDITIONAL VOICE INSTRUCTIONS:")
+        for vp in voice_prompts:
+            prompt_text = vp.get("prompt_text", "").strip()
+            if prompt_text:
+                sections.append(f"- {prompt_text}")
+
     # Style example for Gemini
     if model.lower() in ("gemini", "gemini-flash", "gemini-pro"):
-        example = _get_style_example(voice_profile_id)
+        example = _get_style_example(voice_profile_id, voice_elements)
         sections.append("")
         sections.append("STYLE EXAMPLE (match this voice and rhythm):")
         sections.append(f'"""{example}"""')

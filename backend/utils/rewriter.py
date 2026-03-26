@@ -3,11 +3,14 @@ import re
 import random
 
 
-def heuristic_rewrite(text: str, voice_profile_id: int = None) -> dict:
+def heuristic_rewrite(text: str, voice_profile_id: int = None, voice_elements: list = None) -> dict:
     """Rewrite text using rule-based transformations.
 
     This is the fallback when no AI provider is available.
     Applies basic transformations to reduce AI detection signals.
+
+    voice_elements: resolved element dicts from VoiceProfileService stack.
+        Accepted for future use — not yet applied in heuristic logic.
     """
     sentences = re.split(r'(?<=[.!?])\s+', text.strip())
     changes = []

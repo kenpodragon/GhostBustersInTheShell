@@ -165,3 +165,56 @@ class TestGenerateStyleBrief:
         brief = generate_style_brief(self._make_detection())
         assert "rewritten_text" in brief
         assert "JSON" in brief
+
+    def test_voice_elements_adds_profile_rules_section(self):
+        """voice_elements triggers VOICE PROFILE RULES section via weight_translator."""
+        elements = [
+            {"name": "em_dash_usage", "category": "punctuation", "element_type": "directional",
+             "direction": "less", "weight": 0.9, "target_value": None},
+            {"name": "contraction_rate", "category": "lexical", "element_type": "directional",
+             "direction": "more", "weight": 0.7, "target_value": None},
+        ]
+        brief = generate_style_brief(self._make_detection(), voice_elements=elements)
+        assert "VOICE PROFILE RULES" in brief
+        # weight_translator should produce English instructions
+        assert "em dash" in brief.lower() or "contraction" in brief.lower()
+
+    def test_voice_prompts_appended_to_brief(self):
+        """voice_prompts texts appear in brief under ADDITIONAL VOICE INSTRUCTIONS."""
+        prompts = [
+            {"prompt_text": "Always write in a friendly, conversational tone."},
+            {"prompt_text": "Avoid starting sentences with 'The'."},
+        ]
+        brief = generate_style_brief(self._make_detection(), voice_prompts=prompts)
+        assert "ADDITIONAL VOICE INSTRUCTIONS" in brief
+        assert "friendly, conversational tone" in brief
+        assert "starting sentences with 'The'" in brief
+
+    def test_voice_elements_without_profile_id_no_db_call(self):
+        """Providing voice_elements alone should not attempt DB queries for legacy schema."""
+        elements = [
+            {"name": "passive_voice_rate", "category": "syntax", "element_type": "directional",
+             "direction": "less", "weight": 0.8, "target_value": None},
+        ]
+        # Should not raise even without DB access
+        brief = generate_style_brief(self._make_detection(), voice_elements=elements)
+        assert isinstance(brief, str)
+        assert "VOICE PROFILE RULES" in brief
+
+    def test_empty_voice_elements_no_profile_section(self):
+        """Empty voice_elements list should not produce a VOICE PROFILE RULES section."""
+        brief = generate_style_brief(self._make_detection(), voice_elements=[])
+        assert "VOICE PROFILE RULES" not in brief
+
+    def test_empty_voice_prompts_no_prompts_section(self):
+        """Empty voice_prompts list should not produce ADDITIONAL VOICE INSTRUCTIONS section."""
+        brief = generate_style_brief(self._make_detection(), voice_prompts=[])
+        assert "ADDITIONAL VOICE INSTRUCTIONS" not in brief
+
+    def test_voice_prompts_with_blank_text_skipped(self):
+        """Prompts with empty prompt_text are silently skipped."""
+        prompts = [{"prompt_text": ""}, {"prompt_text": "  "}, {"prompt_text": "Real instruction."}]
+        brief = generate_style_brief(self._make_detection(), voice_prompts=prompts)
+        assert "Real instruction." in brief
+        # Section appears because there is one valid prompt
+        assert "ADDITIONAL VOICE INSTRUCTIONS" in brief
