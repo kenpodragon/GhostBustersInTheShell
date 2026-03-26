@@ -1,6 +1,5 @@
 """Check text against a voice profile for compliance."""
 import re
-import json
 
 
 def check_voice_compliance(text: str, voice_profile_id: int = None, voice_elements: list = None) -> dict:
@@ -10,7 +9,7 @@ def check_voice_compliance(text: str, voice_profile_id: int = None, voice_elemen
         text: The text to check.
         voice_elements: Resolved list of element dicts from VoiceProfileService stack.
             When provided, checks directional elements with direction=="less" and weight>0.6.
-        voice_profile_id: Legacy — fetches rules_json from DB if voice_elements not provided.
+        voice_profile_id: Unused legacy param — kept for signature compatibility only.
 
     Returns violations found and suggestions.
     """
@@ -19,26 +18,8 @@ def check_voice_compliance(text: str, voice_profile_id: int = None, voice_elemen
     # New schema: check voice_elements directly
     if voice_elements:
         violations.extend(_check_elements(text, voice_elements))
-    elif voice_profile_id:
-        # Legacy: fetch from rules_json
-        from db import query_one
-        profile = query_one(
-            "SELECT rules_json FROM voice_profiles WHERE id = %s",
-            (voice_profile_id,)
-        )
-        if profile and profile["rules_json"]:
-            rules = json.loads(profile["rules_json"])
-        else:
-            rules = _default_rules()
-
-        # Check banned words (legacy schema)
-        for word in rules.get("banned_words", []):
-            if re.search(rf'\b{re.escape(word)}\b', text, re.IGNORECASE):
-                violations.append({
-                    "type": "banned_word",
-                    "word": word,
-                    "suggestion": f"Remove or replace '{word}' with a simpler alternative",
-                })
+    # Legacy rules_json path removed — column dropped in migration 006b.
+    # voice_profile_id without voice_elements now falls through to default rules.
     else:
         rules = _default_rules()
         for word in rules.get("banned_words", []):

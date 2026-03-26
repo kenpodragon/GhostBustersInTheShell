@@ -140,23 +140,8 @@ def build_banned_words(detection_result: dict, voice_profile_id: int = None, voi
             if match:
                 banned.add(match.group(1).lower())
 
-    # Voice profile banned words (legacy: from rules_json in voice_profiles table)
-    if voice_profile_id and not voice_elements:
-        try:
-            import json as _json
-            from db import query_one
-            profile = query_one(
-                "SELECT rules_json FROM voice_profiles WHERE id = %s",
-                (voice_profile_id,)
-            )
-            if profile and profile.get("rules_json"):
-                rules = profile["rules_json"]
-                if isinstance(rules, str):
-                    rules = _json.loads(rules)
-                for word in rules.get("banned_words", []):
-                    banned.add(word.strip().lower())
-        except Exception:
-            pass
+    # Legacy rules_json path removed — column dropped in migration 006b.
+    # Voice profile banned words now come via voice_elements from profile_elements table.
 
     return sorted(banned)
 
@@ -173,23 +158,8 @@ def _get_style_example(voice_profile_id: int = None, voice_elements: list = None
 
     Pulls from voice profile if available, otherwise returns built-in default.
     """
-    if voice_profile_id and not voice_elements:
-        try:
-            import json as _json
-            from db import query_one
-            profile = query_one(
-                "SELECT rules_json FROM voice_profiles WHERE id = %s",
-                (voice_profile_id,)
-            )
-            if profile and profile.get("rules_json"):
-                rules = profile["rules_json"]
-                if isinstance(rules, str):
-                    rules = _json.loads(rules)
-                example = rules.get("style_example", "")
-                if example:
-                    return example
-        except Exception:
-            pass
+    # Legacy rules_json path removed — column dropped in migration 006b.
+    # Style examples now come via voice_elements from profile_elements table.
 
     return (
         "I didn't set out to write about sleep deprivation. It started because my "
@@ -221,8 +191,7 @@ def generate_style_brief(
         When provided, uses translate_elements_to_english() to generate style instructions.
     voice_prompts: list of prompt dicts with "prompt_text" key from the active stack.
         Each prompt's text is appended to the brief.
-    voice_profile_id: legacy param — if provided and new params are not, fetches from
-        old rules_json schema for backward compatibility.
+    voice_profile_id: unused legacy param — kept for signature compatibility only.
 
     Returns a prompt string with {text} placeholder for the original text.
     """
@@ -241,31 +210,8 @@ def generate_style_brief(
         translated = translate_elements_to_english(voice_elements)
         if translated:
             voice_rules_text = translated
-    elif voice_profile_id:
-        # Legacy: fetch from rules_json
-        try:
-            import json as _json
-            from db import query_one
-            profile = query_one(
-                "SELECT rules_json FROM voice_profiles WHERE id = %s",
-                (voice_profile_id,)
-            )
-            if profile and profile.get("rules_json"):
-                rules = profile["rules_json"]
-                if isinstance(rules, str):
-                    rules = _json.loads(rules)
-                style_rules = []
-                for key, value in rules.items():
-                    if key == "banned_words":
-                        continue
-                    if isinstance(value, list):
-                        style_rules.extend(str(v) for v in value)
-                    elif isinstance(value, str):
-                        style_rules.append(value)
-                if style_rules:
-                    voice_rules_text = "\n".join(f"- {r}" for r in style_rules[:20])
-        except Exception:
-            pass
+    # Legacy rules_json path removed — column dropped in migration 006b.
+    # Voice rules now come via voice_elements from profile_elements table.
 
     # Assemble the brief
     if is_second_pass:

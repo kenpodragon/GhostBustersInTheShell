@@ -117,14 +117,8 @@ class ClaudeProvider(AIProvider):
             prompt = style_brief.replace("{text}", text)
         else:
             voice_context = ""
-            if voice_profile_id:
-                from db import query_one
-                profile = query_one(
-                    "SELECT name, rules_json FROM voice_profiles WHERE id = %s",
-                    (voice_profile_id,)
-                )
-                if profile:
-                    voice_context = f"\nVoice profile '{profile['name']}' rules:\n{profile['rules_json']}"
+            # voice_profile_id legacy path removed — rules_json column dropped in 006b migration.
+            # Callers should pass style_brief (built from profile_elements) instead.
             prompt = REWRITE_PROMPT.format(text=text, voice_context=voice_context)
 
         result = self._run_cli(prompt)
