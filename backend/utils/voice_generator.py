@@ -138,6 +138,34 @@ def _add_lexical(profile: dict, alpha_words: list) -> None:
         ["python-extractable"],
     )
 
+    # archaic_vocabulary_rate — frequency of Early Modern English words
+    _ARCHAIC_WORDS = {
+        "thee", "thou", "thy", "thine", "hath", "doth", "dost", "hast",
+        "wherefore", "hence", "thence", "whence", "ere", "oft", "tis",
+        "twas", "nay", "aye", "forsooth", "prithee", "methinks",
+        "perchance", "mayhap", "verily", "betwixt", "amongst", "hither",
+        "thither", "whither",
+    }
+    archaic_count = sum(1 for w in alpha_words if w.lower() in _ARCHAIC_WORDS)
+    archaic_rate = archaic_count / total if total else 0.0
+    profile["archaic_vocabulary_rate"] = _directional_element(
+        "lexical",
+        "more" if archaic_rate > 0 else "less",
+        min(1.0, archaic_rate / 0.05),
+        ["python-extractable"],
+    )
+
+    # rare_word_rate — ratio of long words appearing only once
+    word_counts = Counter(w.lower() for w in alpha_words)
+    rare_count = sum(1 for w, c in word_counts.items() if len(w) > 8 and c == 1)
+    rare_rate = rare_count / total if total else 0.0
+    profile["rare_word_rate"] = _directional_element(
+        "lexical",
+        "more" if rare_rate >= 0.05 else "less",
+        rare_rate / 0.3,
+        ["python-extractable"],
+    )
+
 
 # ---------------------------------------------------------------------------
 # Syntactic
@@ -187,6 +215,31 @@ def _add_syntactic(profile: dict, text: str, sentences: list,
         "syntactic",
         "less",
         min(1.0, passive_rate / 0.3),
+        ["python-extractable"],
+    )
+
+    # inverted_syntax_rate — sentences starting with verb or adverb before subject
+    _INVERSION_VERBS = {
+        "is", "are", "was", "were", "do", "did", "shall", "will", "would",
+        "could", "should", "may", "might", "have", "has", "had", "let",
+        "come", "go", "speak", "think", "know", "see", "hear", "give",
+        "take", "make",
+    }
+    _INVERSION_ADVERBS = {
+        "never", "yet", "thus", "hence", "now", "then", "here", "there",
+        "so", "well", "oft",
+    }
+    _INVERSION_STARTERS = _INVERSION_VERBS | _INVERSION_ADVERBS
+    inv_count = 0
+    for s in sentences:
+        first_word = re.match(r'\b([a-zA-Z]+)\b', s.strip())
+        if first_word and first_word.group(1).lower() in _INVERSION_STARTERS:
+            inv_count += 1
+    inv_rate = inv_count / n
+    profile["inverted_syntax_rate"] = _directional_element(
+        "syntactic",
+        "more" if inv_rate >= 0.05 else "less",
+        min(1.0, inv_rate / 0.2),
         ["python-extractable"],
     )
 
@@ -274,6 +327,46 @@ def _add_idiosyncratic(profile: dict, text: str, sentences: list,
         "idiosyncratic",
         "more" if sp_rate >= 0.02 else "less",
         min(1.0, sp_rate / 0.1),
+        ["python-extractable"],
+    )
+
+    # figurative_language_markers — simile/metaphor indicators per sentence
+    fig_patterns = re.findall(
+        r"\blike a\b|\bas a\b|\bas if\b|\bas though\b|'tis\b|\bseems\b|\bappears\b",
+        text, re.IGNORECASE,
+    )
+    fig_rate = len(fig_patterns) / n_sentences
+    profile["figurative_language_markers"] = _directional_element(
+        "idiosyncratic",
+        "more" if fig_rate >= 0.05 else "less",
+        min(1.0, fig_rate / 0.15),
+        ["python-extractable"],
+    )
+
+    # repetition_rate — repeated 2-word phrases appearing 3+ times
+    lower_words = [w.lower() for w in alpha_words]
+    bigrams = [f"{lower_words[i]} {lower_words[i+1]}" for i in range(len(lower_words) - 1)]
+    bigram_counts = Counter(bigrams)
+    repeated_bigrams = sum(1 for _, c in bigram_counts.items() if c >= 3)
+    total_bigrams = max(len(bigrams), 1)
+    rep_rate = repeated_bigrams / total_bigrams
+    profile["repetition_rate"] = _directional_element(
+        "idiosyncratic",
+        "more" if rep_rate > 0 else "less",
+        min(1.0, rep_rate / 0.02),
+        ["python-extractable"],
+    )
+
+    # vocative_usage — direct address patterns per sentence
+    vocative_patterns = re.findall(
+        r'\bO \b|\bOh \b|\bHark\b|\bLo \b|\bAlas\b|\bCome,|\bGood \b|\bMy lord\b|\bMy lady\b|\bDear \b',
+        text, re.IGNORECASE,
+    )
+    voc_rate = len(vocative_patterns) / n_sentences
+    profile["vocative_usage"] = _directional_element(
+        "idiosyncratic",
+        "more" if voc_rate > 0 else "less",
+        min(1.0, voc_rate / 0.1),
         ["python-extractable"],
     )
 
