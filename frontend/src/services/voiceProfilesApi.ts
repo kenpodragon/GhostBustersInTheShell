@@ -21,12 +21,12 @@ export const voiceProfilesApi = {
   // Elements
   getElements: (id: number) => fetch(`${API}/voice-profiles/${id}/elements`).then(json),
   updateElements: (id: number, elements: any[]) =>
-    put(`${API}/voice-profiles/${id}/elements`, { elements }),
+    put(`${API}/voice-profiles/${id}/elements`, elements),
 
   // Prompts
   getPrompts: (id: number) => fetch(`${API}/voice-profiles/${id}/prompts`).then(json),
   updatePrompts: (id: number, prompts: any[]) =>
-    put(`${API}/voice-profiles/${id}/prompts`, { prompts }),
+    put(`${API}/voice-profiles/${id}/prompts`, prompts),
 
   // Corpus / parse
   parse: (id: number, text: string) =>

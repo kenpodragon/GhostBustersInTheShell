@@ -516,10 +516,14 @@ export default function VoiceProfilesPage() {
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState<number | null>(null)
 
-  const loadProfiles = useCallback(async () => {
+  const loadProfiles = useCallback(async (autoSelectFirst = false) => {
     try {
       const data = await voiceProfilesApi.list()
-      setProfiles(Array.isArray(data) ? data : [])
+      const list = Array.isArray(data) ? data : []
+      setProfiles(list)
+      if (autoSelectFirst && list.length > 0) {
+        setSelectedId(prev => prev ?? list[0].id)
+      }
     } catch {
       setProfiles([])
     } finally {
@@ -527,7 +531,7 @@ export default function VoiceProfilesPage() {
     }
   }, [])
 
-  useEffect(() => { loadProfiles() }, [loadProfiles])
+  useEffect(() => { loadProfiles(true) }, [loadProfiles])
 
   const selectedProfile = profiles.find(p => p.id === selectedId) ?? null
 
@@ -601,7 +605,10 @@ export default function VoiceProfilesPage() {
       </div>
 
       {/* Right panel */}
-      <div className="vp-right-panel">
+      <div className="vp-right-panel" style={{ position: 'relative' }}>
+        {showCreate && (
+          <CreateProfileModal onClose={() => setShowCreate(false)} onCreated={handleCreated} />
+        )}
         {!selectedProfile ? (
           <div className="vp-empty-state">
             <div className="text-muted">Select a profile to edit</div>
@@ -639,9 +646,6 @@ export default function VoiceProfilesPage() {
         )}
       </div>
 
-      {showCreate && (
-        <CreateProfileModal onClose={() => setShowCreate(false)} onCreated={handleCreated} />
-      )}
     </div>
   )
 }
