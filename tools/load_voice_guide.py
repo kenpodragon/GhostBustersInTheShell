@@ -1,6 +1,6 @@
 """
-ETL script: Parse VOICE_GUIDE.md and seed voice_profiles, voice_rules,
-and detection_rules tables.
+ETL script: Parse VOICE_GUIDE.md and seed voice_profiles, profile_elements,
+profile_prompts, and detection_rules tables.
 
 Usage:
     # From inside the ghostbusters-app container:
@@ -131,7 +131,7 @@ def extract_banned_words(parts):
             # Parse comma-separated words, strip parenthetical notes
             words = []
             for w in re.split(r',\s*', words_text):
-                w = re.sub(r'\s*\(.*?\)\s*', '', w).strip().strip('"').strip('"').strip('"')
+                w = re.sub(r'\s*\(.*?\)\s*', '', w).strip().strip('"').strip('\u201c').strip('\u201d')
                 if w and len(w) < 80:
                     words.append(w)
             for word in words:
@@ -201,41 +201,106 @@ def extract_ai_patterns(parts):
 
 
 # ---------------------------------------------------------------------------
-# Build rules_json for voice profile
+# Build profile_elements from voice guide style guidance
 # ---------------------------------------------------------------------------
 
-def build_rules_json(parts):
-    """Build a summary rules_json for the voice_profiles.rules_json column."""
-    rules = {
-        'banned_words': [],
-        'banned_constructions': [],
-        'structural_tells': [],
-        'ai_patterns': [],
-        'voice_markers': [],
-    }
+# Static baseline elements derived from the voice guide's style philosophy.
+# These map the guide's directional guidance to measurable style dimensions.
+BASELINE_ELEMENTS = [
+    # --- syntactic ---
+    {
+        'name': 'contraction_rate',
+        'category': 'syntactic',
+        'element_type': 'directional',
+        'direction': 'more',
+        'weight': 0.8,
+        'target_value': None,
+        'tags': ['tone', 'conversational'],
+    },
+    {
+        'name': 'passive_voice_rate',
+        'category': 'syntactic',
+        'element_type': 'directional',
+        'direction': 'less',
+        'weight': 0.8,
+        'target_value': None,
+        'tags': ['clarity', 'active_voice'],
+    },
+    {
+        'name': 'sentence_length_stddev',
+        'category': 'syntactic',
+        'element_type': 'directional',
+        'direction': 'more',
+        'weight': 0.7,
+        'target_value': None,
+        'tags': ['rhythm', 'variety'],
+    },
+    # --- lexical ---
+    {
+        'name': 'first_person_usage',
+        'category': 'lexical',
+        'element_type': 'directional',
+        'direction': 'more',
+        'weight': 0.6,
+        'target_value': None,
+        'tags': ['tone', 'personal_voice'],
+    },
+    {
+        'name': 'vocabulary_richness',
+        'category': 'lexical',
+        'element_type': 'directional',
+        'direction': 'more',
+        'weight': 0.6,
+        'target_value': None,
+        'tags': ['variety', 'authenticity'],
+    },
+    # --- character ---
+    {
+        'name': 'em_dash_usage',
+        'category': 'character',
+        'element_type': 'directional',
+        'direction': 'more',
+        'weight': 0.5,
+        'target_value': None,
+        'tags': ['punctuation', 'natural'],
+    },
+    # --- structural ---
+    {
+        'name': 'flesch_kincaid_grade',
+        'category': 'structural',
+        'element_type': 'metric',
+        'direction': None,
+        'weight': 0.7,
+        'target_value': 8.0,
+        'tags': ['readability', 'accessibility'],
+    },
+    {
+        'name': 'avg_sentence_length',
+        'category': 'syntactic',
+        'element_type': 'metric',
+        'direction': None,
+        'weight': 0.6,
+        'target_value': 18.0,
+        'tags': ['rhythm', 'readability'],
+    },
+    # --- content ---
+    {
+        'name': 'hedge_word_rate',
+        'category': 'content',
+        'element_type': 'directional',
+        'direction': 'less',
+        'weight': 0.5,
+        'target_value': None,
+        'tags': ['confidence', 'directness'],
+    },
+]
 
-    for part in parts:
-        for section in part['sections']:
-            body = '\n'.join(section['lines'])
-            if part['part_num'] == '1':
-                for m in re.finditer(r'\*\*([^*]+):\*\*\s*\n?(.*?)(?=\n\*\*|\n###|\n---|\Z)', body, re.DOTALL):
-                    words_text = m.group(2).strip()
-                    for w in re.split(r',\s*', words_text):
-                        w = re.sub(r'\s*\(.*?\)\s*', '', w).strip().strip('"').strip('"').strip('"')
-                        if w and len(w) < 80:
-                            rules['banned_words'].append(w.lower())
-            elif part['part_num'] == '2':
-                for m in re.finditer(r'^-\s*"([^"]+)"', body, re.MULTILINE):
-                    rules['banned_constructions'].append(m.group(1).strip().lower())
-            elif part['part_num'] == '3':
-                rules['structural_tells'].append(section['title'])
-            elif part['part_num'] in ('5', '6B'):
-                for m in re.finditer(r'^-\s*"([^"]+)"', body, re.MULTILINE):
-                    rules['ai_patterns'].append(m.group(1).strip().lower())
-            elif part['part_num'] == '7':
-                rules['voice_markers'].append(section['title'])
-
-    return rules
+# Default prompts inserted alongside the baseline profile
+BASELINE_PROMPTS = [
+    "Write naturally, as if explaining to a colleague over coffee.",
+    "Vary sentence length and structure — mix short punchy sentences with longer flowing ones.",
+    "Use contractions, first person, and conversational tone.",
+]
 
 
 # ---------------------------------------------------------------------------
@@ -243,97 +308,82 @@ def build_rules_json(parts):
 # ---------------------------------------------------------------------------
 
 def seed_database(conn, parts, voice_guide_text):
-    """Insert voice profile, voice rules, and detection rules."""
+    """Insert voice profile, profile_elements, profile_prompts, and detection_rules."""
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-    # Check if already seeded
-    cur.execute("SELECT id FROM voice_profiles WHERE name = %s", ("Default - Anti-AI Voice Guide",))
+    profile_name = "Default - Anti-AI Voice Guide"
+
+    # Idempotent: delete existing profile (CASCADE removes elements + prompts)
+    cur.execute("SELECT id FROM voice_profiles WHERE name = %s", (profile_name,))
     existing = cur.fetchone()
     if existing:
-        print(f"[SKIP] Voice profile already exists (id={existing['id']}). Delete it first to re-seed.")
-        print("       DELETE FROM voice_profiles WHERE name = 'Default - Anti-AI Voice Guide';")
-        return False
+        print(f"[INFO] Deleting existing profile id={existing['id']} for re-seed...")
+        cur.execute("DELETE FROM voice_profiles WHERE id = %s", (existing['id'],))
 
     # 1. Insert voice profile
-    rules_json = build_rules_json(parts)
     cur.execute("""
-        INSERT INTO voice_profiles (name, description, rules_json, sample_content)
-        VALUES (%s, %s, %s, %s)
+        INSERT INTO voice_profiles
+            (name, description, profile_type, is_active, sample_content)
+        VALUES (%s, %s, 'baseline', true, %s)
         RETURNING id
     """, (
-        "Default - Anti-AI Voice Guide",
-        "Comprehensive anti-AI voice guide with 8 parts covering banned vocabulary, "
-        "constructions, structural tells, resume rules, cover letter rules, final checks, "
-        "LinkedIn patterns, Stephen-isms, and context-specific patterns.",
-        json.dumps(rules_json),
+        profile_name,
+        "Baseline anti-AI voice guide with style elements covering contractions, "
+        "passive voice, sentence variety, first person, vocabulary richness, "
+        "em-dash usage, and readability target.",
         voice_guide_text[:5000],  # First 5K chars as sample
     ))
     profile_id = cur.fetchone()['id']
-    print(f"[OK] Created voice_profile id={profile_id}")
+    print(f"[OK] Created voice_profile id={profile_id} (baseline, is_active=true)")
 
-    # 2. Insert voice_rules (one row per section per part)
-    rule_count = 0
-    sort_order = 0
-    for part in parts:
-        part_num_int = int(re.sub(r'[^0-9]', '', part['part_num']) or '0')
-        for section in part['sections']:
-            body = '\n'.join(section['lines']).strip()
-            if not body:
-                continue
+    # 2. Insert profile_elements
+    for i, el in enumerate(BASELINE_ELEMENTS):
+        cur.execute("""
+            INSERT INTO profile_elements
+                (voice_profile_id, name, category, element_type,
+                 direction, weight, target_value, tags, source)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'manual')
+            ON CONFLICT (voice_profile_id, name) DO UPDATE SET
+                category     = EXCLUDED.category,
+                element_type = EXCLUDED.element_type,
+                direction    = EXCLUDED.direction,
+                weight       = EXCLUDED.weight,
+                target_value = EXCLUDED.target_value,
+                tags         = EXCLUDED.tags,
+                updated_at   = NOW()
+        """, (
+            profile_id,
+            el['name'],
+            el['category'],
+            el['element_type'],
+            el['direction'],
+            el['weight'],
+            el['target_value'],
+            json.dumps(el['tags']),
+        ))
+    print(f"[OK] Inserted {len(BASELINE_ELEMENTS)} profile_elements for profile {profile_id}")
 
-            # Extract bad/good examples
-            bad_examples = []
-            good_examples = []
-            for m in re.finditer(r'(?:Bad|Never|❌|Don\'t):\s*(.+)', body, re.IGNORECASE):
-                bad_examples.append(m.group(1).strip().strip('"'))
-            for m in re.finditer(r'(?:Good|Instead|✅|Do):\s*(.+)', body, re.IGNORECASE):
-                good_examples.append(m.group(1).strip().strip('"'))
+    # 3. Insert profile_prompts
+    for i, prompt_text in enumerate(BASELINE_PROMPTS):
+        cur.execute("""
+            INSERT INTO profile_prompts (voice_profile_id, prompt_text, sort_order)
+            VALUES (%s, %s, %s)
+        """, (profile_id, prompt_text, i))
+    print(f"[OK] Inserted {len(BASELINE_PROMPTS)} profile_prompts for profile {profile_id}")
 
-            # Determine category
-            category = 'general'
-            title_lower = section['title'].lower()
-            if part['part_num'] == '1':
-                category = 'banned_vocabulary'
-            elif part['part_num'] == '2':
-                category = 'banned_construction'
-            elif part['part_num'] == '3':
-                category = 'structural_tell'
-            elif part['part_num'] == '4':
-                category = 'resume_rule'
-            elif part['part_num'] == '5':
-                category = 'cover_letter_rule'
-            elif part['part_num'] == '6':
-                category = 'quality_gate'
-            elif part['part_num'] == '6B':
-                category = 'linkedin_pattern'
-            elif part['part_num'] == '7':
-                category = 'voice_marker'
-            elif part['part_num'] == '8':
-                category = 'context_pattern'
+    # 4. Update settings to point active_baseline_id at this profile
+    cur.execute("SELECT id FROM settings LIMIT 1")
+    settings_row = cur.fetchone()
+    if settings_row:
+        cur.execute(
+            "UPDATE settings SET active_baseline_id = %s WHERE id = %s",
+            (profile_id, settings_row['id'])
+        )
+        print(f"[OK] Updated settings.active_baseline_id = {profile_id}")
+    else:
+        print("[WARN] No settings row found — skipping active_baseline_id update")
 
-            sort_order += 1
-            cur.execute("""
-                INSERT INTO voice_rules
-                    (voice_profile_id, part, part_title, category, subcategory,
-                     rule_text, explanation, examples_bad, examples_good, sort_order)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """, (
-                profile_id,
-                part_num_int,
-                part['title'],
-                category,
-                title_lower[:100],
-                body[:2000],  # Main rule content
-                f"Part {part['part_num']}: {part['title']}",
-                '\n'.join(bad_examples)[:1000] or None,
-                '\n'.join(good_examples)[:1000] or None,
-                sort_order,
-            ))
-            rule_count += 1
-
-    print(f"[OK] Inserted {rule_count} voice_rules for profile {profile_id}")
-
-    # 3. Seed detection_rules
+    # 5. Seed detection_rules (unchanged — feeds Rules Configurator)
     cur.execute("SELECT COUNT(*) as cnt FROM detection_rules")
     existing_count = cur.fetchone()['cnt']
     if existing_count > 0:
