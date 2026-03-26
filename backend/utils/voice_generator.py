@@ -1,140 +1,346 @@
-"""Generate voice profiles from sample content."""
+"""Generate voice profiles from sample content.
+
+Outputs profile_elements format: dict[str, dict] where each key is an element
+name and each value contains category, element_type, weight, tags, and
+optionally direction and target_value.
+"""
 import re
-import json
+import math
+import statistics
 from collections import Counter
 
 
-def generate_voice_profile(content: str) -> str:
-    """Analyze writing samples and generate a voice profile JSON.
+def generate_voice_profile(text: str) -> dict:
+    """Analyze writing sample and return profile_elements dict.
 
     Minimum 500 words required. 2000+ words recommended for accuracy.
-    Extracts: vocabulary patterns, sentence structure, punctuation habits,
-    tone markers, and common constructions.
+    Returns a dict where keys are element names and values are element dicts
+    with: category, element_type, weight, tags, and optionally direction/target_value.
     """
-    words = content.split()
+    words = re.findall(r"\b[a-zA-Z']+\b", text)
     word_count = len(words)
 
-    profile = {
-        "word_count_analyzed": word_count,
-        "vocabulary": _analyze_vocabulary(content),
-        "sentence_structure": _analyze_sentences(content),
-        "punctuation": _analyze_punctuation(content),
-        "tone": _analyze_tone(content),
-        "constructions": _extract_constructions(content),
-        "banned_words": [],  # User can customize
-        "preferred_words": [],  # User can customize
-    }
+    if word_count < 500:
+        raise ValueError(f"Text must be at least 500 words for analysis (got {word_count}). "
+                         "Provide a longer sample.")
 
-    return json.dumps(profile, indent=2)
+    alpha_words = re.findall(r"\b[a-zA-Z]+\b", text)
+    sentences = _split_sentences(text)
+    n_sentences = max(len(sentences), 1)
+
+    profile = {}
+
+    # --- Lexical ---
+    _add_lexical(profile, alpha_words)
+
+    # --- Syntactic ---
+    _add_syntactic(profile, text, sentences, alpha_words)
+
+    # --- Idiosyncratic ---
+    _add_idiosyncratic(profile, text, sentences, alpha_words, n_sentences)
+
+    # --- Readability ---
+    _add_readability(profile, text, alpha_words, sentences)
+
+    return profile
 
 
-def _analyze_vocabulary(text: str) -> dict:
-    """Analyze vocabulary patterns."""
-    words = re.findall(r'\b[a-zA-Z]+\b', text.lower())
-    word_freq = Counter(words)
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
 
-    # Filter stop words
-    stop_words = {"the", "a", "an", "is", "are", "was", "were", "in", "on", "at",
-                  "to", "for", "of", "and", "or", "but", "not", "with", "this",
-                  "that", "it", "i", "you", "we", "they", "he", "she", "my",
-                  "your", "his", "her", "our", "their", "be", "have", "has",
-                  "had", "do", "does", "did", "will", "would", "could", "should",
-                  "can", "may", "might", "shall", "from", "by", "as", "if", "so"}
-    content_words = {w: c for w, c in word_freq.items() if w not in stop_words and len(w) > 2}
+def _split_sentences(text: str) -> list:
+    """Split text into sentences on .!? boundaries."""
+    parts = re.split(r'(?<=[.!?])\s+', text.strip())
+    return [s for s in parts if s.strip()]
 
-    total = len(words)
-    unique = len(set(words))
 
+def _count_syllables(word: str) -> int:
+    """Estimate syllable count via vowel-group heuristic."""
+    word = word.lower().strip("'")
+    if not word:
+        return 1
+    vowels = "aeiouy"
+    count = len(re.findall(r'[aeiouy]+', word))
+    # Subtract silent-e at end
+    if word.endswith('e') and len(word) > 2 and word[-2] not in vowels:
+        count -= 1
+    return max(1, count)
+
+
+def _clamp(value: float, lo: float = 0.0, hi: float = 1.0) -> float:
+    return max(lo, min(hi, value))
+
+
+def _directional_element(category: str, direction: str, weight: float,
+                          tags: list) -> dict:
     return {
-        "total_words": total,
-        "unique_words": unique,
-        "type_token_ratio": round(unique / total, 3) if total > 0 else 0,
-        "top_content_words": dict(Counter(content_words).most_common(20)),
-        "avg_word_length": round(sum(len(w) for w in words) / total, 1) if total else 0,
+        "category": category,
+        "element_type": "directional",
+        "direction": direction,
+        "weight": round(_clamp(weight), 4),
+        "tags": tags,
     }
 
 
-def _analyze_sentences(text: str) -> dict:
-    """Analyze sentence structure patterns."""
-    sentences = re.split(r'(?<=[.!?])\s+', text.strip())
-    lengths = [len(s.split()) for s in sentences if s]
-
-    if not lengths:
-        return {}
-
-    import statistics
+def _metric_element(category: str, target_value: float, tags: list,
+                    weight: float = 0.0) -> dict:
     return {
-        "count": len(lengths),
-        "avg_length": round(statistics.mean(lengths), 1),
-        "std_dev": round(statistics.stdev(lengths), 1) if len(lengths) > 1 else 0,
-        "min_length": min(lengths),
-        "max_length": max(lengths),
-        "short_sentence_ratio": round(sum(1 for l in lengths if l < 8) / len(lengths), 2),
-        "long_sentence_ratio": round(sum(1 for l in lengths if l > 25) / len(lengths), 2),
+        "category": category,
+        "element_type": "metric",
+        "weight": round(_clamp(weight), 4),
+        "target_value": round(target_value, 4),
+        "tags": tags,
     }
 
 
-def _analyze_punctuation(text: str) -> dict:
-    """Analyze punctuation habits."""
-    return {
-        "uses_ellipsis": text.count("...") > 0,
-        "ellipsis_count": text.count("..."),
-        "uses_em_dash": text.count("--") > 0 or text.count("\u2014") > 0,
-        "em_dash_count": text.count("--") + text.count("\u2014"),
-        "uses_semicolons": text.count(";") > 0,
-        "semicolon_count": text.count(";"),
-        "exclamation_count": text.count("!"),
-        "question_count": text.count("?"),
-        "parenthetical_count": text.count("("),
-    }
+# ---------------------------------------------------------------------------
+# Lexical
+# ---------------------------------------------------------------------------
+
+def _add_lexical(profile: dict, alpha_words: list) -> None:
+    total = len(alpha_words)
+    unique = len(set(w.lower() for w in alpha_words))
+    ttr = unique / total if total else 0.0
+
+    # vocabulary_richness — directional, weight = normalized TTR (expected max ~0.8)
+    profile["vocabulary_richness"] = _directional_element(
+        "lexical",
+        "more" if ttr >= 0.4 else "less",
+        ttr / 0.8,
+        ["python-extractable"],
+    )
+
+    # avg_word_length — metric
+    avg_len = sum(len(w) for w in alpha_words) / total if total else 0.0
+    profile["avg_word_length"] = _metric_element(
+        "lexical", avg_len, ["python-extractable"], weight=_clamp(avg_len / 10.0)
+    )
+
+    # contraction_rate
+    contractions = re.findall(
+        r"\b\w+(?:n't|'re|'ll|'ve|'d|'m|'s)\b", " ".join(alpha_words), re.IGNORECASE
+    )
+    rate = len(contractions) / total if total else 0.0
+    profile["contraction_rate"] = _directional_element(
+        "lexical",
+        "more" if rate > 0.02 else "less",
+        min(1.0, rate / 0.1),
+        ["python-extractable"],
+    )
+
+    # long_word_frequency — ratio of words > 6 chars
+    long_ratio = sum(1 for w in alpha_words if len(w) > 6) / total if total else 0.0
+    profile["long_word_frequency"] = _directional_element(
+        "lexical",
+        "more" if long_ratio >= 0.2 else "less",
+        long_ratio,
+        ["python-extractable"],
+    )
 
 
-def _analyze_tone(text: str) -> dict:
-    """Analyze tone markers."""
-    text_lower = text.lower()
-    return {
-        "formality": _estimate_formality(text_lower),
-        "uses_contractions": bool(re.search(r"\b\w+n't\b|\b\w+'re\b|\b\w+'ll\b|\b\w+'ve\b", text)),
-        "uses_first_person": bool(re.search(r'\b(I|my|me|mine)\b', text)),
-        "uses_second_person": bool(re.search(r'\b(you|your|yours)\b', text_lower)),
-        "question_frequency": text.count("?") / max(len(re.split(r'(?<=[.!?])\s+', text)), 1),
-    }
+# ---------------------------------------------------------------------------
+# Syntactic
+# ---------------------------------------------------------------------------
+
+def _add_syntactic(profile: dict, text: str, sentences: list,
+                   alpha_words: list) -> None:
+    lengths = [len(re.findall(r"\b[a-zA-Z']+\b", s)) for s in sentences]
+    n = len(lengths) if lengths else 1
+
+    avg_len = statistics.mean(lengths) if lengths else 0.0
+    stddev = statistics.stdev(lengths) if len(lengths) > 1 else 0.0
+
+    profile["avg_sentence_length"] = _metric_element(
+        "syntactic", avg_len, ["python-extractable"],
+        weight=_clamp(avg_len / 40.0)
+    )
+
+    profile["sentence_length_stddev"] = _metric_element(
+        "syntactic", stddev, ["python-extractable"],
+        weight=_clamp(stddev / 20.0)
+    )
+
+    short_ratio = sum(1 for l in lengths if l < 10) / n
+    profile["short_sentence_ratio"] = _directional_element(
+        "syntactic",
+        "more" if short_ratio >= 0.3 else "less",
+        short_ratio,
+        ["python-extractable"],
+    )
+
+    long_ratio = sum(1 for l in lengths if l > 25) / n
+    profile["long_sentence_ratio"] = _directional_element(
+        "syntactic",
+        "more" if long_ratio >= 0.2 else "less",
+        long_ratio,
+        ["python-extractable"],
+    )
+
+    # Passive voice: "was/were/been/being + past participle (word ending in -ed or irregular)"
+    passive_pattern = re.compile(
+        r'\b(was|were|been|being|is|are)\s+\w+ed\b', re.IGNORECASE
+    )
+    passive_count = len(passive_pattern.findall(text))
+    passive_rate = passive_count / n
+    profile["passive_voice_rate"] = _directional_element(
+        "syntactic",
+        "less",
+        min(1.0, passive_rate / 0.3),
+        ["python-extractable"],
+    )
 
 
-def _estimate_formality(text: str) -> str:
-    """Estimate writing formality level."""
-    formal_markers = ["therefore", "furthermore", "moreover", "consequently",
-                      "nevertheless", "notwithstanding", "henceforth"]
-    informal_markers = ["gonna", "wanna", "kinda", "sorta", "yeah", "nah",
-                        "ok", "okay", "hey", "lol", "btw"]
+# ---------------------------------------------------------------------------
+# Idiosyncratic
+# ---------------------------------------------------------------------------
 
-    formal_count = sum(1 for m in formal_markers if m in text)
-    informal_count = sum(1 for m in informal_markers if m in text)
+def _add_idiosyncratic(profile: dict, text: str, sentences: list,
+                       alpha_words: list, n_sentences: int) -> None:
+    total_words = len(alpha_words)
 
-    if formal_count > informal_count + 2:
-        return "formal"
-    elif informal_count > formal_count + 2:
-        return "informal"
-    return "moderate"
+    # em_dash_usage
+    em_count = text.count("\u2014") + text.count("--")
+    profile["em_dash_usage"] = _directional_element(
+        "idiosyncratic",
+        "more" if em_count > 0 else "less",
+        min(1.0, (em_count / n_sentences) / 0.3),
+        ["python-extractable", "punctuation"],
+    )
+
+    # semicolon_usage
+    semi_count = text.count(";")
+    profile["semicolon_usage"] = _directional_element(
+        "idiosyncratic",
+        "more" if semi_count > 0 else "less",
+        min(1.0, (semi_count / n_sentences) / 0.3),
+        ["python-extractable", "punctuation"],
+    )
+
+    # ellipsis_usage
+    ellipsis_count = text.count("...")
+    profile["ellipsis_usage"] = _directional_element(
+        "idiosyncratic",
+        "more" if ellipsis_count > 0 else "less",
+        min(1.0, (ellipsis_count / n_sentences) / 0.3),
+        ["python-extractable", "punctuation"],
+    )
+
+    # exclamation_rate
+    excl_sentences = sum(1 for s in sentences if s.rstrip().endswith("!"))
+    excl_rate = excl_sentences / n_sentences
+    profile["exclamation_rate"] = _directional_element(
+        "idiosyncratic",
+        "more" if excl_rate >= 0.05 else "less",
+        excl_rate,
+        ["python-extractable", "punctuation"],
+    )
+
+    # parenthetical_usage
+    paren_count = text.count("(")
+    profile["parenthetical_usage"] = _directional_element(
+        "idiosyncratic",
+        "more" if paren_count > 0 else "less",
+        min(1.0, (paren_count / n_sentences) / 0.3),
+        ["python-extractable", "punctuation"],
+    )
+
+    # rhetorical_question_rate
+    q_sentences = sum(1 for s in sentences if s.rstrip().endswith("?"))
+    q_rate = q_sentences / n_sentences
+    profile["rhetorical_question_rate"] = _directional_element(
+        "idiosyncratic",
+        "more" if q_rate >= 0.05 else "less",
+        q_rate,
+        ["python-extractable"],
+    )
+
+    # first_person_usage
+    first_person = re.findall(r'\b(I|me|my|mine|myself|we|us|our|ours|ourselves)\b',
+                              text, re.IGNORECASE)
+    fp_rate = len(first_person) / total_words if total_words else 0.0
+    profile["first_person_usage"] = _directional_element(
+        "idiosyncratic",
+        "more" if fp_rate >= 0.03 else "less",
+        min(1.0, fp_rate / 0.1),
+        ["python-extractable"],
+    )
+
+    # second_person_usage
+    second_person = re.findall(r'\b(you|your|yours|yourself|yourselves)\b',
+                               text, re.IGNORECASE)
+    sp_rate = len(second_person) / total_words if total_words else 0.0
+    profile["second_person_usage"] = _directional_element(
+        "idiosyncratic",
+        "more" if sp_rate >= 0.02 else "less",
+        min(1.0, sp_rate / 0.1),
+        ["python-extractable"],
+    )
 
 
-def _extract_constructions(text: str) -> list:
-    """Extract recurring sentence constructions/patterns."""
-    constructions = []
-    sentences = re.split(r'(?<=[.!?])\s+', text.strip())
+# ---------------------------------------------------------------------------
+# Readability
+# ---------------------------------------------------------------------------
 
-    # Check for common opening patterns
-    openings = Counter()
-    for s in sentences:
-        words = s.split()[:3]
-        if len(words) >= 2:
-            openings[" ".join(words[:2]).lower()] += 1
+def _add_readability(profile: dict, text: str, alpha_words: list,
+                     sentences: list) -> None:
+    words = alpha_words
+    n_words = len(words)
+    n_sentences = max(len(sentences), 1)
+    n_chars = sum(len(w) for w in words)
+    n_syllables = sum(_count_syllables(w) for w in words)
+    complex_words = sum(1 for w in words if _count_syllables(w) >= 3)
 
-    for opening, count in openings.most_common(5):
-        if count >= 2:
-            constructions.append({
-                "pattern": f"Opens with '{opening}'",
-                "frequency": count,
-            })
+    wps = n_words / n_sentences          # words per sentence
+    spw = n_syllables / n_words if n_words else 0  # syllables per word
+    cpw = n_chars / n_words if n_words else 0       # chars per word
 
-    return constructions
+    # Flesch-Kincaid Grade
+    fk_grade = 0.39 * wps + 11.8 * spw - 15.59
+    profile["flesch_kincaid_grade"] = _metric_element(
+        "idiosyncratic", fk_grade,
+        ["python-extractable", "readability"],
+        weight=_clamp(fk_grade / 20.0),
+    )
+
+    # Flesch Reading Ease
+    fre = 206.835 - 1.015 * wps - 84.6 * spw
+    profile["flesch_reading_ease"] = _metric_element(
+        "idiosyncratic", fre,
+        ["python-extractable", "readability"],
+        weight=_clamp(fre / 100.0),
+    )
+
+    # Gunning Fog
+    fog = 0.4 * (wps + 100.0 * complex_words / n_words) if n_words else 0.0
+    profile["gunning_fog_index"] = _metric_element(
+        "idiosyncratic", fog,
+        ["python-extractable", "readability"],
+        weight=_clamp(fog / 20.0),
+    )
+
+    # Coleman-Liau
+    L = (n_chars / n_words * 100) if n_words else 0   # avg chars per 100 words
+    S = (n_sentences / n_words * 100) if n_words else 0  # avg sentences per 100 words
+    cli = 0.0588 * L - 0.296 * S - 15.8
+    profile["coleman_liau_index"] = _metric_element(
+        "idiosyncratic", cli,
+        ["python-extractable", "readability"],
+        weight=_clamp(cli / 20.0),
+    )
+
+    # SMOG
+    smog = 1.0430 * math.sqrt(complex_words * (30.0 / n_sentences)) + 3.1291
+    profile["smog_index"] = _metric_element(
+        "idiosyncratic", smog,
+        ["python-extractable", "readability"],
+        weight=_clamp(smog / 20.0),
+    )
+
+    # Automated Readability Index
+    ari = 4.71 * cpw + 0.5 * wps - 21.43
+    profile["automated_readability_index"] = _metric_element(
+        "idiosyncratic", ari,
+        ["python-extractable", "readability"],
+        weight=_clamp(ari / 20.0),
+    )
