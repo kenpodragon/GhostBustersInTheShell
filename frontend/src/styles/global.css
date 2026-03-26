@@ -858,6 +858,354 @@ input:focus, select:focus {
   text-align: center;
 }
 
+/* ── Voice Profiles Page ──────────────────────────────────────────────────── */
+
+.vp-page {
+  display: flex;
+  gap: 1rem;
+  height: 100%;
+  min-height: 0;
+}
+
+.vp-left-panel {
+  width: 260px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow-y: auto;
+}
+
+.vp-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 0 0.75rem 0;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.vp-profile-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.vp-profile-card {
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  padding: 0.6rem 0.75rem;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.vp-profile-card:hover {
+  border-color: var(--teal-primary);
+  background: var(--bg-hover);
+}
+
+.vp-profile-card.selected {
+  border-color: var(--teal-primary);
+  background: var(--teal-dark);
+  box-shadow: 0 0 8px var(--teal-glow);
+}
+
+.vp-profile-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.2rem;
+}
+
+.vp-profile-name {
+  font-size: 0.85rem;
+  color: var(--text-white);
+}
+
+.vp-type-badge {
+  font-size: 0.65rem;
+  padding: 0.1rem 0.4rem;
+  border: 1px solid currentColor;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.vp-type-badge.baseline {
+  color: var(--teal-primary);
+}
+
+.vp-type-badge.overlay {
+  color: var(--cyan-info);
+}
+
+.vp-profile-desc {
+  font-size: 0.75rem;
+  margin-bottom: 0.3rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vp-profile-meta {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  font-size: 0.7rem;
+  margin-bottom: 0.3rem;
+}
+
+.vp-active-dot {
+  color: var(--teal-primary);
+  font-size: 0.7rem;
+}
+
+.vp-profile-actions {
+  display: flex;
+  gap: 0.4rem;
+  justify-content: flex-end;
+}
+
+/* Right panel */
+.vp-right-panel {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.vp-empty-state {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--border-color);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.vp-right-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+/* Tab body */
+.vp-tab-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.vp-tab-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border-color);
+}
+
+/* Elements tab */
+.vp-category {
+  border: 1px solid var(--border-color);
+}
+
+.vp-category-header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4rem 0.6rem;
+  background: var(--bg-secondary);
+  border: none;
+  cursor: pointer;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  text-align: left;
+}
+
+.vp-category-header:hover {
+  background: var(--bg-hover);
+}
+
+.vp-category-name {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.vp-element-list {
+  padding: 0.4rem 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.vp-element-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid var(--border-color);
+  flex-wrap: wrap;
+}
+
+.vp-element-row:last-child {
+  border-bottom: none;
+}
+
+.vp-element-name {
+  min-width: 140px;
+  font-size: 0.8rem;
+  color: var(--text-white);
+}
+
+.vp-select-sm {
+  padding: 0.15rem 0.3rem;
+  font-size: 0.75rem;
+  width: auto;
+}
+
+.vp-weight-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.vp-weight-slider {
+  width: 80px;
+  accent-color: var(--teal-primary);
+  cursor: pointer;
+}
+
+.vp-weight-val {
+  font-size: 0.75rem;
+  color: var(--teal-primary);
+  min-width: 2.5rem;
+  text-align: right;
+}
+
+.vp-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+  flex: 1;
+}
+
+.vp-source-badge {
+  font-size: 0.65rem;
+  padding: 0.1rem 0.35rem;
+  border: 1px solid var(--border-color);
+  text-transform: uppercase;
+}
+
+.vp-source-badge.parsed {
+  color: var(--teal-muted);
+}
+
+.vp-source-badge.manual {
+  color: var(--yellow-warn);
+  border-color: var(--yellow-warn);
+}
+
+/* Prompts tab */
+.vp-prompt-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.vp-prompt-order-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.vp-prompt-input {
+  flex: 1;
+  resize: vertical;
+  min-height: 3rem;
+  font-size: 0.8rem;
+}
+
+/* Snapshots tab */
+.vp-snapshot-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.vp-snapshot-row:last-child {
+  border-bottom: none;
+}
+
+/* Create modal */
+.vp-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.vp-modal {
+  width: 400px;
+  max-width: 90vw;
+}
+
+/* Profile selector in scanner (Task 17) */
+.vp-scanner-selector {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.vp-scanner-field {
+  flex: 1;
+  min-width: 160px;
+}
+
+.vp-scanner-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  display: block;
+  margin-bottom: 0.3rem;
+}
+
+.vp-overlay-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.3rem;
+}
+
+.vp-overlay-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--cyan-info);
+  color: var(--cyan-info);
+  font-size: 0.75rem;
+  cursor: pointer;
+  background: transparent;
+  font-family: var(--font-mono);
+}
+
+.vp-overlay-chip.selected {
+  background: rgba(0, 180, 216, 0.15);
+}
+
 /* Preview view */
 .preview-view {
   display: flex;

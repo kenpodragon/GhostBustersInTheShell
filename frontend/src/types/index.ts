@@ -53,7 +53,48 @@ export interface VoiceProfile {
   id: number
   name: string
   description: string
+  profile_type: 'baseline' | 'overlay'
+  parse_count: number
+  is_active: boolean
+  stack_order: number
   created_at: string
+  updated_at: string
+}
+
+export interface ProfileElement {
+  id: number
+  name: string
+  category: 'lexical' | 'character' | 'syntactic' | 'structural' | 'content' | 'idiosyncratic'
+  element_type: 'directional' | 'metric'
+  direction?: 'more' | 'less'
+  weight: number
+  target_value?: number
+  tags: string[]
+  source: 'parsed' | 'manual'
+}
+
+export interface ProfilePrompt {
+  id?: number
+  prompt_text: string
+  sort_order: number
+}
+
+export interface ProfileSnapshot {
+  id: number
+  snapshot_name: string
+  created_at: string
+}
+
+export interface ActiveStack {
+  baseline: { id: number; name: string } | null
+  overlays: { id: number; name: string }[]
+  resolved_elements: ProfileElement[]
+  prompts: ProfilePrompt[]
+}
+
+export interface VoiceProfileFull extends VoiceProfile {
+  elements: ProfileElement[]
+  prompts: ProfilePrompt[]
 }
 
 export interface AIStatus {

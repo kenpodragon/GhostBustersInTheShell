@@ -3,6 +3,7 @@ import { useDocument } from '../context/DocumentContext'
 import ScoreBadge from './ScoreBadge'
 import ScoreGauge from './ScoreGauge'
 import type { VoiceProfile, Pattern, SentenceResult } from '../types'
+import { voiceProfilesApi } from '../services/voiceProfilesApi'
 
 interface AnalysisResult {
   overall_score: number
@@ -15,22 +16,32 @@ export default function InputView() {
   const { submitText, uploadFile, selectProfile, selectedProfileId, useAI, setUseAI, loading: docLoading, error: docError } = useDocument()
   const [text, setText] = useState('')
   const [profiles, setProfiles] = useState<VoiceProfile[]>([])
+  const [selectedOverlayIds, setSelectedOverlayIds] = useState<number[]>([])
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null)
   const [analyzing, setAnalyzing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
+  const baselines = profiles.filter(p => p.profile_type === 'baseline')
+  const overlays = profiles.filter(p => p.profile_type === 'overlay')
+
   useEffect(() => {
-    fetch('/api/voice-profiles')
-      .then(r => r.json())
+    voiceProfilesApi.list()
       .then((data: VoiceProfile[]) => {
         setProfiles(data)
-        if (!selectedProfileId && data.length > 0) {
-          selectProfile(data[0].id)
+        if (!selectedProfileId) {
+          const firstBaseline = data.find(p => p.profile_type === 'baseline')
+          if (firstBaseline) selectProfile(firstBaseline.id)
         }
       })
       .catch(() => {})
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const toggleOverlay = (id: number) => {
+    setSelectedOverlayIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    )
+  }
 
   const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0
 
@@ -86,25 +97,40 @@ export default function InputView() {
 
       {/* Settings Row: Voice Profile + AI Toggle */}
       <div className="card" style={{ marginBottom: '1rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
-          <div style={{ flex: 1 }}>
-            <label className="text-muted" style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px', display: 'block', marginBottom: '0.3rem' }}>
-              Voice Profile
-            </label>
+        <div className="vp-scanner-selector">
+          <div className="vp-scanner-field">
+            <label className="vp-scanner-label">Baseline Profile</label>
             <select
               value={selectedProfileId ?? ''}
               onChange={e => selectProfile(e.target.value ? Number(e.target.value) : null)}
               className="select-input"
             >
-              {profiles.map(p => (
+              <option value="">— none —</option>
+              {baselines.map(p => (
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </select>
           </div>
-          <div style={{ textAlign: 'right' }}>
-            <label className="text-muted" style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px', display: 'block', marginBottom: '0.3rem' }}>
-              AI Enhanced
-            </label>
+
+          {overlays.length > 0 && (
+            <div className="vp-scanner-field">
+              <label className="vp-scanner-label">Overlays</label>
+              <div className="vp-overlay-list">
+                {overlays.map(p => (
+                  <button
+                    key={p.id}
+                    className={`vp-overlay-chip ${selectedOverlayIds.includes(p.id) ? 'selected' : ''}`}
+                    onClick={() => toggleOverlay(p.id)}
+                  >
+                    {selectedOverlayIds.includes(p.id) ? '✓ ' : ''}{p.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+            <label className="vp-scanner-label">AI Enhanced</label>
             <button
               className={`toggle-btn ${useAI ? 'toggle-on' : 'toggle-off'}`}
               onClick={() => setUseAI(!useAI)}

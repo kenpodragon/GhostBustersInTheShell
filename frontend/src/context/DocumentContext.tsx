@@ -13,6 +13,7 @@ interface DocumentContextValue {
   sections: Section[]
   documentAnalysis: DocumentAnalysis | null
   selectedProfileId: number | null
+  selectedOverlayIds: number[]
   useAI: boolean
   loading: boolean
   error: string | null
@@ -33,6 +34,7 @@ interface DocumentContextValue {
   autoOptimize: (index: number, threshold: number, comment?: string) => Promise<void>
   updateSectionText: (index: number, text: string) => void
   selectProfile: (id: number | null) => void
+  setOverlayIds: (ids: number[]) => void
   setUseAI: (enabled: boolean) => void
   setView: (view: ActiveView) => void
   setFocusedSection: (index: number | null) => void
@@ -59,6 +61,7 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
   const [sections, setSections] = useState<Section[]>([])
   const [documentAnalysis, setDocumentAnalysis] = useState<DocumentAnalysis | null>(null)
   const [selectedProfileId, setSelectedProfileId] = useState<number | null>(null)
+  const [selectedOverlayIds, setOverlayIds] = useState<number[]>([])
   const [useAI, setUseAI] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -193,6 +196,7 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({
           text: textToRewrite,
           voice_profile_id: selectedProfileId,
+          overlay_ids: selectedOverlayIds.length > 0 ? selectedOverlayIds : undefined,
           comment: section.rewrite.comment || undefined,
         }),
       })
@@ -303,12 +307,12 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
 
   return (
     <DocumentContext.Provider value={{
-      document, sections, documentAnalysis, selectedProfileId, useAI, loading, error,
+      document, sections, documentAnalysis, selectedProfileId, selectedOverlayIds, useAI, loading, error,
       activeView, focusedSectionIndex, rewritePanelOpen,
       submitText, uploadFile, analyzeSection, analyzeAll,
       rewriteSection, acceptRewrite, rejectRewrite,
       updateSectionText, updateEditedText, updateComment, regenerateRewrite, autoOptimize,
-      selectProfile: setSelectedProfileId, setUseAI, setView: setActiveView,
+      selectProfile: setSelectedProfileId, setOverlayIds, setUseAI, setView: setActiveView,
       setFocusedSection: setFocusedSectionIndex,
       setRewritePanelOpen, exportMarkdown, reset,
     }}>
