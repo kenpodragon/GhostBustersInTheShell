@@ -86,3 +86,126 @@ def set_ai_enabled(enabled: bool) -> dict:
     execute("UPDATE settings SET ai_enabled = %s, updated_at = CURRENT_TIMESTAMP WHERE id = 1", (enabled,))
     startup_health_check()
     return _get_status()
+
+
+@mcp.tool()
+def get_style_guide() -> dict:
+    """Get the resolved active voice profile (weights + English instructions + prompts).
+
+    Returns the baseline profile, any overlays, the merged element list with
+    numeric weights, human-readable English instructions derived from those
+    weights, and all style prompts.
+    """
+    from db import get_conn
+    from utils.voice_profile_service import VoiceProfileService
+    from utils.weight_translator import translate_elements_to_english
+    with get_conn() as conn:
+        svc = VoiceProfileService(conn)
+        stack = svc.get_active_stack()
+    elements = stack.get("resolved_elements", [])
+    return {
+        "baseline": stack.get("baseline"),
+        "overlays": stack.get("overlays", []),
+        "elements": elements,
+        "english_instructions": translate_elements_to_english(elements),
+        "prompts": stack.get("prompts", []),
+    }
+
+
+@mcp.tool()
+def get_rules() -> dict:
+    """Get the active rules configuration (detection config only).
+
+    Returns all detection rule sections: heuristic weights, buzzwords,
+    ai_phrases, word_lists, thresholds, classification, severity, and pipeline.
+    """
+    from utils.rules_config import rules_config
+    return {
+        "heuristic_weights": rules_config.weights,
+        "buzzwords": rules_config.buzzwords,
+        "ai_phrases": rules_config.ai_phrases,
+        "word_lists": rules_config.word_lists,
+        "thresholds": rules_config.thresholds,
+        "classification": rules_config.classification,
+        "severity": rules_config.severity,
+        "pipeline": rules_config.pipeline,
+        "ai_prompt": rules_config.ai_prompt,
+    }
+
+
+@mcp.tool()
+def get_full_guide() -> dict:
+    """Get both the active voice profile and the rules configuration combined.
+
+    Useful for AI providers that need a single call to retrieve all style and
+    detection guidance in one payload.
+    """
+    from db import get_conn
+    from utils.voice_profile_service import VoiceProfileService
+    from utils.weight_translator import translate_elements_to_english
+    from utils.rules_config import rules_config
+    with get_conn() as conn:
+        svc = VoiceProfileService(conn)
+        stack = svc.get_active_stack()
+    elements = stack.get("resolved_elements", [])
+    return {
+        "voice_profile": {
+            "baseline": stack.get("baseline"),
+            "overlays": stack.get("overlays", []),
+            "elements": elements,
+            "english_instructions": translate_elements_to_english(elements),
+            "prompts": stack.get("prompts", []),
+        },
+        "rules": {
+            "heuristic_weights": rules_config.weights,
+            "buzzwords": rules_config.buzzwords,
+            "ai_phrases": rules_config.ai_phrases,
+            "word_lists": rules_config.word_lists,
+            "thresholds": rules_config.thresholds,
+            "classification": rules_config.classification,
+            "severity": rules_config.severity,
+            "pipeline": rules_config.pipeline,
+            "ai_prompt": rules_config.ai_prompt,
+        },
+    }
+
+
+@mcp.tool()
+def list_voice_profiles() -> list:
+    """List all available voice profiles.
+
+    Returns summary info for every profile: id, name, description,
+    profile_type (baseline or overlay), parse_count, and stack metadata.
+    """
+    from db import get_conn
+    from utils.voice_profile_service import VoiceProfileService
+    with get_conn() as conn:
+        svc = VoiceProfileService(conn)
+        return svc.list_profiles()
+
+
+@mcp.tool()
+def set_active_profile(baseline_id: int, overlay_ids: list[int] = None) -> dict:
+    """Set the active voice profile stack (baseline + overlays).
+
+    baseline_id: ID of the profile to use as the baseline.
+    overlay_ids: Optional list of profile IDs to layer on top, in order.
+
+    Returns the resolved active stack after the update.
+    """
+    from db import get_conn
+    from utils.voice_profile_service import VoiceProfileService
+    from utils.weight_translator import translate_elements_to_english
+    ids = overlay_ids or []
+    with get_conn() as conn:
+        svc = VoiceProfileService(conn)
+        svc.set_active_stack(baseline_id, ids)
+        stack = svc.get_active_stack()
+    elements = stack.get("resolved_elements", [])
+    return {
+        "baseline": stack.get("baseline"),
+        "overlays": stack.get("overlays", []),
+        "elements": elements,
+        "english_instructions": translate_elements_to_english(elements),
+        "prompts": stack.get("prompts", []),
+    }
