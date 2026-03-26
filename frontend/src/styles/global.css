@@ -992,6 +992,46 @@ input:focus, select:focus {
   align-items: flex-start;
 }
 
+/* Tab bar */
+.vp-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 0;
+}
+
+.vp-tab {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-bottom: none;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.2s;
+  position: relative;
+  top: 1px;
+}
+
+.vp-tab:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+.vp-tab-active {
+  color: var(--teal-primary);
+  background: var(--bg-card);
+  border-color: var(--border-color);
+  border-bottom-color: var(--bg-card);
+}
+
+.vp-tab-content {
+  border-top: none;
+}
+
 /* Tab body */
 .vp-tab-body {
   display: flex;
