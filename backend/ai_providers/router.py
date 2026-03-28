@@ -212,23 +212,16 @@ def _get_voice_elements_and_prompts(voice_profile_id: int = None, baseline_id: i
 
 
 def route_rewrite(text: str, voice_profile_id: int = None, use_ai: bool = None, threshold: int = 20, use_lm_signals: bool = False, comment: str = None, baseline_id: int = None, overlay_ids: list = None) -> dict:
-    """Rewrite text to reduce AI detection signals.
+    """Rewrite text using a two-pass pipeline.
 
-    Pipeline (Phase 3.10 / Phase 4.5):
-    1. Analyze original text (heuristic-only, fast)
-    2. Resolve voice profile stack → voice_elements + voice_prompts
-    3. Generate style brief from detection results + voice elements
-    4. AI rewrite using the brief
-    5. Re-analyze rewritten text
-    6. Optional second pass if score still > threshold
+    Pass 1 — Voice: Rewrite in the author's voice using voice elements.
+        No detection analysis needed upfront. Pure voice fidelity.
+    Pass 2 — Detection Fix (conditional): If pass 1 score > threshold,
+        run detection and send targeted fix instructions. Minimal changes.
     """
     from utils.detector import detect_ai_patterns
 
-    # Step 1: Analyze original
-    detection = detect_ai_patterns(text, use_lm_signals=use_lm_signals)
-    before_score = detection.get("overall_score", 0)
-
-    # Step 2: Resolve voice stack
+    # Resolve voice stack
     voice_elements, voice_prompts = _get_voice_elements_and_prompts(
         voice_profile_id=voice_profile_id,
         baseline_id=baseline_id,
@@ -240,7 +233,6 @@ def route_rewrite(text: str, voice_profile_id: int = None, use_ai: bool = None, 
         from utils.rewriter import heuristic_rewrite
         result = heuristic_rewrite(text, voice_profile_id, voice_elements=voice_elements)
         result["_analysis_mode"] = "heuristic"
-        result["_before_score"] = round(before_score, 1)
         return result
 
     settings = _get_settings()
@@ -249,49 +241,45 @@ def route_rewrite(text: str, voice_profile_id: int = None, use_ai: bool = None, 
         from utils.rewriter import heuristic_rewrite
         result = heuristic_rewrite(text, voice_profile_id, voice_elements=voice_elements)
         result["_analysis_mode"] = "heuristic"
-        result["_before_score"] = round(before_score, 1)
         return result
 
-    # Step 3: Generate style brief
     from utils.style_brief import generate_style_brief
     model_name = settings.get("ai_provider", "claude")
-    brief = generate_style_brief(
-        detection,
-        voice_profile_id=voice_profile_id if not voice_elements else None,
-        model=model_name,
-        comment=comment,
-        voice_elements=voice_elements or None,
-        voice_prompts=voice_prompts or None,
-    )
 
     try:
-        # Step 4: AI rewrite
-        rewritten = provider.rewrite(text, style_brief=brief)
+        # --- Pass 1: Voice rewrite ---
+        brief_voice = generate_style_brief(
+            detection_result=None,
+            model=model_name,
+            mode="voice",
+            voice_elements=voice_elements or None,
+            voice_prompts=voice_prompts or None,
+        )
+
+        rewritten = provider.rewrite(text, style_brief=brief_voice)
         rewritten_text = rewritten.get("rewritten_text", text)
 
-        # Step 5: Re-analyze
+        # Score pass 1 output
         recheck = detect_ai_patterns(rewritten_text, use_lm_signals=use_lm_signals)
         after_score = recheck.get("overall_score", 0)
         passes = 1
+        brief_pass2 = None
 
-        # Step 6: Optional second pass
+        # --- Pass 2: Detection fix (conditional) ---
         if after_score > threshold:
-            brief2 = generate_style_brief(
-                recheck,
-                voice_profile_id=voice_profile_id if not voice_elements else None,
+            brief_pass2 = generate_style_brief(
+                detection_result=recheck,
                 model=model_name,
-                is_second_pass=True,
+                mode="detection_fix",
                 comment=comment,
-                voice_elements=voice_elements or None,
-                voice_prompts=voice_prompts or None,
             )
             try:
-                rewritten2 = provider.rewrite(rewritten_text, style_brief=brief2)
+                rewritten2 = provider.rewrite(rewritten_text, style_brief=brief_pass2)
                 rewritten_text2 = rewritten2.get("rewritten_text", rewritten_text)
                 recheck2 = detect_ai_patterns(rewritten_text2, use_lm_signals=use_lm_signals)
                 after_score2 = recheck2.get("overall_score", 0)
 
-                # Regression guard: only use second pass if it improved
+                # Regression guard: only use pass 2 if it improved
                 if after_score2 < after_score:
                     rewritten_text = rewritten_text2
                     rewritten = rewritten2
@@ -299,7 +287,7 @@ def route_rewrite(text: str, voice_profile_id: int = None, use_ai: bool = None, 
                     after_score = after_score2
                     passes = 2
             except Exception as e2:
-                print(f"[AI Router] Second rewrite pass failed: {e2}")
+                print(f"[AI Router] Pass 2 (detection fix) failed: {e2}")
 
         # Check voice compliance against resolved elements
         from utils.voice_checker import check_voice_compliance
@@ -309,7 +297,10 @@ def route_rewrite(text: str, voice_profile_id: int = None, use_ai: bool = None, 
             voice_elements=voice_elements or None,
         )
 
-        # Collect remaining signal names
+        # Score original for the _before_score field
+        original_detection = detect_ai_patterns(text, use_lm_signals=use_lm_signals)
+        before_score = original_detection.get("overall_score", 0)
+
         remaining = [p.get("pattern", "") for p in recheck.get("patterns", [])]
         classification = recheck.get("classification", {})
 
@@ -324,7 +315,8 @@ def route_rewrite(text: str, voice_profile_id: int = None, use_ai: bool = None, 
             "_after_score": round(after_score, 1),
             "_passes": passes,
             "_remaining_signals": remaining,
-            "_brief": brief,
+            "_brief": brief_voice,
+            "_brief_pass2": brief_pass2,
             "_voice_compliance": compliance,
         }
 
@@ -335,7 +327,6 @@ def route_rewrite(text: str, voice_profile_id: int = None, use_ai: bool = None, 
         from utils.rewriter import heuristic_rewrite
         result = heuristic_rewrite(text, voice_profile_id, voice_elements=voice_elements)
         result["_analysis_mode"] = "heuristic"
-        result["_before_score"] = round(before_score, 1)
         return result
 
 
