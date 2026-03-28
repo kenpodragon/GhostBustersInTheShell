@@ -173,65 +173,71 @@ def _get_style_example(voice_profile_id: int = None, voice_elements: list = None
 
 
 def generate_style_brief(
-    detection_result: dict,
+    detection_result: dict = None,
     voice_profile_id: int = None,
     model: str = "claude",
     is_second_pass: bool = False,
     comment: str = None,
     voice_elements: list = None,
     voice_prompts: list = None,
+    mode: str = "combined",
 ) -> str:
     """Build a complete rewrite prompt from detection output.
+
+    Modes:
+        "voice": Voice-only brief for pass 1. Includes voice elements, voice prompts,
+            ALWAYS_ON_RULES, and global banned buzzwords. Excludes detection patterns.
+        "detection_fix": Detection-fix brief for pass 2. Includes detection patterns
+            mapped to fix instructions and detected buzzwords. Excludes voice elements.
+        "combined": Legacy default — both voice and detection (original behavior).
 
     detection_result: dict from detect_ai_patterns() — expects keys:
         "overall_score", "patterns" (list of {"pattern": str, "detail": str}),
         "sentences", "classification". Genre from detection_result.get("genre").
+        Can be None for mode="voice".
 
     voice_elements: resolved list of element dicts from VoiceProfileService stack.
         When provided, uses translate_elements_to_english() to generate style instructions.
     voice_prompts: list of prompt dicts with "prompt_text" key from the active stack.
         Each prompt's text is appended to the brief.
     voice_profile_id: unused legacy param — kept for signature compatibility only.
+    is_second_pass: deprecated — use mode="detection_fix" instead. Kept for backward compat.
 
     Returns a prompt string with {text} placeholder for the original text.
     """
-    patterns = detection_result.get("patterns", [])
-    genre = detection_result.get("genre") or "general"
+    # Backward compat: is_second_pass=True maps to detection_fix when mode not explicitly set
+    if is_second_pass and mode == "combined":
+        mode = "detection_fix"
 
-    # Build components
-    detected_rules = map_patterns_to_rules(patterns)
-    banned = build_banned_words(detection_result, voice_profile_id, voice_elements)
+    # Extract patterns/genre safely (detection_result may be None for voice mode)
+    patterns = detection_result.get("patterns", []) if detection_result else []
+    genre = (detection_result.get("genre") if detection_result else None) or "general"
+
+    # Build detected rules only for detection_fix and combined modes
+    detected_rules = []
+    if mode in ("detection_fix", "combined"):
+        detected_rules = map_patterns_to_rules(patterns)
+
+    # Build banned words — for voice mode use empty detection to get global list only
+    if mode == "voice":
+        banned = build_banned_words({"patterns": []}, voice_profile_id, voice_elements)
+    else:
+        banned = build_banned_words(detection_result or {"patterns": []}, voice_profile_id, voice_elements)
+
     tone = get_tone_reference(genre)
 
-    # Voice instructions — new schema: translate elements to English
+    # Voice instructions — only for voice and combined modes
     voice_rules_text = ""
-    if voice_elements:
+    if mode in ("voice", "combined") and voice_elements:
         from utils.weight_translator import translate_elements_to_english
         translated = translate_elements_to_english(voice_elements)
         if translated:
             voice_rules_text = translated
-    # Legacy rules_json path removed — column dropped in migration 006b.
-    # Voice rules now come via voice_elements from profile_elements table.
 
-    # Assemble the brief
-    if is_second_pass:
+    # Assemble the brief based on mode
+    if mode == "voice":
         sections = [
-            "You are rewriting this text to fix remaining AI detection signals.",
-            "This is a REVISION. The previous rewrite still has these issues:",
-        ]
-        if detected_rules:
-            for rule in detected_rules:
-                sections.append(f"- {rule}")
-        else:
-            sections.append("- General AI-like tone")
-        sections.extend([
-            "",
-            "Fix ONLY these issues while preserving everything else that already sounds natural.",
-            "Preserve the original point of view exactly.",
-        ])
-    else:
-        sections = [
-            "You are a text humanizer. Rewrite this text to eliminate AI detection signals while preserving the meaning.",
+            "You are rewriting this text to match a specific author's voice and style.",
             "",
             f"TONE: {tone}",
             "",
@@ -240,25 +246,71 @@ def generate_style_brief(
         for i, rule in enumerate(ALWAYS_ON_RULES, 1):
             sections.append(f"{i}. {rule}")
 
+    elif mode == "detection_fix":
+        sections = [
+            "Fix these specific AI detection issues. Make MINIMAL changes. Keep the existing voice and tone intact.",
+            "",
+            "DETECTED ISSUES TO FIX:",
+        ]
         if detected_rules:
-            sections.append("")
-            sections.append("ADDITIONAL FIXES (these specific problems were detected):")
             for rule in detected_rules:
                 sections.append(f"- {rule}")
+        else:
+            sections.append("- General AI-like tone")
+        sections.extend([
+            "",
+            "Only fix the issues listed above. Do NOT rephrase text that already sounds natural.",
+            "Preserve the original point of view exactly.",
+        ])
 
-    # Banned words (both passes) — limit to 80 to avoid prompt bloat
+    else:  # combined (legacy default)
+        if is_second_pass:
+            # Legacy is_second_pass within combined mode (shouldn't happen due to
+            # backward compat above, but kept for safety)
+            sections = [
+                "You are rewriting this text to fix remaining AI detection signals.",
+                "This is a REVISION. The previous rewrite still has these issues:",
+            ]
+            if detected_rules:
+                for rule in detected_rules:
+                    sections.append(f"- {rule}")
+            else:
+                sections.append("- General AI-like tone")
+            sections.extend([
+                "",
+                "Fix ONLY these issues while preserving everything else that already sounds natural.",
+                "Preserve the original point of view exactly.",
+            ])
+        else:
+            sections = [
+                "You are a text humanizer. Rewrite this text to eliminate AI detection signals while preserving the meaning.",
+                "",
+                f"TONE: {tone}",
+                "",
+                "STYLE RULES (follow ALL of these):",
+            ]
+            for i, rule in enumerate(ALWAYS_ON_RULES, 1):
+                sections.append(f"{i}. {rule}")
+
+            if detected_rules:
+                sections.append("")
+                sections.append("ADDITIONAL FIXES (these specific problems were detected):")
+                for rule in detected_rules:
+                    sections.append(f"- {rule}")
+
+    # Banned words — limit to 80 to avoid prompt bloat
     banned_sample = banned[:80]
     sections.append("")
     sections.append(f"BANNED WORDS (never use these): {', '.join(banned_sample)}")
 
-    # Voice profile rules
-    if voice_rules_text:
+    # Voice profile rules — voice and combined modes only
+    if mode in ("voice", "combined") and voice_rules_text:
         sections.append("")
         sections.append("VOICE PROFILE RULES (highest priority — follow these above all else):")
         sections.append(voice_rules_text)
 
-    # Voice prompts (free-form instructions from the active stack)
-    if voice_prompts:
+    # Voice prompts — voice and combined modes only
+    if mode in ("voice", "combined") and voice_prompts:
         sections.append("")
         sections.append("ADDITIONAL VOICE INSTRUCTIONS:")
         for vp in voice_prompts:
@@ -266,8 +318,8 @@ def generate_style_brief(
             if prompt_text:
                 sections.append(f"- {prompt_text}")
 
-    # Style example for Gemini
-    if model.lower() in ("gemini", "gemini-flash", "gemini-pro"):
+    # Style example for Gemini — voice and combined modes only
+    if mode in ("voice", "combined") and model.lower() in ("gemini", "gemini-flash", "gemini-pro"):
         example = _get_style_example(voice_profile_id, voice_elements)
         sections.append("")
         sections.append("STYLE EXAMPLE (match this voice and rhythm):")

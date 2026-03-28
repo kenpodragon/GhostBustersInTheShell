@@ -150,7 +150,8 @@ class TestGenerateStyleBrief:
     def test_second_pass_is_targeted(self):
         patterns = [{"pattern": "hedge_cluster", "detail": "4 consecutive hedges"}]
         brief = generate_style_brief(self._make_detection(patterns=patterns), is_second_pass=True)
-        assert "revision" in brief.lower()
+        # is_second_pass now maps to detection_fix mode
+        assert "detected issues" in brief.lower() or "revision" in brief.lower()
         assert "hedge" in brief.lower()
 
     def test_gemini_includes_style_example(self):
@@ -218,3 +219,104 @@ class TestGenerateStyleBrief:
         assert "Real instruction." in brief
         # Section appears because there is one valid prompt
         assert "ADDITIONAL VOICE INSTRUCTIONS" in brief
+
+
+class TestGenerateStyleBriefModes:
+    """Tests for the mode parameter in generate_style_brief."""
+
+    def _make_detection(self, patterns=None, score=45, genre="general"):
+        return {
+            "overall_score": score,
+            "patterns": patterns or [],
+            "sentences": [],
+            "classification": {"category": "ghost_written"},
+            "genre": genre,
+        }
+
+    def _voice_elements(self):
+        return [
+            {"name": "em_dash_usage", "category": "punctuation", "element_type": "directional",
+             "direction": "less", "weight": 0.9, "target_value": None},
+            {"name": "contraction_rate", "category": "lexical", "element_type": "directional",
+             "direction": "more", "weight": 0.7, "target_value": None},
+        ]
+
+    def test_voice_mode_excludes_detection_patterns(self):
+        """mode='voice' should NOT have ADDITIONAL FIXES or detected-problem framing."""
+        patterns = [{"pattern": "synonym_treadmill", "detail": "2 synonym clusters"}]
+        brief = generate_style_brief(
+            self._make_detection(patterns=patterns),
+            voice_elements=self._voice_elements(),
+            mode="voice",
+        )
+        assert "ADDITIONAL FIXES" not in brief
+        assert "these specific problems were detected" not in brief
+        assert "DETECTED ISSUES" not in brief
+        # Should have voice framing
+        assert "voice and style" in brief.lower()
+
+    def test_detection_fix_mode_excludes_voice_elements(self):
+        """mode='detection_fix' should NOT have VOICE PROFILE RULES."""
+        patterns = [{"pattern": "hedge_cluster", "detail": "4 consecutive hedges"}]
+        brief = generate_style_brief(
+            self._make_detection(patterns=patterns),
+            voice_elements=self._voice_elements(),
+            voice_prompts=[{"prompt_text": "Write casually."}],
+            mode="detection_fix",
+        )
+        assert "VOICE PROFILE RULES" not in brief
+        assert "ADDITIONAL VOICE INSTRUCTIONS" not in brief
+        assert "STYLE RULES" not in brief
+        # Should have detection framing
+        assert "DETECTED ISSUES" in brief
+
+    def test_combined_mode_includes_both(self):
+        """mode='combined' should have both VOICE PROFILE and BANNED WORDS."""
+        brief = generate_style_brief(
+            self._make_detection(),
+            voice_elements=self._voice_elements(),
+            mode="combined",
+        )
+        assert "VOICE PROFILE RULES" in brief
+        assert "BANNED WORDS" in brief
+        assert "STYLE RULES" in brief
+
+    def test_voice_mode_with_no_detection_result(self):
+        """mode='voice' with detection_result=None should work fine."""
+        brief = generate_style_brief(
+            detection_result=None,
+            voice_elements=self._voice_elements(),
+            mode="voice",
+        )
+        assert isinstance(brief, str)
+        assert "voice and style" in brief.lower()
+        assert "VOICE PROFILE RULES" in brief
+        assert "{text}" in brief
+
+    def test_detection_fix_mode_minimal_changes_instruction(self):
+        """mode='detection_fix' should instruct minimal changes."""
+        patterns = [{"pattern": "no_contractions", "detail": "0% contractions"}]
+        brief = generate_style_brief(
+            self._make_detection(patterns=patterns),
+            mode="detection_fix",
+        )
+        brief_lower = brief.lower()
+        assert "minimal" in brief_lower or "only fix" in brief_lower
+
+    def test_is_second_pass_backward_compat(self):
+        """is_second_pass=True should behave like mode='detection_fix'."""
+        patterns = [{"pattern": "hedge_cluster", "detail": "4 consecutive hedges"}]
+        brief_second_pass = generate_style_brief(
+            self._make_detection(patterns=patterns),
+            is_second_pass=True,
+        )
+        brief_detection_fix = generate_style_brief(
+            self._make_detection(patterns=patterns),
+            mode="detection_fix",
+        )
+        # Both should have detection fix framing, not voice framing
+        assert "DETECTED ISSUES" in brief_second_pass
+        assert "DETECTED ISSUES" in brief_detection_fix
+        # Neither should have STYLE RULES (always-on rules)
+        assert "STYLE RULES" not in brief_second_pass
+        assert "STYLE RULES" not in brief_detection_fix
