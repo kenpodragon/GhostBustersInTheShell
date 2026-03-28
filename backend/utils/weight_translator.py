@@ -44,6 +44,33 @@ _ELEMENT_LABELS = {
     "coleman_liau_index": "Coleman-Liau index",
     "smog_index": "SMOG index",
     "automated_readability_index": "Automated Readability Index",
+    # Phase 4.5.3.2 — new lexical elements
+    "function_word_rate": "function word frequency",
+    "article_rate": "article usage (a/an/the)",
+    "preposition_rate": "preposition frequency",
+    "lexical_density": "content word density",
+    "hapax_legomena_ratio": "unique word ratio (hapax legomena)",
+    "nominalization_rate": "nominalizations (-tion, -ment, -ness)",
+    # Phase 4.5.3.2 — new syntactic elements
+    "conjunction_opening_rate": "conjunction sentence openers (And/But/So)",
+    "sentence_opener_variety": "sentence opener diversity",
+    "coordinating_conjunction_rate": "coordinating conjunctions (and/but/or)",
+    "subordinating_conjunction_rate": "subordinating conjunctions (because/although/if)",
+    "avg_clause_complexity": "clause complexity per sentence",
+    # Phase 4.5.3.2 — new structural elements
+    "paragraph_avg_length": "average paragraph length (sentences)",
+    "single_sentence_paragraph_ratio": "single-sentence paragraphs",
+    "quotation_density": "quoted material density",
+    # Phase 4.5.3.2 — new idiosyncratic elements
+    "third_person_usage": "third-person pronouns (he/she/they)",
+    "modal_verb_rate": "modal verbs (can/could/would/should)",
+    "comma_rate": "commas per sentence",
+    "colon_usage": "colons",
+    "discourse_marker_rate": "discourse markers (actually/basically/clearly)",
+    # Phase 4.5.3.2 — new voice/tone elements
+    "hedging_language_rate": "hedging language (perhaps/maybe/somewhat)",
+    "intensifier_rate": "intensifiers (very/really/extremely)",
+    "transition_word_rate": "transition words (however/therefore/moreover)",
 }
 
 

@@ -3,6 +3,14 @@
 Outputs profile_elements format: dict[str, dict] where each key is an element
 name and each value contains category, element_type, weight, tags, and
 optionally direction and target_value.
+
+51 elements across 6 categories:
+- Lexical (12): vocabulary, word choice, function words
+- Syntactic (10): sentence structure, clause patterns
+- Structural (3): paragraph organization, quotation density
+- Idiosyncratic (13): punctuation, pronoun, figurative patterns
+- Voice/Tone (3): hedging, intensifiers, transitions
+- Readability (6+4 metric): grade levels, reading ease, readability indices
 """
 import re
 import math
@@ -26,6 +34,7 @@ def generate_voice_profile(text: str) -> dict:
 
     alpha_words = re.findall(r"\b[a-zA-Z]+\b", text)
     sentences = _split_sentences(text)
+    paragraphs = _split_paragraphs(text)
     n_sentences = max(len(sentences), 1)
 
     profile = {}
@@ -36,8 +45,14 @@ def generate_voice_profile(text: str) -> dict:
     # --- Syntactic ---
     _add_syntactic(profile, text, sentences, alpha_words)
 
+    # --- Structural ---
+    _add_structural(profile, text, sentences, paragraphs, n_sentences)
+
     # --- Idiosyncratic ---
     _add_idiosyncratic(profile, text, sentences, alpha_words, n_sentences)
+
+    # --- Voice / Tone ---
+    _add_voice_tone(profile, alpha_words, n_sentences)
 
     # --- Readability ---
     _add_readability(profile, text, alpha_words, sentences)
@@ -53,6 +68,12 @@ def _split_sentences(text: str) -> list:
     """Split text into sentences on .!? boundaries."""
     parts = re.split(r'(?<=[.!?])\s+', text.strip())
     return [s for s in parts if s.strip()]
+
+
+def _split_paragraphs(text: str) -> list:
+    """Split text into paragraphs on double-newline boundaries."""
+    parts = re.split(r'\n\s*\n', text.strip())
+    return [p.strip() for p in parts if p.strip()]
 
 
 def _count_syllables(word: str) -> int:
@@ -166,6 +187,78 @@ def _add_lexical(profile: dict, alpha_words: list) -> None:
         ["python-extractable"],
     )
 
+    # --- New lexical elements (Phase 4.5.3.2) ---
+
+    lower_words = [w.lower() for w in alpha_words]
+
+    # function_word_rate — top function words as % of total
+    _FUNCTION_WORDS = {
+        "the", "of", "and", "to", "a", "in", "is", "it", "that", "for",
+        "was", "on", "with", "as", "at", "by", "from", "or", "but", "not",
+        "be", "this", "which", "an", "are", "were", "been", "have", "has",
+        "had", "do", "did", "will", "would", "could", "should", "may",
+        "might", "can", "shall", "must", "if", "so", "than", "no", "when",
+        "what", "who", "how", "all", "each", "every", "both", "few",
+        "more", "most", "other", "some", "such", "any", "only", "same",
+    }
+    fw_count = sum(1 for w in lower_words if w in _FUNCTION_WORDS)
+    fw_rate = fw_count / total if total else 0.0
+    profile["function_word_rate"] = _metric_element(
+        "lexical", fw_rate, ["python-extractable"],
+        weight=_clamp(fw_rate / 0.6),
+    )
+
+    # article_rate — a/an/the as % of total
+    article_count = sum(1 for w in lower_words if w in {"a", "an", "the"})
+    art_rate = article_count / total if total else 0.0
+    profile["article_rate"] = _metric_element(
+        "lexical", art_rate, ["python-extractable"],
+        weight=_clamp(art_rate / 0.1),
+    )
+
+    # preposition_rate — common prepositions as % of total
+    _PREPOSITIONS = {
+        "of", "in", "to", "for", "with", "on", "at", "by", "from",
+        "about", "into", "through", "during", "before", "after",
+        "above", "below", "between", "under", "over", "against",
+        "among", "without", "within", "along", "across", "behind",
+        "beyond", "toward", "towards", "upon", "around", "near",
+    }
+    prep_count = sum(1 for w in lower_words if w in _PREPOSITIONS)
+    prep_rate = prep_count / total if total else 0.0
+    profile["preposition_rate"] = _metric_element(
+        "lexical", prep_rate, ["python-extractable"],
+        weight=_clamp(prep_rate / 0.15),
+    )
+
+    # lexical_density — content words / total words (lower = more functional/grammatical)
+    # Content words ≈ total - function words
+    content_rate = 1.0 - fw_rate
+    profile["lexical_density"] = _metric_element(
+        "lexical", content_rate, ["python-extractable"],
+        weight=_clamp(content_rate),
+    )
+
+    # hapax_legomena_ratio — words appearing exactly once / total unique words
+    unique_count = len(word_counts)
+    hapax_count = sum(1 for _, c in word_counts.items() if c == 1)
+    hapax_ratio = hapax_count / unique_count if unique_count else 0.0
+    profile["hapax_legomena_ratio"] = _metric_element(
+        "lexical", hapax_ratio, ["python-extractable"],
+        weight=_clamp(hapax_ratio),
+    )
+
+    # nominalization_rate — words ending in -tion/-sion/-ment/-ness/-ity/-ence/-ance
+    _NOM_SUFFIXES = re.compile(r'(tion|sion|ment|ness|ity|ence|ance)$', re.IGNORECASE)
+    nom_count = sum(1 for w in lower_words if len(w) > 4 and _NOM_SUFFIXES.search(w))
+    nom_rate = nom_count / total if total else 0.0
+    profile["nominalization_rate"] = _directional_element(
+        "lexical",
+        "more" if nom_rate >= 0.03 else "less",
+        min(1.0, nom_rate / 0.08),
+        ["python-extractable"],
+    )
+
 
 # ---------------------------------------------------------------------------
 # Syntactic
@@ -240,6 +333,119 @@ def _add_syntactic(profile: dict, text: str, sentences: list,
         "syntactic",
         "more" if inv_rate >= 0.05 else "less",
         min(1.0, inv_rate / 0.2),
+        ["python-extractable"],
+    )
+
+    # --- New syntactic elements (Phase 4.5.3.2) ---
+
+    # conjunction_opening_rate — sentences starting with And/But/Or/So/Yet/Because
+    _CONJ_OPENERS = {"and", "but", "or", "so", "yet", "because", "nor"}
+    conj_open = 0
+    for s in sentences:
+        first_word = re.match(r'\b([a-zA-Z]+)\b', s.strip())
+        if first_word and first_word.group(1).lower() in _CONJ_OPENERS:
+            conj_open += 1
+    conj_open_rate = conj_open / n
+    profile["conjunction_opening_rate"] = _directional_element(
+        "syntactic",
+        "more" if conj_open_rate >= 0.05 else "less",
+        min(1.0, conj_open_rate / 0.2),
+        ["python-extractable"],
+    )
+
+    # sentence_opener_variety — Shannon entropy of first words (higher = more diverse)
+    first_words = []
+    for s in sentences:
+        m = re.match(r'\b([a-zA-Z]+)\b', s.strip())
+        if m:
+            first_words.append(m.group(1).lower())
+    if first_words:
+        fw_counts = Counter(first_words)
+        fw_total = len(first_words)
+        entropy = -sum((c / fw_total) * math.log2(c / fw_total)
+                       for c in fw_counts.values() if c > 0)
+        max_entropy = math.log2(fw_total) if fw_total > 1 else 1.0
+        norm_entropy = entropy / max_entropy if max_entropy > 0 else 0.0
+    else:
+        norm_entropy = 0.0
+    profile["sentence_opener_variety"] = _metric_element(
+        "syntactic", norm_entropy, ["python-extractable"],
+        weight=_clamp(norm_entropy),
+    )
+
+    # coordinating_conjunction_rate — and/but/or/nor/for/yet/so per word
+    _COORD_CONJ = {"and", "but", "or", "nor", "for", "yet", "so"}
+    total_words = len(alpha_words)
+    coord_count = sum(1 for w in [x.lower() for x in alpha_words] if w in _COORD_CONJ)
+    coord_rate = coord_count / total_words if total_words else 0.0
+    profile["coordinating_conjunction_rate"] = _metric_element(
+        "syntactic", coord_rate, ["python-extractable"],
+        weight=_clamp(coord_rate / 0.08),
+    )
+
+    # subordinating_conjunction_rate — because/although/while/since/if/unless/when/where/that/which
+    _SUBORD_CONJ = {
+        "because", "although", "though", "while", "since", "if", "unless",
+        "when", "where", "whereas", "whenever", "wherever", "until",
+        "after", "before", "once", "provided", "supposing",
+    }
+    subord_count = sum(1 for w in [x.lower() for x in alpha_words] if w in _SUBORD_CONJ)
+    subord_rate = subord_count / total_words if total_words else 0.0
+    profile["subordinating_conjunction_rate"] = _metric_element(
+        "syntactic", subord_rate, ["python-extractable"],
+        weight=_clamp(subord_rate / 0.05),
+    )
+
+    # avg_clause_complexity — commas + subordinating conjunctions per sentence (proxy)
+    comma_count = text.count(",")
+    clause_proxy = (comma_count + subord_count) / n
+    profile["avg_clause_complexity"] = _metric_element(
+        "syntactic", clause_proxy, ["python-extractable"],
+        weight=_clamp(clause_proxy / 5.0),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Structural
+# ---------------------------------------------------------------------------
+
+def _add_structural(profile: dict, text: str, sentences: list,
+                    paragraphs: list, n_sentences: int) -> None:
+    """Paragraph-level and structural organization elements."""
+    n_paras = max(len(paragraphs), 1)
+
+    # paragraph_avg_length — average sentences per paragraph
+    para_sent_counts = []
+    for p in paragraphs:
+        p_sents = _split_sentences(p)
+        para_sent_counts.append(len(p_sents))
+    avg_para_len = statistics.mean(para_sent_counts) if para_sent_counts else 1.0
+    profile["paragraph_avg_length"] = _metric_element(
+        "structural", avg_para_len, ["python-extractable"],
+        weight=_clamp(avg_para_len / 10.0),
+    )
+
+    # single_sentence_paragraph_ratio — one-sentence paragraphs as %
+    single_sent = sum(1 for c in para_sent_counts if c == 1)
+    single_ratio = single_sent / n_paras
+    profile["single_sentence_paragraph_ratio"] = _directional_element(
+        "structural",
+        "more" if single_ratio >= 0.2 else "less",
+        single_ratio,
+        ["python-extractable"],
+    )
+
+    # quotation_density — quoted material as approximate % of text
+    # Count characters inside quotation marks
+    quoted_chars = sum(len(m) for m in re.findall(
+        r'["\u201c][^"\u201d]*["\u201d]', text
+    ))
+    total_chars = max(len(text), 1)
+    quote_ratio = quoted_chars / total_chars
+    profile["quotation_density"] = _directional_element(
+        "structural",
+        "more" if quote_ratio >= 0.05 else "less",
+        min(1.0, quote_ratio / 0.3),
         ["python-extractable"],
     )
 
@@ -367,6 +573,129 @@ def _add_idiosyncratic(profile: dict, text: str, sentences: list,
         "idiosyncratic",
         "more" if voc_rate > 0 else "less",
         min(1.0, voc_rate / 0.1),
+        ["python-extractable"],
+    )
+
+    # --- New idiosyncratic elements (Phase 4.5.3.2) ---
+
+    # third_person_usage — he/she/they/them/his/her/their rate
+    third_person = re.findall(
+        r'\b(he|she|they|them|his|her|hers|their|theirs|him|himself|herself|themselves)\b',
+        text, re.IGNORECASE,
+    )
+    tp_rate = len(third_person) / total_words if total_words else 0.0
+    profile["third_person_usage"] = _directional_element(
+        "idiosyncratic",
+        "more" if tp_rate >= 0.02 else "less",
+        min(1.0, tp_rate / 0.08),
+        ["python-extractable"],
+    )
+
+    # modal_verb_rate — can/could/would/should/may/might/must/shall
+    _MODALS = {"can", "could", "would", "should", "may", "might", "must", "shall"}
+    modal_count = sum(1 for w in [x.lower() for x in alpha_words] if w in _MODALS)
+    modal_rate = modal_count / total_words if total_words else 0.0
+    profile["modal_verb_rate"] = _directional_element(
+        "idiosyncratic",
+        "more" if modal_rate >= 0.015 else "less",
+        min(1.0, modal_rate / 0.04),
+        ["python-extractable"],
+    )
+
+    # comma_rate — commas per sentence (major punctuation style indicator)
+    comma_count = text.count(",")
+    comma_per_sent = comma_count / n_sentences
+    profile["comma_rate"] = _metric_element(
+        "idiosyncratic", comma_per_sent,
+        ["python-extractable", "punctuation"],
+        weight=_clamp(comma_per_sent / 4.0),
+    )
+
+    # colon_usage — colons per sentence
+    colon_count = text.count(":")
+    colon_per_sent = colon_count / n_sentences
+    profile["colon_usage"] = _directional_element(
+        "idiosyncratic",
+        "more" if colon_count > 0 else "less",
+        min(1.0, colon_per_sent / 0.2),
+        ["python-extractable", "punctuation"],
+    )
+
+    # discourse_marker_rate — informal connectors per word
+    _DISCOURSE_MARKERS = {
+        "well", "basically", "essentially", "actually", "literally",
+        "honestly", "obviously", "clearly", "frankly", "naturally",
+        "anyway", "anyhow", "indeed", "certainly", "definitely",
+        "surely", "simply", "merely",
+    }
+    dm_count = sum(1 for w in [x.lower() for x in alpha_words] if w in _DISCOURSE_MARKERS)
+    dm_rate = dm_count / total_words if total_words else 0.0
+    profile["discourse_marker_rate"] = _directional_element(
+        "idiosyncratic",
+        "more" if dm_rate >= 0.005 else "less",
+        min(1.0, dm_rate / 0.02),
+        ["python-extractable"],
+    )
+
+
+# ---------------------------------------------------------------------------
+# Voice / Tone
+# ---------------------------------------------------------------------------
+
+def _add_voice_tone(profile: dict, alpha_words: list,
+                    n_sentences: int) -> None:
+    """Hedging, intensifiers, and transition patterns that define authorial tone."""
+    total_words = len(alpha_words)
+    lower_words = [w.lower() for w in alpha_words]
+
+    # hedging_language_rate — tentative/uncertain language per word
+    _HEDGES = {
+        "maybe", "perhaps", "might", "somewhat", "arguably", "possibly",
+        "apparently", "relatively", "fairly", "likely", "unlikely",
+        "probably", "presumably", "conceivably", "roughly", "approximately",
+        "seemingly", "supposedly", "tends", "suggest", "suggests",
+        "indicate", "indicates", "appear", "appears", "seem", "seems",
+    }
+    hedge_count = sum(1 for w in lower_words if w in _HEDGES)
+    hedge_rate = hedge_count / total_words if total_words else 0.0
+    profile["hedging_language_rate"] = _directional_element(
+        "voice_tone",
+        "more" if hedge_rate >= 0.005 else "less",
+        min(1.0, hedge_rate / 0.02),
+        ["python-extractable"],
+    )
+
+    # intensifier_rate — emphatic/amplifying words per word
+    _INTENSIFIERS = {
+        "very", "really", "extremely", "absolutely", "totally", "incredibly",
+        "quite", "rather", "highly", "particularly", "especially",
+        "remarkably", "utterly", "thoroughly", "deeply", "profoundly",
+        "enormously", "vastly", "significantly", "considerably",
+        "exceedingly", "terribly", "awfully", "entirely", "completely",
+    }
+    intens_count = sum(1 for w in lower_words if w in _INTENSIFIERS)
+    intens_rate = intens_count / total_words if total_words else 0.0
+    profile["intensifier_rate"] = _directional_element(
+        "voice_tone",
+        "more" if intens_rate >= 0.005 else "less",
+        min(1.0, intens_rate / 0.02),
+        ["python-extractable"],
+    )
+
+    # transition_word_rate — discourse connectors per sentence
+    _TRANSITIONS = {
+        "however", "therefore", "meanwhile", "furthermore", "moreover",
+        "consequently", "nevertheless", "nonetheless", "additionally",
+        "accordingly", "subsequently", "alternatively", "conversely",
+        "similarly", "likewise", "otherwise", "hence", "thus",
+        "instead", "regardless", "notwithstanding",
+    }
+    trans_count = sum(1 for w in lower_words if w in _TRANSITIONS)
+    trans_per_sent = trans_count / n_sentences
+    profile["transition_word_rate"] = _directional_element(
+        "voice_tone",
+        "more" if trans_per_sent >= 0.05 else "less",
+        min(1.0, trans_per_sent / 0.2),
         ["python-extractable"],
     )
 
