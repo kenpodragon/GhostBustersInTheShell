@@ -53,9 +53,22 @@ def score_fidelity(
         return {"mode": "both", "quantitative": quant, "qualitative": qual}
 
 
+def _normalize_elements(profile_elements) -> list[dict]:
+    """Normalize profile elements to list[dict] format.
+
+    Accepts either:
+      - list[dict] with "name" key (DB/51-element export format)
+      - dict keyed by element name (29-element export format)
+    """
+    if isinstance(profile_elements, dict):
+        return [{"name": k, **v} for k, v in profile_elements.items()]
+    return profile_elements
+
+
 def _score_quantitative(generated_text: str, profile_elements: list[dict]) -> dict:
     """Parse generated text and compare element values against profile baseline."""
     parsed = generate_voice_profile(generated_text)
+    profile_elements = _normalize_elements(profile_elements)
 
     per_element = []
     weighted_sum = 0.0
