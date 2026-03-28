@@ -209,6 +209,9 @@ def generate_style_brief(
     if is_second_pass and mode == "combined":
         mode = "detection_fix"
 
+    if mode not in ("voice", "detection_fix", "combined"):
+        raise ValueError(f"Unknown mode: {mode!r}. Expected 'voice', 'detection_fix', or 'combined'.")
+
     # Extract patterns/genre safely (detection_result may be None for voice mode)
     patterns = detection_result.get("patterns", []) if detection_result else []
     genre = (detection_result.get("genre") if detection_result else None) or "general"
@@ -264,39 +267,21 @@ def generate_style_brief(
         ])
 
     else:  # combined (legacy default)
-        if is_second_pass:
-            # Legacy is_second_pass within combined mode (shouldn't happen due to
-            # backward compat above, but kept for safety)
-            sections = [
-                "You are rewriting this text to fix remaining AI detection signals.",
-                "This is a REVISION. The previous rewrite still has these issues:",
-            ]
-            if detected_rules:
-                for rule in detected_rules:
-                    sections.append(f"- {rule}")
-            else:
-                sections.append("- General AI-like tone")
-            sections.extend([
-                "",
-                "Fix ONLY these issues while preserving everything else that already sounds natural.",
-                "Preserve the original point of view exactly.",
-            ])
-        else:
-            sections = [
-                "You are a text humanizer. Rewrite this text to eliminate AI detection signals while preserving the meaning.",
-                "",
-                f"TONE: {tone}",
-                "",
-                "STYLE RULES (follow ALL of these):",
-            ]
-            for i, rule in enumerate(ALWAYS_ON_RULES, 1):
-                sections.append(f"{i}. {rule}")
+        sections = [
+            "You are a text humanizer. Rewrite this text to eliminate AI detection signals while preserving the meaning.",
+            "",
+            f"TONE: {tone}",
+            "",
+            "STYLE RULES (follow ALL of these):",
+        ]
+        for i, rule in enumerate(ALWAYS_ON_RULES, 1):
+            sections.append(f"{i}. {rule}")
 
-            if detected_rules:
-                sections.append("")
-                sections.append("ADDITIONAL FIXES (these specific problems were detected):")
-                for rule in detected_rules:
-                    sections.append(f"- {rule}")
+        if detected_rules:
+            sections.append("")
+            sections.append("ADDITIONAL FIXES (these specific problems were detected):")
+            for rule in detected_rules:
+                sections.append(f"- {rule}")
 
     # Banned words — limit to 80 to avoid prompt bloat
     banned_sample = banned[:80]

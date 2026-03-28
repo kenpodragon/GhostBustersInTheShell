@@ -151,7 +151,7 @@ class TestGenerateStyleBrief:
         patterns = [{"pattern": "hedge_cluster", "detail": "4 consecutive hedges"}]
         brief = generate_style_brief(self._make_detection(patterns=patterns), is_second_pass=True)
         # is_second_pass now maps to detection_fix mode
-        assert "detected issues" in brief.lower() or "revision" in brief.lower()
+        assert "detected issues" in brief.lower()
         assert "hedge" in brief.lower()
 
     def test_gemini_includes_style_example(self):
