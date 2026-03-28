@@ -131,6 +131,82 @@ def _compute_similarity(profile_value: float, generated_value: float) -> float:
     return max(0.0, 1.0 - deviation)
 
 
-def _score_qualitative(generated_text, sample_text, quant_scores=None):
-    """Qualitative scoring — implemented in Task 3."""
-    raise NotImplementedError("Qualitative scoring implemented in Task 3")
+QUALITATIVE_PROMPT = """You are a voice fidelity analyst. Compare two writing samples and assess how well the GENERATED text matches the ORIGINAL author's voice.
+
+## Original Author Sample:
+{sample_text}
+
+## Generated Text:
+{generated_text}
+
+{quant_context}
+
+Analyze the voice match. Focus on:
+- Tone, register, and formality level
+- Humor style, rhetorical patterns, sentence rhythm
+- Word choice tendencies, contractions, pronouns
+- Structural habits (paragraph length, list usage, digression patterns)
+- Distinctive quirks or signature moves
+
+Return ONLY valid JSON:
+{{
+  "matches": ["specific voice characteristic that matches well", ...],
+  "gaps": ["specific voice characteristic that is missing or wrong", ...],
+  "overall_assessment": "2-3 sentence summary of the voice fidelity"
+}}"""
+
+
+def _score_qualitative(
+    generated_text: str,
+    sample_text: str,
+    quant_scores: dict | None = None,
+) -> dict:
+    """Run AI qualitative comparison of generated vs original text."""
+    result = _call_ai_qualitative(generated_text, sample_text, quant_scores)
+    result["mode"] = "qualitative"
+    return result
+
+
+def _call_ai_qualitative(
+    generated_text: str,
+    sample_text: str,
+    quant_scores: dict | None = None,
+) -> dict:
+    """Call AI provider for qualitative voice comparison."""
+    quant_context = ""
+    if quant_scores:
+        top_gaps = sorted(
+            quant_scores.get("per_element", []),
+            key=lambda e: e.get("similarity", 1.0),
+        )[:10]
+        if top_gaps:
+            lines = ["## Quantitative Element Scores (lowest similarity first):"]
+            for e in top_gaps:
+                lines.append(
+                    f"- {e['name']}: profile={e['profile_value']}, "
+                    f"generated={e['generated_value']}, "
+                    f"similarity={e['similarity']:.0%}"
+                )
+            quant_context = "\n".join(lines)
+
+    prompt = QUALITATIVE_PROMPT.format(
+        sample_text=sample_text[:3000],
+        generated_text=generated_text[:3000],
+        quant_context=quant_context,
+    )
+
+    from ai_providers.router import _get_provider
+    provider = _get_provider()
+    if not provider:
+        return {
+            "matches": [],
+            "gaps": ["AI provider unavailable — qualitative scoring requires AI"],
+            "overall_assessment": "Could not perform qualitative analysis: no AI provider available.",
+        }
+
+    raw = provider._run_cli(prompt)
+    return {
+        "matches": raw.get("matches", []),
+        "gaps": raw.get("gaps", []),
+        "overall_assessment": raw.get("overall_assessment", "No assessment returned."),
+    }

@@ -1,5 +1,6 @@
 """Tests for voice fidelity scoring module."""
 import pytest
+from unittest.mock import patch, MagicMock
 from utils.voice_fidelity_scorer import score_fidelity
 
 
@@ -153,3 +154,94 @@ class TestScoreFidelityValidation:
                 sample_text="some text",
                 mode="both",
             )
+
+
+class TestScoreFidelityQualitative:
+    """Qualitative mode: AI comparison of generated vs original text."""
+
+    def test_returns_qualitative_structure(self, long_human_text):
+        mock_response = {
+            "matches": ["Tone matches well"],
+            "gaps": ["Missing rhetorical questions"],
+            "overall_assessment": "Good but not great.",
+        }
+        with patch(
+            "utils.voice_fidelity_scorer._call_ai_qualitative",
+            return_value=mock_response,
+        ):
+            result = score_fidelity(
+                generated_text=long_human_text,
+                sample_text="Original author sample text here.",
+                mode="qualitative",
+            )
+        assert result["mode"] == "qualitative"
+        assert isinstance(result["matches"], list)
+        assert isinstance(result["gaps"], list)
+        assert "overall_assessment" in result
+
+    def test_qualitative_passes_texts_to_ai(self, long_human_text):
+        mock_response = {
+            "matches": [],
+            "gaps": [],
+            "overall_assessment": "N/A",
+        }
+        with patch(
+            "utils.voice_fidelity_scorer._call_ai_qualitative",
+            return_value=mock_response,
+        ) as mock_ai:
+            score_fidelity(
+                generated_text=long_human_text,
+                sample_text="Original text.",
+                mode="qualitative",
+            )
+        mock_ai.assert_called_once()
+        call_args = mock_ai.call_args
+        assert call_args[0][0] == long_human_text  # generated_text
+        assert call_args[0][1] == "Original text."  # sample_text
+
+
+class TestScoreFidelityBoth:
+    """Combined mode: quantitative + qualitative."""
+
+    def test_returns_both_structure(self, long_human_text, sample_profile_elements):
+        mock_response = {
+            "matches": ["Good tone"],
+            "gaps": ["Missing humor"],
+            "overall_assessment": "Decent match.",
+        }
+        with patch(
+            "utils.voice_fidelity_scorer._call_ai_qualitative",
+            return_value=mock_response,
+        ):
+            result = score_fidelity(
+                generated_text=long_human_text,
+                profile_elements=sample_profile_elements,
+                sample_text="Original text.",
+                mode="both",
+            )
+        assert result["mode"] == "both"
+        assert "quantitative" in result
+        assert "qualitative" in result
+        assert result["quantitative"]["mode"] == "quantitative"
+        assert result["qualitative"]["mode"] == "qualitative"
+
+    def test_both_passes_quant_scores_to_qualitative(self, long_human_text, sample_profile_elements):
+        mock_response = {
+            "matches": [],
+            "gaps": [],
+            "overall_assessment": "N/A",
+        }
+        with patch(
+            "utils.voice_fidelity_scorer._call_ai_qualitative",
+            return_value=mock_response,
+        ) as mock_ai:
+            score_fidelity(
+                generated_text=long_human_text,
+                profile_elements=sample_profile_elements,
+                sample_text="Original text.",
+                mode="both",
+            )
+        call_args = mock_ai.call_args
+        # Third positional arg should be quant_scores dict
+        assert call_args[0][2] is not None
+        assert call_args[0][2]["mode"] == "quantitative"
