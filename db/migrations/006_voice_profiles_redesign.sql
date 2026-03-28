@@ -62,8 +62,8 @@ ALTER TABLE settings
     ADD COLUMN IF NOT EXISTS active_baseline_id INTEGER REFERENCES voice_profiles(id),
     ADD COLUMN IF NOT EXISTS active_overlay_ids JSONB NOT NULL DEFAULT '[]';
 
--- 6. Set existing profile as default baseline
+-- 6. Set existing profile as default baseline (only if profile exists from prior data)
 UPDATE voice_profiles SET profile_type = 'baseline', is_active = true WHERE id = 1;
-UPDATE settings SET active_baseline_id = 1 WHERE id = 1;
+UPDATE settings SET active_baseline_id = 1 WHERE id = 1 AND EXISTS (SELECT 1 FROM voice_profiles WHERE id = 1);
 
 COMMIT;

@@ -421,6 +421,274 @@ def run_generation_experiment(full_profile: dict):
     return report
 
 
+def _call_claude(prompt: str) -> str:
+    """Call Claude CLI and return raw text response."""
+    result = subprocess.run(
+        ["claude", "-p", prompt, "--output-format", "text"],
+        capture_output=True, text=True, timeout=120,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(f"Claude CLI failed: {result.stderr.strip()}")
+    return result.stdout.strip()
+
+
+def _parse_json_from_claude(raw: str) -> object:
+    """Extract JSON from Claude response, handling markdown fences."""
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        match = re.search(r"```(?:json)?\s*(\[.*?\]|\{.*?\})\s*```", raw, re.DOTALL)
+        if match:
+            return json.loads(match.group(1))
+        raise
+
+
+def run_ai_enhanced_experiment(full_profile: dict):
+    """Use AI to analyze gaps in Python-only profile and enhance with AI-crafted prompts.
+
+    Steps:
+    1. Send Shakespeare text samples + current profile to Claude
+    2. Ask Claude to identify style patterns not captured by metrics
+    3. Ask Claude to generate voice prompts that capture Shakespeare's essence
+    4. Create enhanced profile with AI prompts in DB
+    5. Generate text and score vs Python-only baseline
+    """
+    print(f"\n{'='*60}")
+    print("AI-ENHANCED CORPUS EXPERIMENT")
+    print(f"{'='*60}\n")
+
+    profile_json_str = profile_to_json_for_ai(full_profile)
+
+    # Build english instructions for comparison
+    elements_list = [{"name": k, **v} for k, v in full_profile.items()]
+    english_instructions = translate_elements_to_english(elements_list)
+
+    # Load a Shakespeare sample for AI analysis
+    sample_path = os.path.join(SHAKESPEARE_DIR, "hamlet.txt")
+    with open(sample_path, "r", encoding="utf-8") as f:
+        sample_text = f.read()
+    # Truncate to ~3000 words
+    sample_text = " ".join(sample_text.split()[:3000])
+
+    # --- Step 1: Gap Analysis ---
+    print("Step 1: Asking Claude to identify gaps in our metrics...")
+    gap_prompt = f"""You are a literary style analyst specializing in Shakespeare.
+
+Here is our current computational voice profile for Shakespeare (JSON metrics):
+```json
+{profile_json_str}
+```
+
+Here is a sample of Shakespeare's actual writing:
+{sample_text[:2000]}
+
+Identify 5-8 specific style elements that our computational metrics MISS but are crucial to Shakespeare's voice. Focus on patterns that would help an AI generate more authentic Shakespeare-style text.
+
+For each gap, explain:
+- What the element is
+- Why it matters for Shakespeare specifically
+- How it could be described in a writing instruction
+
+Respond with ONLY valid JSON (no markdown fences):
+[
+  {{"name": "<element_name>", "description": "<what it is>", "importance": "<why it matters>", "instruction": "<how to tell AI to use it>"}}
+]"""
+
+    try:
+        gap_raw = _call_claude(gap_prompt)
+        gap_analysis = _parse_json_from_claude(gap_raw)
+        print(f"  Found {len(gap_analysis)} style gaps:")
+        for gap in gap_analysis:
+            print(f"    - {gap.get('name', '?')}: {gap.get('description', '?')[:80]}")
+    except Exception as e:
+        print(f"  WARNING: Gap analysis failed: {e}")
+        gap_analysis = []
+
+    # --- Step 2: Generate AI Voice Prompts ---
+    print("\nStep 2: Asking Claude to generate voice prompts...")
+    prompt_prompt = f"""You are helping build a voice profile that guides AI text generation to sound like Shakespeare.
+
+Current computational metrics:
+```json
+{profile_json_str}
+```
+
+Current English instructions (generated from metrics):
+{english_instructions[:1500]}
+
+Style gaps identified:
+{json.dumps(gap_analysis[:5], indent=2) if gap_analysis else "None identified"}
+
+Write 3-5 concise voice prompts (1-2 sentences each) that capture Shakespeare's writing style. These prompts will be prepended to AI generation requests. Focus on aspects NOT already covered by the English instructions above — especially the gaps.
+
+Respond with ONLY valid JSON (no markdown fences):
+["<prompt1>", "<prompt2>", ...]"""
+
+    try:
+        prompts_raw = _call_claude(prompt_prompt)
+        ai_prompts = _parse_json_from_claude(prompts_raw)
+        print(f"  Generated {len(ai_prompts)} voice prompts:")
+        for p in ai_prompts:
+            print(f"    - {p[:100]}...")
+    except Exception as e:
+        print(f"  WARNING: Prompt generation failed: {e}")
+        ai_prompts = []
+
+    # --- Step 3: Create Enhanced Profile ---
+    print("\nStep 3: Creating AI-enhanced profile in DB...")
+    try:
+        profile_id = _create_shakespeare_profile_via_api(
+            full_profile, "Shakespeare AI-Enhanced"
+        )
+        print(f"  Profile ID: {profile_id}")
+
+        # Add AI-generated prompts
+        for i, p in enumerate(ai_prompts):
+            requests.post(
+                f"{API_BASE}/api/voice-profiles/{profile_id}/prompts",
+                json={"prompt_text": p, "sort_order": i},
+            )
+        print(f"  Added {len(ai_prompts)} AI prompts to profile")
+    except Exception as e:
+        print(f"  ERROR: Failed to create profile: {e}")
+        return None
+
+    # --- Step 4: Generate + Score ---
+    print("\nStep 4: Generating text with AI-enhanced profile and scoring...")
+
+    test_prompts = [
+        "Write a short monologue about the nature of ambition and power.",
+        "Write a dialogue between two characters debating the merits of love versus duty.",
+        "Write a reflection on mortality and the passage of time.",
+    ]
+
+    # Build combined english instructions: original + AI prompts
+    enhanced_english = english_instructions
+    if ai_prompts:
+        enhanced_english += "\n\n## Additional Style Directives\n"
+        enhanced_english += "\n".join(f"- {p}" for p in ai_prompts)
+
+    # Also build gap-informed instructions
+    if gap_analysis:
+        enhanced_english += "\n\n## Style Elements to Emphasize\n"
+        for gap in gap_analysis:
+            instr = gap.get("instruction", gap.get("description", ""))
+            enhanced_english += f"- {gap.get('name', '?')}: {instr}\n"
+
+    scoring_formats = {
+        "english_only_python": {"english_instructions": english_instructions},
+        "english_only_enhanced": {"english_instructions": enhanced_english},
+        "both_enhanced": {"profile_json": profile_json_str, "english_instructions": enhanced_english},
+    }
+
+    generation_results = []
+
+    for i, prompt in enumerate(test_prompts, 1):
+        print(f"\n--- Prompt {i}: {prompt[:60]}... ---")
+
+        # Generate with enhanced profile
+        print("  Generating text...")
+        try:
+            generated = _generate_text_with_voice(profile_id, prompt)
+        except requests.RequestException as e:
+            print(f"  ERROR generating: {e}")
+            generation_results.append({"prompt": prompt, "error": str(e)})
+            continue
+
+        if not generated or generated == "Generate new content.":
+            print("  WARNING: Generation returned empty or unchanged text.")
+            generation_results.append({"prompt": prompt, "error": "generation failed"})
+            continue
+
+        print(f"  Generated {len(generated)} chars")
+        print(f"  Preview: {generated[:120]}...\n")
+
+        # Score with each format
+        scores = {}
+        for fmt_name, fmt_kwargs in scoring_formats.items():
+            print(f"  Scoring ({fmt_name})...", end=" ", flush=True)
+            result = _score_similarity_with_ai(
+                generated, "William Shakespeare", **fmt_kwargs
+            )
+            score = result.get("similarity_score", "?")
+            confidence = result.get("confidence", "?")
+            print(f"score={score}, confidence={confidence}")
+            scores[fmt_name] = result
+
+        generation_results.append({
+            "prompt": prompt,
+            "generated_text": generated,
+            "generated_length": len(generated),
+            "scores": scores,
+        })
+
+    # --- Cleanup ---
+    print("\nCleaning up: deleting AI-enhanced profile...")
+    try:
+        requests.delete(f"{API_BASE}/api/voice-profiles/{profile_id}")
+        print("Profile deleted.")
+    except requests.RequestException:
+        print(f"WARNING: Could not delete profile {profile_id}")
+
+    # --- Save Report ---
+    report = {
+        "experiment": "shakespeare_ai_enhanced",
+        "gap_analysis": gap_analysis,
+        "ai_prompts": ai_prompts,
+        "enhanced_english_instructions": enhanced_english,
+        "generation_results": generation_results,
+    }
+    report_path = save_report("shakespeare_ai_enhanced", report)
+    print(f"\nReport saved: {report_path}")
+
+    # --- Print Summary ---
+    fmt_names = list(scoring_formats.keys())
+    print(f"\n{'='*60}")
+    print("AI-ENHANCED SCORING SUMMARY")
+    print(f"{'='*60}")
+
+    header = f"{'Prompt':<12}"
+    for fmt in fmt_names:
+        header += f" | {fmt:>22}"
+    print(header)
+    print("-" * len(header))
+
+    fmt_totals = {fmt: [] for fmt in fmt_names}
+    for i, result in enumerate(generation_results, 1):
+        if "error" in result:
+            row = f"Prompt {i:<5}"
+            for fmt in fmt_names:
+                row += f" | {'ERROR':>22}"
+            print(row)
+            continue
+        row = f"Prompt {i:<5}"
+        for fmt in fmt_names:
+            s = result["scores"].get(fmt, {}).get("similarity_score", "?")
+            row += f" | {s:>22}"
+            if isinstance(s, (int, float)):
+                fmt_totals[fmt].append(s)
+        print(row)
+
+    print("-" * len(header))
+    row = f"{'Average':<12}"
+    for fmt in fmt_names:
+        vals = fmt_totals[fmt]
+        avg = sum(vals) / len(vals) if vals else 0
+        row += f" | {avg:>22.1f}"
+    print(row)
+
+    # Compare to baseline
+    print(f"\n{'='*60}")
+    print("COMPARISON TO PYTHON-ONLY BASELINE")
+    print(f"{'='*60}")
+    print("Baseline (Session 19):  english_only = 5.3, both = 40.7")
+    print("Enhanced parser:        english_only = 55.7")
+    enhanced_avg = sum(fmt_totals.get("english_only_enhanced", [])) / len(fmt_totals.get("english_only_enhanced", [1])) if fmt_totals.get("english_only_enhanced") else 0
+    print(f"AI-enhanced:            english_only_enhanced = {enhanced_avg:.1f}")
+
+    return report
+
+
 def run_training_curve():
     """Main experiment: incremental training curve for Shakespeare corpus."""
     # Discover text files
@@ -561,24 +829,41 @@ if __name__ == "__main__":
         action="store_true",
         help="Run training curve only (skip generation)",
     )
+    parser.add_argument(
+        "--ai-enhance",
+        action="store_true",
+        help="Run AI-enhanced corpus experiment (gap analysis + AI prompts)",
+    )
     args = parser.parse_args()
 
-    # Default: run both if no flags specified
-    run_curve = True
-    run_gen = not args.curve_only  # generate unless --curve-only
+    # Determine what to run
+    run_curve = not args.ai_enhance  # skip curve if only doing AI enhance
+    run_gen = not args.curve_only and not args.ai_enhance
+    run_ai = args.ai_enhance
 
     if args.generate:
         run_gen = True
+        run_curve = True
 
     report = None
     full_profile = None
+
+    def _build_full_profile():
+        """Parse all Shakespeare texts and return cumulative profile."""
+        txt_files = sorted(
+            f for f in os.listdir(SHAKESPEARE_DIR) if f.endswith(".txt")
+        )
+        all_profiles = []
+        for filename in txt_files:
+            filepath = os.path.join(SHAKESPEARE_DIR, filename)
+            result = parse_file(filepath, max_words=0)
+            all_profiles.append(result["profile"])
+        return _cumulative_average(all_profiles)
 
     if run_curve:
         result = run_training_curve()
         if result:
             report, full_profile = result
-            # Extract full profile from training curve for generation
-            # Re-derive it from the report's full_profile_json
             print(f"\n{'='*60}")
             print("SUMMARY")
             print(f"{'='*60}")
@@ -600,17 +885,12 @@ if __name__ == "__main__":
                 )
 
     if run_gen:
-        # We need the full profile. Re-derive from corpus.
         if full_profile is None:
-            # Build it from scratch by re-parsing
-            txt_files = sorted(
-                f for f in os.listdir(SHAKESPEARE_DIR) if f.endswith(".txt")
-            )
-            all_profiles = []
-            for filename in txt_files:
-                filepath = os.path.join(SHAKESPEARE_DIR, filename)
-                result = parse_file(filepath, max_words=0)
-                all_profiles.append(result["profile"])
-            full_profile = _cumulative_average(all_profiles)
-
+            full_profile = _build_full_profile()
         gen_report = run_generation_experiment(full_profile)
+
+    if run_ai:
+        if full_profile is None:
+            print("Building full Shakespeare corpus profile...")
+            full_profile = _build_full_profile()
+        ai_report = run_ai_enhanced_experiment(full_profile)

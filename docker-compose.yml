@@ -1,3 +1,5 @@
+name: ghostbusters
+
 services:
   postgres:
     image: postgres:17
