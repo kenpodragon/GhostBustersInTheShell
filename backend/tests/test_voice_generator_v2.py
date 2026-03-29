@@ -122,4 +122,6 @@ class TestGenerateProfile:
     def test_all_have_tags(self, sample_text):
         result = generate_voice_profile(sample_text)
         for name, el in result.items():
-            assert "python-extractable" in el["tags"], f"{name} missing python-extractable tag"
+            has_valid_tag = ("python-extractable" in el["tags"] or
+                            "spacy-extractable" in el["tags"])
+            assert has_valid_tag, f"{name} missing extractable tag"

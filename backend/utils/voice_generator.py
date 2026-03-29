@@ -4,18 +4,41 @@ Outputs profile_elements format: dict[str, dict] where each key is an element
 name and each value contains category, element_type, weight, tags, and
 optionally direction and target_value.
 
-51 elements across 6 categories:
-- Lexical (12): vocabulary, word choice, function words
-- Syntactic (10): sentence structure, clause patterns
+57 elements across 6 categories (51 regex + 6 spaCy):
+- Lexical (12 + 1 spaCy): vocabulary, word choice, function words, NER
+- Syntactic (10 + 5 spaCy): sentence structure, clause patterns, POS ratios
 - Structural (3): paragraph organization, quotation density
 - Idiosyncratic (13): punctuation, pronoun, figurative patterns
 - Voice/Tone (3): hedging, intensifiers, transitions
 - Readability (6+4 metric): grade levels, reading ease, readability indices
+
+Tier 2 elements require spaCy + en_core_web_sm. If unavailable, gracefully
+falls back to 51 Tier 1 regex-only elements.
 """
 import re
 import math
 import statistics
 from collections import Counter
+
+# ---------------------------------------------------------------------------
+# spaCy lazy loading — Tier 2 elements require spaCy + en_core_web_sm
+# ---------------------------------------------------------------------------
+
+_nlp = None
+_spacy_available = None
+
+
+def _get_spacy_nlp():
+    """Lazy-load spaCy model. Returns None if spaCy isn't installed."""
+    global _nlp, _spacy_available
+    if _spacy_available is None:
+        try:
+            import spacy
+            _nlp = spacy.load("en_core_web_sm")
+            _spacy_available = True
+        except (ImportError, OSError):
+            _spacy_available = False
+    return _nlp
 
 
 def generate_voice_profile(text: str) -> dict:
@@ -56,6 +79,9 @@ def generate_voice_profile(text: str) -> dict:
 
     # --- Readability ---
     _add_readability(profile, text, alpha_words, sentences)
+
+    # --- Tier 2: spaCy-based (optional) ---
+    _add_spacy_elements(profile, text, sentences)
 
     return profile
 
@@ -765,4 +791,114 @@ def _add_readability(profile: dict, text: str, alpha_words: list,
         "idiosyncratic", ari,
         ["python-extractable", "readability"],
         weight=_clamp(ari / 20.0),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Tier 2: spaCy-based elements (optional)
+# ---------------------------------------------------------------------------
+
+def _add_spacy_elements(profile: dict, text: str, sentences: list) -> None:
+    """Extract POS/dependency/NER elements using spaCy. Skips if unavailable."""
+    nlp = _get_spacy_nlp()
+    if nlp is None:
+        return
+
+    # Truncate very long texts — voice elements stabilize well before 100K chars
+    analysis_text = text[:100_000] if len(text) > 100_000 else text
+    doc = nlp(analysis_text)
+
+    # Count POS tags
+    pos_counts = {}
+    for token in doc:
+        pos_counts[token.pos_] = pos_counts.get(token.pos_, 0) + 1
+    total_tokens = len(doc)
+
+    # --- adjective_to_noun_ratio ---
+    adj_count = pos_counts.get("ADJ", 0)
+    noun_count = pos_counts.get("NOUN", 0) + pos_counts.get("PROPN", 0)
+    adj_noun_ratio = adj_count / noun_count if noun_count > 0 else 0.0
+    profile["adjective_to_noun_ratio"] = _metric_element(
+        "syntactic", adj_noun_ratio, ["spacy-extractable"],
+        weight=_clamp(adj_noun_ratio / 1.0),
+    )
+
+    # --- adverb_density ---
+    adv_count = pos_counts.get("ADV", 0)
+    adv_density = adv_count / total_tokens if total_tokens > 0 else 0.0
+    profile["adverb_density"] = _directional_element(
+        "syntactic",
+        "more" if adv_density >= 0.05 else "less",
+        min(1.0, adv_density / 0.1),
+        ["spacy-extractable"],
+    )
+
+    # --- verb_tense_past_ratio and verb_tense_present_ratio ---
+    past_count = 0
+    present_count = 0
+    finite_verb_count = 0
+    for token in doc:
+        if token.pos_ in ("VERB", "AUX"):
+            tense = token.morph.get("Tense")
+            if tense:
+                finite_verb_count += 1
+                if "Past" in tense:
+                    past_count += 1
+                elif "Pres" in tense:
+                    present_count += 1
+
+    past_ratio = past_count / finite_verb_count if finite_verb_count > 0 else 0.0
+    present_ratio = present_count / finite_verb_count if finite_verb_count > 0 else 0.0
+
+    profile["verb_tense_past_ratio"] = _metric_element(
+        "syntactic", past_ratio, ["spacy-extractable"],
+        weight=_clamp(past_ratio),
+    )
+    profile["verb_tense_present_ratio"] = _metric_element(
+        "syntactic", present_ratio, ["spacy-extractable"],
+        weight=_clamp(present_ratio),
+    )
+
+    # --- clause_depth_avg ---
+    def _tree_depth(token):
+        depth = 0
+        current = token
+        while current.head != current:
+            depth += 1
+            current = current.head
+        return depth
+
+    sentence_max_depths = []
+    for sent in doc.sents:
+        max_depth = max((_tree_depth(token) for token in sent), default=0)
+        sentence_max_depths.append(max_depth)
+
+    avg_depth = (sum(sentence_max_depths) / len(sentence_max_depths)
+                 if sentence_max_depths else 0.0)
+    profile["clause_depth_avg"] = _metric_element(
+        "syntactic", avg_depth, ["spacy-extractable"],
+        weight=_clamp(avg_depth / 10.0),
+    )
+
+    # --- named_entity_density ---
+    ner_count = len(doc.ents)
+    ner_density = ner_count / total_tokens if total_tokens > 0 else 0.0
+    profile["named_entity_density"] = _metric_element(
+        "lexical", ner_density, ["spacy-extractable"],
+        weight=_clamp(ner_density / 0.05),
+    )
+
+    # --- passive_voice_rate upgrade ---
+    # Override the regex-based passive_voice_rate with spaCy nsubjpass detection
+    n_sentences_spacy = max(len(list(doc.sents)), 1)
+    passive_sents = set()
+    for token in doc:
+        if token.dep_ in ("nsubjpass", "auxpass"):
+            passive_sents.add(token.sent.start)
+    passive_rate = len(passive_sents) / n_sentences_spacy
+    profile["passive_voice_rate"] = _directional_element(
+        "syntactic",
+        "less",
+        min(1.0, passive_rate / 0.3),
+        ["spacy-extractable"],
     )
