@@ -55,7 +55,7 @@ class TestParsingOverhead:
         actual_words = len(text.split())
         print(f"\n  WITH spaCy | {label} ({actual_words} actual): "
               f"{elapsed:.3f}s | {element_count} elements")
-        assert element_count == 57
+        assert element_count == 60
 
     @pytest.mark.parametrize("word_count,label", [
         (700, "~650 words"),
@@ -77,4 +77,4 @@ class TestParsingOverhead:
         actual_words = len(text.split())
         print(f"\n  WITHOUT spaCy | {label} ({actual_words} actual): "
               f"{elapsed:.3f}s | {element_count} elements")
-        assert element_count == 51
+        assert element_count == 54

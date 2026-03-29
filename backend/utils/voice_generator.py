@@ -4,16 +4,18 @@ Outputs profile_elements format: dict[str, dict] where each key is an element
 name and each value contains category, element_type, weight, tags, and
 optionally direction and target_value.
 
-57 elements across 6 categories (51 regex + 6 spaCy):
+60 elements across 6 categories (51 regex + 6 spaCy + 3 VADER sentiment):
 - Lexical (12 + 1 spaCy): vocabulary, word choice, function words, NER
 - Syntactic (10 + 5 spaCy): sentence structure, clause patterns, POS ratios
 - Structural (3): paragraph organization, quotation density
 - Idiosyncratic (13): punctuation, pronoun, figurative patterns
-- Voice/Tone (3): hedging, intensifiers, transitions
+- Voice/Tone (3 + 3 VADER): hedging, intensifiers, transitions, sentiment
 - Readability (6+4 metric): grade levels, reading ease, readability indices
 
 Tier 2 elements require spaCy + en_core_web_sm. If unavailable, gracefully
-falls back to 51 Tier 1 regex-only elements.
+falls back to 54 elements (51 regex + 3 VADER sentiment).
+Tier 3 elements require nltk + vader_lexicon. If unavailable, gracefully
+falls back to 57 elements (51 regex + 6 spaCy) or 51 regex-only.
 """
 import re
 import math
@@ -39,6 +41,43 @@ def _get_spacy_nlp():
         except (ImportError, OSError):
             _spacy_available = False
     return _nlp
+
+
+# ---------------------------------------------------------------------------
+# Tier 3 lazy loaders
+# ---------------------------------------------------------------------------
+
+_vader_analyzer = None
+_vader_available = None
+
+
+def _get_vader():
+    """Lazy-load VADER sentiment analyzer. Returns None if unavailable."""
+    global _vader_analyzer, _vader_available
+    if _vader_available is None:
+        try:
+            from nltk.sentiment.vader import SentimentIntensityAnalyzer
+            _vader_analyzer = SentimentIntensityAnalyzer()
+            _vader_available = True
+        except (ImportError, LookupError):
+            _vader_available = False
+    return _vader_analyzer
+
+
+_tfidf_available = None
+
+
+def _check_tfidf():
+    """Check if scikit-learn TF-IDF is available."""
+    global _tfidf_available
+    if _tfidf_available is None:
+        try:
+            from sklearn.feature_extraction.text import TfidfVectorizer  # noqa: F401
+            from sklearn.metrics.pairwise import cosine_similarity  # noqa: F401
+            _tfidf_available = True
+        except ImportError:
+            _tfidf_available = False
+    return _tfidf_available
 
 
 def generate_voice_profile(text: str) -> dict:
@@ -82,6 +121,9 @@ def generate_voice_profile(text: str) -> dict:
 
     # --- Tier 2: spaCy-based (optional) ---
     _add_spacy_elements(profile, text)
+
+    # --- Tier 3: Sentiment, Topic Coherence, Discourse (optional) ---
+    _add_tier3_elements(profile, text, sentences, paragraphs)
 
     return profile
 
@@ -902,3 +944,66 @@ def _add_spacy_elements(profile: dict, text: str) -> None:
         min(1.0, passive_rate / 0.3),
         ["spacy-extractable"],
     )
+
+
+# ---------------------------------------------------------------------------
+# Tier 3: Sentiment, Topic Coherence, Discourse-Adjacent (optional)
+# ---------------------------------------------------------------------------
+
+def _add_tier3_elements(profile: dict, text: str, sentences: list,
+                        paragraphs: list) -> None:
+    """Extract Tier 3 NLP elements. Each sub-category fails independently."""
+    _add_sentiment_elements(profile, sentences)
+    _add_topic_elements(profile, paragraphs)
+    _add_discourse_elements(profile, paragraphs)
+
+
+def _add_sentiment_elements(profile: dict, sentences: list) -> None:
+    """Extract sentiment elements using VADER. Skips if unavailable or <3 sentences."""
+    analyzer = _get_vader()
+    if analyzer is None:
+        return
+    if len(sentences) < 3:
+        return
+
+    scores = [analyzer.polarity_scores(s)["compound"] for s in sentences]
+
+    # sentiment_mean — average emotional tone
+    mean_score = sum(scores) / len(scores)
+    profile["sentiment_mean"] = _metric_element(
+        "voice_tone", mean_score, ["python-extractable", "tier3"],
+        weight=_clamp(abs(mean_score)),
+    )
+
+    # sentiment_variance — emotional range
+    variance = sum((s - mean_score) ** 2 for s in scores) / len(scores)
+    profile["sentiment_variance"] = _metric_element(
+        "voice_tone", variance, ["python-extractable", "tier3"],
+        weight=_clamp(variance / 0.5),
+    )
+
+    # sentiment_shift_rate — polarity flip frequency
+    threshold = 0.05
+    shifts = 0
+    for i in range(1, len(scores)):
+        prev_pos = scores[i - 1] > threshold
+        prev_neg = scores[i - 1] < -threshold
+        curr_pos = scores[i] > threshold
+        curr_neg = scores[i] < -threshold
+        if (prev_pos and curr_neg) or (prev_neg and curr_pos):
+            shifts += 1
+    shift_rate = shifts / (len(scores) - 1) if len(scores) > 1 else 0.0
+    profile["sentiment_shift_rate"] = _metric_element(
+        "voice_tone", shift_rate, ["python-extractable", "tier3"],
+        weight=_clamp(shift_rate),
+    )
+
+
+def _add_topic_elements(profile: dict, paragraphs: list) -> None:
+    """Extract topic coherence elements. Placeholder for next task."""
+    pass
+
+
+def _add_discourse_elements(profile: dict, paragraphs: list) -> None:
+    """Extract discourse-adjacent elements. Placeholder for next task."""
+    pass
