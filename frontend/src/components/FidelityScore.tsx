@@ -29,8 +29,19 @@ export default function FidelityScore({ result, loading }: Props) {
 
   if (loading) return <div className="terminal-output" style={{ padding: '8px' }}>Scoring...</div>
 
-  const quant = result.quantitative
-  const qual = result.qualitative
+  // Handle both nested (mode=both) and flat (mode=quantitative) response shapes
+  const raw = result as any
+  const quant = result.quantitative ?? (raw.aggregate_similarity != null ? {
+    aggregate_similarity: raw.aggregate_similarity,
+    per_element: raw.per_element ?? [],
+    matched: raw.elements_matched ?? raw.matched ?? 0,
+    missing: raw.elements_missing ?? raw.missing ?? 0,
+  } : null)
+  const qual = result.qualitative ?? (raw.matches ? {
+    matches: raw.matches,
+    gaps: raw.gaps ?? [],
+    overall_assessment: raw.overall_assessment ?? '',
+  } : null)
   const aggPct = quant ? Math.round(quant.aggregate_similarity * 100) : null
 
   return (
