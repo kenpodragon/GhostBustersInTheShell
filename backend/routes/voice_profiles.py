@@ -419,6 +419,28 @@ def get_style_guide():
         return jsonify({"error": str(e)}), 500
 
 
+@voice_profiles_bp.route("/voice-profiles/<int:profile_id>/samples", methods=["GET"])
+def get_samples(profile_id):
+    """Get sample texts from a profile's voice corpus documents."""
+    limit = request.args.get("limit", 10, type=int)
+    try:
+        from db import query_all
+        docs = query_all(
+            """SELECT id AS document_id, filename,
+                      LEFT(original_text, 5000) AS text_excerpt,
+                      length(original_text) AS word_count,
+                      created_at
+               FROM documents
+               WHERE voice_profile_id = %s AND purpose = 'voice_corpus'
+               ORDER BY created_at DESC
+               LIMIT %s""",
+            (profile_id, limit),
+        )
+        return jsonify(docs)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @voice_profiles_bp.route("/style-guide/full", methods=["GET"])
 def get_style_guide_full():
     """Get voice profile + rules config combined."""
