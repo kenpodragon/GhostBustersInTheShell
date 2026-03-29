@@ -1,13 +1,22 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import type { VoiceProfile, ProfileElement, ProfilePrompt, ProfileSnapshot } from '../types'
+import type { VoiceProfile, ProfileElement, ProfilePrompt, ProfileSnapshot, FidelityScoreResult } from '../types'
 import { voiceProfilesApi } from '../services/voiceProfilesApi'
+import { scoringApi } from '../services/scoringApi'
+import FidelityScore from '../components/FidelityScore'
+import CorpusManager from '../components/CorpusManager'
+import ConsolidationView from '../components/ConsolidationView'
+import ReparseView from '../components/ReparseView'
 
-type TabId = 'elements' | 'prompts' | 'finetune' | 'freeze'
+type TabId = 'elements' | 'prompts' | 'finetune' | 'freeze' | 'testvox' | 'corpus' | 'consolidate' | 'reparse'
 const TABS: { id: TabId; label: string }[] = [
   { id: 'elements', label: 'Style Elements' },
   { id: 'prompts', label: 'Prompts' },
   { id: 'finetune', label: 'Fine-Tune' },
   { id: 'freeze', label: 'Freeze Voice' },
+  { id: 'testvox', label: 'Test Voice' },
+  { id: 'corpus', label: 'Corpus' },
+  { id: 'consolidate', label: 'AI Observations' },
+  { id: 'reparse', label: 'Re-parse' },
 ]
 
 const BASELINE_NAME = 'Baseline'
@@ -818,6 +827,48 @@ function CreateProfileModal({ onClose, onCreated }: { onClose: () => void; onCre
   )
 }
 
+// ─── Test Voice Tab ──────────────────────────────────────────────────────────
+function TestVoiceTab({ profileId }: { profileId: number }) {
+  const [text, setText] = useState('')
+  const [mode, setMode] = useState<'quantitative' | 'qualitative' | 'both'>('quantitative')
+  const [result, setResult] = useState<FidelityScoreResult | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  const handleScore = async () => {
+    if (!text.trim()) return
+    setLoading(true); setResult(null)
+    try {
+      const data = await scoringApi.scoreFidelity(text, profileId, mode)
+      setResult(data)
+    } catch { /* handled by component */ }
+    finally { setLoading(false) }
+  }
+
+  return (
+    <div>
+      <textarea
+        className="terminal-input"
+        value={text}
+        onChange={e => setText(e.target.value)}
+        placeholder="Paste text to score against this voice profile..."
+        rows={6}
+        style={{ width: '100%', marginBottom: '8px' }}
+      />
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
+        {(['quantitative', 'qualitative', 'both'] as const).map(m => (
+          <label key={m} style={{ fontSize: '12px', cursor: 'pointer' }}>
+            <input type="radio" name="score-mode" value={m} checked={mode === m} onChange={() => setMode(m)} /> {m}
+          </label>
+        ))}
+        <button className="vp-btn" onClick={handleScore} disabled={loading || !text.trim()}>
+          {loading ? 'Scoring...' : 'Score'}
+        </button>
+      </div>
+      {result && <FidelityScore result={result} />}
+    </div>
+  )
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function VoiceProfilesPage() {
   const [profiles, setProfiles] = useState<VoiceProfile[]>([])
@@ -1074,6 +1125,10 @@ export default function VoiceProfilesPage() {
               {activeTab === 'prompts' && <PromptsTab key={selectedProfile.id} profileId={selectedProfile.id} />}
               {activeTab === 'finetune' && <FineTuneTab key={selectedProfile.id} profile={selectedProfile} />}
               {activeTab === 'freeze' && <FreezeVoiceTab key={selectedProfile.id} profileId={selectedProfile.id} />}
+              {activeTab === 'testvox' && <TestVoiceTab key={selectedProfile.id} profileId={selectedProfile.id} />}
+              {activeTab === 'corpus' && <CorpusManager key={selectedProfile.id} profileId={selectedProfile.id} />}
+              {activeTab === 'consolidate' && <ConsolidationView key={selectedProfile.id} profileId={selectedProfile.id} observationCount={0} />}
+              {activeTab === 'reparse' && selectedProfile && <ReparseView key={selectedProfile.id} profileId={selectedProfile.id} profileName={selectedProfile.name} />}
             </div>
           </>
         )}

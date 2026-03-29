@@ -2,8 +2,10 @@ import { useState, useRef, useEffect } from 'react'
 import { useDocument } from '../context/DocumentContext'
 import ScoreBadge from './ScoreBadge'
 import ScoreGauge from './ScoreGauge'
-import type { VoiceProfile, Pattern, SentenceResult } from '../types'
+import FidelityScore from './FidelityScore'
+import type { VoiceProfile, Pattern, SentenceResult, FidelityScoreResult } from '../types'
 import { voiceProfilesApi } from '../services/voiceProfilesApi'
+import { scoringApi } from '../services/scoringApi'
 
 interface AnalysisResult {
   overall_score: number
@@ -27,6 +29,8 @@ export default function InputView() {
   const [wasGenerated, setWasGenerated] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [mode, setMode] = useState<Mode>('scan')
+  const [fidelityResult, setFidelityResult] = useState<FidelityScoreResult | null>(null)
+  const [scoringFidelity, setScoringFidelity] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   const baselines = profiles.filter(p => p.profile_type === 'baseline')
@@ -423,6 +427,32 @@ export default function InputView() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Fidelity Scoring — available after rewrite/generate */}
+      {analysis && !analyzing && selectedProfileId && (wasGenerated || rewriting === false) && (
+        <div className="card" style={{ marginTop: '1rem' }}>
+          <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>Voice Fidelity</span>
+            <button
+              className="btn btn-small"
+              onClick={async () => {
+                if (!text.trim() || !selectedProfileId) return
+                setScoringFidelity(true)
+                setFidelityResult(null)
+                try {
+                  const data = await scoringApi.scoreFidelity(text, selectedProfileId, 'quantitative')
+                  setFidelityResult(data)
+                } catch { /* ignore */ }
+                finally { setScoringFidelity(false) }
+              }}
+              disabled={scoringFidelity || !text.trim()}
+            >
+              {scoringFidelity ? 'Scoring...' : '[ Score Fidelity ]'}
+            </button>
+          </div>
+          {fidelityResult && <FidelityScore result={fidelityResult} />}
         </div>
       )}
 
