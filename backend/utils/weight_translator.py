@@ -71,6 +71,13 @@ _ELEMENT_LABELS = {
     "hedging_language_rate": "hedging language (perhaps/maybe/somewhat)",
     "intensifier_rate": "intensifiers (very/really/extremely)",
     "transition_word_rate": "transition words (however/therefore/moreover)",
+    # Phase B.2 — Tier 2 spaCy elements
+    "adjective_to_noun_ratio": "adjective-to-noun ratio",
+    "adverb_density": "adverb density",
+    "verb_tense_past_ratio": "past tense verb ratio",
+    "verb_tense_present_ratio": "present tense verb ratio",
+    "clause_depth_avg": "average clause depth",
+    "named_entity_density": "named entity density (people/places/orgs)",
 }
 
 
