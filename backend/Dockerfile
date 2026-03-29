@@ -17,6 +17,7 @@ RUN npm install -g @anthropic-ai/claude-code || echo "Claude CLI install skipped
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir setuptools && pip install --no-cache-dir -r requirements.txt
+RUN python -m spacy download en_core_web_sm
 
 COPY . .
 

@@ -14,6 +14,7 @@ textstat==0.7.4
 scikit-learn==1.6.1
 numpy==2.2.3
 scipy==1.15.2
+spacy==3.8.13
 # AI providers (Claude CLI installed via npm in Dockerfile)
 # Testing
 pytest==8.3.4
