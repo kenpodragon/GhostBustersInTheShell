@@ -78,6 +78,17 @@ _ELEMENT_LABELS = {
     "verb_tense_present_ratio": "present tense verb ratio",
     "clause_depth_avg": "average clause depth",
     "named_entity_density": "named entity density (people/places/orgs)",
+    # Tier 3: sentiment
+    "sentiment_mean": "average emotional tone",
+    "sentiment_variance": "emotional range/variance",
+    "sentiment_shift_rate": "sentiment polarity shift frequency",
+    # Tier 3: topic coherence
+    "topic_coherence_score": "topic coherence across paragraphs",
+    "topic_drift_rate": "topic drift between paragraphs",
+    "vocabulary_concentration": "vocabulary concentration (top-term dominance)",
+    # Tier 3: discourse-adjacent (spaCy)
+    "paragraph_opening_pos_entropy": "variety in how paragraphs begin grammatically",
+    "narrative_vs_analytical_ratio": "preference for storytelling vs analytical writing",
 }
 
 
