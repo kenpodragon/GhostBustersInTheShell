@@ -581,6 +581,56 @@ class VoiceProfileService:
         ))
         return cur.fetchone()[0]
 
+    # -------------------------------------------------------------------------
+    # Task 8: Reparse helpers
+    # -------------------------------------------------------------------------
+
+    def clone_profile(self, profile_id: int, new_name: str) -> dict:
+        """Clone a profile with fresh elements (parse_count=0). Returns the new profile summary."""
+        original = self.get_profile_summary(profile_id)
+        if not original:
+            raise ValueError(f"Profile {profile_id} not found")
+        new_profile = self.create_profile(
+            name=new_name,
+            description=original.get("description", ""),
+            profile_type=original.get("profile_type", "baseline"),
+        )
+        return new_profile
+
+    def accept_reparse(self, old_profile_id: int, new_profile_id: int):
+        """Accept a reparsed profile: make new active, archive old, transfer corpus doc links."""
+        with self.conn.cursor() as cur:
+            cur.execute(
+                "UPDATE documents SET voice_profile_id = %s WHERE voice_profile_id = %s AND purpose = 'voice_corpus'",
+                (new_profile_id, old_profile_id),
+            )
+            cur.execute(
+                "UPDATE ai_parse_observations SET profile_id = %s WHERE profile_id = %s",
+                (new_profile_id, old_profile_id),
+            )
+            cur.execute(
+                "UPDATE voice_profiles SET is_active = FALSE WHERE id = %s",
+                (old_profile_id,),
+            )
+            cur.execute(
+                "UPDATE voice_profiles SET is_active = TRUE WHERE id = %s",
+                (new_profile_id,),
+            )
+        self.conn.commit()
+
+    def reject_reparse(self, new_profile_id: int):
+        """Reject a reparsed profile: delete the new profile and all its data."""
+        with self.conn.cursor() as cur:
+            cur.execute("DELETE FROM ai_parse_observations WHERE profile_id = %s", (new_profile_id,))
+            cur.execute("DELETE FROM profile_prompts WHERE voice_profile_id = %s", (new_profile_id,))
+            cur.execute("DELETE FROM profile_elements WHERE voice_profile_id = %s", (new_profile_id,))
+            cur.execute("DELETE FROM voice_profiles WHERE id = %s", (new_profile_id,))
+        self.conn.commit()
+
+    # -------------------------------------------------------------------------
+    # Private helpers
+    # -------------------------------------------------------------------------
+
     @staticmethod
     def _row_to_dict(cols: list, row: tuple) -> dict:
         result = {}

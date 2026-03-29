@@ -562,3 +562,132 @@ def get_style_guide_full():
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+# ---------------------------------------------------------------------------
+# Reparse & Consolidate
+# ---------------------------------------------------------------------------
+
+@voice_profiles_bp.route("/voice-profiles/<int:profile_id>/reparse", methods=["POST"])
+def reparse_corpus(profile_id):
+    """Re-parse all corpus documents into a new profile version."""
+    data = request.get_json() or {}
+    use_ai = data.get("use_ai")
+    try:
+        from db import get_conn, query_all, query_one, execute
+        from utils.voice_profile_service import VoiceProfileService
+        from utils.voice_generator import generate_voice_profile
+        import datetime
+
+        with get_conn() as conn:
+            svc = VoiceProfileService(conn)
+            profile = svc.get_profile_summary(profile_id)
+            if not profile:
+                return jsonify({"error": "Profile not found"}), 404
+            snapshot_name = f"Pre-reparse backup {datetime.date.today().isoformat()}"
+            svc.save_snapshot(profile_id, snapshot_name)
+            new_name = f"{profile['name']} (reparsed {datetime.date.today().isoformat()})"
+            new_profile = svc.clone_profile(profile_id, new_name)
+            new_id = new_profile["id"]
+
+        corpus_docs = query_all(
+            "SELECT id, original_text, filename FROM documents WHERE voice_profile_id = %s AND purpose = 'voice_corpus' ORDER BY created_at",
+            (profile_id,),
+        )
+
+        parsed_count = 0
+        errors = []
+        for doc in corpus_docs:
+            try:
+                parse_result = generate_voice_profile(doc["original_text"])
+                with get_conn() as conn:
+                    svc = VoiceProfileService(conn)
+                    svc.apply_parse_results(new_id, parse_result)
+                parsed_count += 1
+
+                from ai_providers.router import should_use_ai
+                if should_use_ai(use_ai):
+                    from utils.ai_voice_extractor import extract_voice_with_ai
+                    import json as _json
+                    ai_result = extract_voice_with_ai(doc["original_text"], parse_result)
+                    if ai_result["status"] == "success":
+                        execute(
+                            """INSERT INTO ai_parse_observations (profile_id, document_id, qualitative_prompts, metric_descriptions, discovered_patterns, raw_ai_response)
+                               VALUES (%s, %s, %s::jsonb, %s::jsonb, %s::jsonb, %s::jsonb)""",
+                            (new_id, doc["id"],
+                             _json.dumps(ai_result["qualitative_prompts"]),
+                             _json.dumps(ai_result["metric_descriptions"]),
+                             _json.dumps(ai_result["discovered_patterns"]),
+                             _json.dumps(ai_result["raw_ai_response"])),
+                        )
+            except Exception as e:
+                errors.append({"document_id": doc["id"], "filename": doc["filename"], "error": str(e)})
+
+        obs_count = query_one("SELECT COUNT(*) AS cnt FROM ai_parse_observations WHERE profile_id = %s", (new_id,))
+        if obs_count and obs_count["cnt"] > 0:
+            from utils.ai_consolidator import consolidate_observations
+            consolidate_observations(new_id)
+
+        with get_conn() as conn:
+            svc = VoiceProfileService(conn)
+            old_elements = svc.get_elements(profile_id)
+            new_elements = svc.get_elements(new_id)
+
+        return jsonify({
+            "old_profile_id": profile_id,
+            "new_profile_id": new_id,
+            "parsed_count": parsed_count,
+            "total_documents": len(corpus_docs),
+            "errors": errors,
+            "old_elements": old_elements,
+            "new_elements": new_elements,
+            "snapshot_name": snapshot_name,
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@voice_profiles_bp.route("/voice-profiles/<int:profile_id>/reparse/accept", methods=["POST"])
+def accept_reparse(profile_id):
+    """Accept a reparsed profile, making it the active version."""
+    data = request.get_json()
+    if not data or "new_profile_id" not in data:
+        return jsonify({"error": "new_profile_id is required"}), 400
+    try:
+        from db import get_conn
+        from utils.voice_profile_service import VoiceProfileService
+        with get_conn() as conn:
+            svc = VoiceProfileService(conn)
+            svc.accept_reparse(profile_id, data["new_profile_id"])
+            new_profile = svc.get_profile(data["new_profile_id"])
+        return jsonify(new_profile)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@voice_profiles_bp.route("/voice-profiles/<int:profile_id>/reparse/reject", methods=["POST"])
+def reject_reparse(profile_id):
+    """Reject a reparsed profile, deleting the new version."""
+    data = request.get_json()
+    if not data or "new_profile_id" not in data:
+        return jsonify({"error": "new_profile_id is required"}), 400
+    try:
+        from db import get_conn
+        from utils.voice_profile_service import VoiceProfileService
+        with get_conn() as conn:
+            svc = VoiceProfileService(conn)
+            svc.reject_reparse(data["new_profile_id"])
+        return jsonify({"status": "rejected", "deleted_profile_id": data["new_profile_id"]})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@voice_profiles_bp.route("/voice-profiles/<int:profile_id>/consolidate", methods=["POST"])
+def consolidate(profile_id):
+    """Consolidate AI observations for a profile."""
+    try:
+        from utils.ai_consolidator import consolidate_observations
+        result = consolidate_observations(profile_id)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
