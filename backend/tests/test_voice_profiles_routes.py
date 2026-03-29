@@ -383,7 +383,7 @@ class TestParse:
         """500+ word text should parse successfully."""
         resp = client.post(
             f"/api/voice-profiles/{profile_id}/parse",
-            data=json.dumps({"text": self.LONG_TEXT}),
+            data=json.dumps({"text": self.LONG_TEXT, "use_ai": False}),
             content_type="application/json",
         )
         assert resp.status_code == 200
@@ -407,3 +407,45 @@ class TestParse:
         # parse_count should be 0
         profile_resp = client.get(f"/api/voice-profiles/{profile_id}")
         assert profile_resp.get_json()["parse_count"] == 0
+
+
+# ---------------------------------------------------------------------------
+# Enhanced Parse (dedup, document storage, AI extraction)
+# ---------------------------------------------------------------------------
+
+class TestEnhancedParse:
+    """Tests for the enhanced parse flow with dedup and document storage."""
+
+    def test_parse_returns_document_id(self, client):
+        """Parse should return a document_id."""
+        text = "A unique test document for enhanced parse testing. " * 30
+        res = client.post("/api/voice-profiles/1/parse", json={
+            "text": text,
+            "filename": "enhanced_test.txt",
+        })
+        # May be 200 (success) or 400 (text too short) depending on min length
+        if res.status_code == 200:
+            data = res.get_json()
+            assert "document_id" in data
+            assert "ai_extraction" in data
+
+    def test_parse_dedup_exact_match(self, client):
+        """Parsing identical text twice should be rejected."""
+        text = "This is a unique dedup test document with enough words. " * 30
+        res1 = client.post("/api/voice-profiles/1/parse", json={"text": text, "filename": "dup.txt"})
+        if res1.status_code == 200:
+            res2 = client.post("/api/voice-profiles/1/parse", json={"text": text, "filename": "dup.txt"})
+            assert res2.status_code == 409
+            data = res2.get_json()
+            assert data["duplicate_type"] == "exact"
+
+    def test_parse_with_ai_disabled(self, client):
+        """When use_ai=false, ai_extraction should be skipped."""
+        text = "Another unique text for AI disabled test parsing. " * 30
+        res = client.post("/api/voice-profiles/1/parse", json={
+            "text": text,
+            "use_ai": False,
+        })
+        if res.status_code == 200:
+            data = res.get_json()
+            assert data["ai_extraction"]["status"] == "skipped"

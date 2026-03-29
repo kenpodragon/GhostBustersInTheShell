@@ -186,18 +186,68 @@ def update_prompts(profile_id):
 
 @voice_profiles_bp.route("/voice-profiles/<int:profile_id>/parse", methods=["POST"])
 def parse_text(profile_id):
-    """Parse text into voice profile elements."""
+    """Parse text into voice profile elements with optional AI extraction.
+
+    Creates a document row (purpose='voice_corpus'), runs dedup check,
+    parses with Python, optionally runs AI extraction, auto-consolidates.
+    """
     data = request.get_json()
     if not data or "text" not in data:
         return jsonify({"error": "text is required"}), 400
+
+    text = data["text"]
+    filename = data.get("filename", "Untitled")
+    use_ai = data.get("use_ai")
+    force_near_duplicate = data.get("force_near_duplicate", False)
+
     try:
-        from db import get_conn
+        from db import get_conn, execute, query_one
         from utils.voice_profile_service import VoiceProfileService
         from utils.voice_generator import generate_voice_profile
+        from utils.document_dedup import compute_content_hash, check_exact_duplicate, check_near_duplicate, count_same_filename
+
+        # --- Dedup check ---
+        content_hash = compute_content_hash(text)
+
+        exact = check_exact_duplicate(content_hash, profile_id)
+        if exact:
+            return jsonify({
+                "error": f"This exact text was already parsed on {exact['created_at']} as '{exact['filename']}'.",
+                "duplicate_type": "exact",
+                "existing_document": {"id": exact["id"], "filename": exact["filename"], "created_at": str(exact["created_at"])},
+            }), 409
+
+        if not force_near_duplicate:
+            near = check_near_duplicate(text, profile_id)
+            if near:
+                return jsonify({
+                    "error": f"This appears very similar to '{near['filename']}' ({near['created_at']}). Set force_near_duplicate=true to parse anyway.",
+                    "duplicate_type": "near",
+                    "existing_document": {"id": near["id"], "filename": near["filename"], "created_at": str(near["created_at"])},
+                    "similarity": near.get("similarity"),
+                }), 409
+
+        # --- Check same filename ---
+        same_name_count = count_same_filename(filename, profile_id)
+        same_name_warning = None
+        if same_name_count > 0:
+            same_name_warning = f"You have {same_name_count} other document(s) named '{filename}' in this corpus."
+
+        # --- Create document row ---
+        doc_row = query_one(
+            """INSERT INTO documents (filename, file_type, original_text, voice_profile_id, purpose, content_hash)
+               VALUES (%s, %s, %s, %s, %s, %s)
+               RETURNING id, filename, created_at""",
+            (filename, "text", text, profile_id, "voice_corpus", content_hash),
+        )
+        document_id = doc_row["id"]
+
+        # --- Python parsing ---
         try:
-            parse_result = generate_voice_profile(data["text"])
+            parse_result = generate_voice_profile(text)
         except ValueError as ve:
             return jsonify({"error": str(ve)}), 400
+
         with get_conn() as conn:
             svc = VoiceProfileService(conn)
             profile = svc.get_profile_summary(profile_id)
@@ -206,11 +256,47 @@ def parse_text(profile_id):
             svc.apply_parse_results(profile_id, parse_result)
             elements = svc.get_elements(profile_id)
             updated = svc.get_profile_summary(profile_id)
-        return jsonify({
+
+        # --- AI extraction (optional) ---
+        ai_extraction = {"status": "skipped"}
+        from ai_providers.router import should_use_ai
+        if should_use_ai(use_ai):
+            from utils.ai_voice_extractor import extract_voice_with_ai
+            ai_extraction = extract_voice_with_ai(text, parse_result)
+
+            if ai_extraction["status"] == "success":
+                import json as _json
+                execute(
+                    """INSERT INTO ai_parse_observations (profile_id, document_id, qualitative_prompts, metric_descriptions, discovered_patterns, raw_ai_response)
+                       VALUES (%s, %s, %s::jsonb, %s::jsonb, %s::jsonb, %s::jsonb)""",
+                    (profile_id, document_id,
+                     _json.dumps(ai_extraction["qualitative_prompts"]),
+                     _json.dumps(ai_extraction["metric_descriptions"]),
+                     _json.dumps(ai_extraction["discovered_patterns"]),
+                     _json.dumps(ai_extraction["raw_ai_response"])),
+                )
+
+                # Auto-consolidate for single doc parse
+                from utils.ai_consolidator import consolidate_observations
+                consolidate_observations(profile_id)
+
+        response = {
             "elements": elements,
             "findings": list(parse_result.keys()),
             "parse_count": updated.get("parse_count", 0),
-        })
+            "document_id": document_id,
+            "ai_extraction": {
+                "status": ai_extraction["status"],
+                "qualitative_prompts": ai_extraction.get("qualitative_prompts", []),
+                "metric_descriptions": ai_extraction.get("metric_descriptions", []),
+                "discovered_patterns": ai_extraction.get("discovered_patterns", []),
+            },
+        }
+        if same_name_warning:
+            response["same_name_warning"] = same_name_warning
+
+        return jsonify(response)
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
