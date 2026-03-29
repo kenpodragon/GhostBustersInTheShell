@@ -97,11 +97,11 @@ class TestSpacyLazyLoading:
             result = vg.generate_voice_profile(sample_text)
             assert "adjective_to_noun_ratio" not in result
             assert "contraction_rate" in result
-            assert len(result) == 54
+            assert len(result) == 57
 
     def test_element_count_with_spacy(self, sample_text):
         result = generate_voice_profile(sample_text)
-        assert len(result) == 60, f"Expected 60 elements, got {len(result)}: {sorted(result.keys())}"
+        assert len(result) == 63, f"Expected 63 elements, got {len(result)}: {sorted(result.keys())}"
 
 
 class TestAdjectiveToNounRatio:
