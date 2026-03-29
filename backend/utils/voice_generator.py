@@ -81,7 +81,7 @@ def generate_voice_profile(text: str) -> dict:
     _add_readability(profile, text, alpha_words, sentences)
 
     # --- Tier 2: spaCy-based (optional) ---
-    _add_spacy_elements(profile, text, sentences)
+    _add_spacy_elements(profile, text)
 
     return profile
 
@@ -798,7 +798,7 @@ def _add_readability(profile: dict, text: str, alpha_words: list,
 # Tier 2: spaCy-based elements (optional)
 # ---------------------------------------------------------------------------
 
-def _add_spacy_elements(profile: dict, text: str, sentences: list) -> None:
+def _add_spacy_elements(profile: dict, text: str) -> None:
     """Extract POS/dependency/NER elements using spaCy. Skips if unavailable."""
     nlp = _get_spacy_nlp()
     if nlp is None:

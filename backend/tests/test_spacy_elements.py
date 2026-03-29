@@ -92,18 +92,12 @@ class TestSpacyLazyLoading:
 
     def test_fallback_without_spacy(self, sample_text):
         import utils.voice_generator as vg
-        original_available = vg._spacy_available
-        original_nlp = vg._nlp
-        try:
-            vg._spacy_available = False
-            vg._nlp = None
+        with patch.object(vg, "_spacy_available", False), \
+             patch.object(vg, "_nlp", None):
             result = vg.generate_voice_profile(sample_text)
             assert "adjective_to_noun_ratio" not in result
             assert "contraction_rate" in result
             assert len(result) == 51
-        finally:
-            vg._spacy_available = original_available
-            vg._nlp = original_nlp
 
     def test_element_count_with_spacy(self, sample_text):
         result = generate_voice_profile(sample_text)
@@ -199,6 +193,10 @@ class TestPassiveVoiceUpgrade:
     def test_passive_voice_still_exists(self, sample_text):
         result = generate_voice_profile(sample_text)
         assert "passive_voice_rate" in result
+
+    def test_passive_voice_uses_spacy_tag_when_available(self, sample_text):
+        result = generate_voice_profile(sample_text)
+        assert "spacy-extractable" in result["passive_voice_rate"]["tags"]
 
     def test_passive_heavy_text(self):
         text = " ".join([
