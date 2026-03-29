@@ -1022,7 +1022,7 @@ def _add_topic_elements(profile: dict, paragraphs: list) -> None:
     for i in range(1, tfidf_matrix.shape[0]):
         sim = cosine_similarity(tfidf_matrix[i - 1:i], tfidf_matrix[i:i + 1])[0][0]
         drift_distances.append(1.0 - sim)
-    drift_rate = sum(drift_distances) / len(drift_distances) if drift_distances else 0.0
+    drift_rate = float(sum(drift_distances) / len(drift_distances)) if drift_distances else 0.0
     profile["topic_drift_rate"] = _metric_element(
         "structural", drift_rate, ["python-extractable", "tier3"],
         weight=_clamp(drift_rate),
@@ -1035,7 +1035,7 @@ def _add_topic_elements(profile: dict, paragraphs: list) -> None:
     for i in range(tfidf_matrix.shape[0]):
         sim = cosine_similarity(tfidf_matrix[i:i + 1], doc_vector)[0][0]
         coherence_scores.append(sim)
-    coherence = sum(coherence_scores) / len(coherence_scores) if coherence_scores else 0.0
+    coherence = float(sum(coherence_scores) / len(coherence_scores)) if coherence_scores else 0.0
     profile["topic_coherence_score"] = _metric_element(
         "structural", coherence, ["python-extractable", "tier3"],
         weight=_clamp(coherence),
@@ -1047,7 +1047,7 @@ def _add_topic_elements(profile: dict, paragraphs: list) -> None:
     top_20_count = max(1, len(sorted_weights) // 5)
     top_weight = sum(sorted_weights[:top_20_count])
     total_weight = sum(sorted_weights)
-    concentration = top_weight / total_weight if total_weight > 0 else 0.0
+    concentration = float(top_weight / total_weight) if total_weight > 0 else 0.0
     profile["vocabulary_concentration"] = _metric_element(
         "lexical", concentration, ["python-extractable", "tier3"],
         weight=_clamp(concentration),
