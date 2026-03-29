@@ -1055,5 +1055,69 @@ def _add_topic_elements(profile: dict, paragraphs: list) -> None:
 
 
 def _add_discourse_elements(profile: dict, paragraphs: list) -> None:
-    """Extract discourse-adjacent elements. Placeholder for next task."""
-    pass
+    """Extract discourse-adjacent elements using spaCy. Skips if unavailable or <3 paragraphs."""
+    nlp = _get_spacy_nlp()
+    if nlp is None:
+        return
+    if len(paragraphs) < 3:
+        return
+
+    import math
+
+    # --- paragraph_opening_pos_entropy ---
+    opening_pos_tags = []
+    for para in paragraphs:
+        doc = nlp(para[:200])
+        for token in doc:
+            if token.is_alpha:
+                opening_pos_tags.append(token.pos_)
+                break
+
+    if opening_pos_tags:
+        tag_counts = {}
+        for tag in opening_pos_tags:
+            tag_counts[tag] = tag_counts.get(tag, 0) + 1
+        total = len(opening_pos_tags)
+        entropy = 0.0
+        for count in tag_counts.values():
+            p = count / total
+            if p > 0:
+                entropy -= p * math.log2(p)
+        profile["paragraph_opening_pos_entropy"] = _metric_element(
+            "structural", entropy, ["python-extractable", "tier3"],
+            weight=_clamp(entropy / 3.5),
+        )
+
+    # --- narrative_vs_analytical_ratio ---
+    full_text = "\n\n".join(paragraphs)
+    analysis_text = full_text[:100_000] if len(full_text) > 100_000 else full_text
+    doc = nlp(analysis_text)
+
+    narrative_count = 0
+    analytical_count = 0
+
+    for sent in doc.sents:
+        has_past = False
+        has_present = False
+        has_entity = len([e for e in sent.ents]) > 0
+
+        for token in sent:
+            if token.pos_ in ("VERB", "AUX") and token.dep_ in ("ROOT", "aux"):
+                tense = token.morph.get("Tense")
+                if tense:
+                    if "Past" in tense:
+                        has_past = True
+                    elif "Pres" in tense:
+                        has_present = True
+
+        if has_past and has_entity:
+            narrative_count += 1
+        elif has_present and not has_entity:
+            analytical_count += 1
+
+    total_classified = narrative_count + analytical_count
+    ratio = narrative_count / total_classified if total_classified > 0 else 0.5
+    profile["narrative_vs_analytical_ratio"] = _metric_element(
+        "voice_tone", ratio, ["python-extractable", "tier3"],
+        weight=_clamp(abs(ratio - 0.5) * 2),
+    )

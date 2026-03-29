@@ -394,3 +394,185 @@ class TestTopicFallback:
         text = para + "\n\n" + para
         profile = generate_voice_profile(text)
         assert "topic_drift_rate" not in profile
+
+
+# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Discourse-adjacent element fixtures
+# ---------------------------------------------------------------------------
+
+
+# ---------------------------------------------------------------------------
+# spaCy discourse-adjacent elements
+# ---------------------------------------------------------------------------
+
+@pytest.fixture
+def narrative_text():
+    """Text in narrative/storytelling mode — past tense, named entities, events. 500+ words."""
+    return (
+        "Sarah walked into the office that Monday morning with a feeling she "
+        "couldn't quite place. The fluorescent lights buzzed overhead as she "
+        "passed the empty reception desk. Tom had called in sick — third time "
+        "this month. She dropped her bag on her chair and noticed the sticky "
+        "note on her monitor. It was from Michael, her manager.\n\n"
+        "The meeting with Acme Corp had been moved to Tuesday. Sarah sighed "
+        "and pulled up her calendar. The presentation wasn't ready — half the "
+        "slides still had placeholder data. She'd spent all weekend at the "
+        "Henderson project site, troubleshooting the installation that went "
+        "sideways on Friday afternoon. The client had complained loudly and "
+        "Michael had forwarded every email in the chain without comment.\n\n"
+        "Around eleven, Marcus from engineering stopped by her desk. He'd "
+        "found the bug that crashed the Tokyo deployment last Thursday. It "
+        "was a timezone conversion error — the server in Singapore had been "
+        "running on UTC while the client expected JST. A simple fix, but it "
+        "had taken Marcus three days to trace through the logs. He looked "
+        "exhausted. Sarah told him to go home early and he actually listened.\n\n"
+        "Sarah grabbed coffee from the break room and ran into Lisa Chen, "
+        "who'd just returned from the Portland conference. Lisa was excited — "
+        "she'd met the CTO of DataFlow Systems and they were interested in "
+        "a partnership. She handed Sarah a business card and a bag of "
+        "artisanal chocolate from Powell's. Sarah pocketed both and promised "
+        "to loop in the business development team before end of week.\n\n"
+        "By afternoon, the office had filled up. Dave and Jenny were arguing "
+        "about the database migration again. Carlos had finished the security "
+        "audit and was writing up his findings. The new intern, Alex, was "
+        "shadowing Patricia in QA and looked thoroughly overwhelmed. Sarah "
+        "stopped by to reassure him that everyone felt that way their first "
+        "month. He smiled weakly and went back to his notes.\n\n"
+        "Sarah left the office around seven that evening. The parking garage "
+        "was nearly empty — just her Honda and the janitor's van. She sat in "
+        "her car for a moment, thinking about the Acme presentation. She'd "
+        "figure it out tomorrow. She always did. The drive home took forty "
+        "minutes through the rain, and she fell asleep on the couch watching "
+        "an old episode of a show she'd already seen three times.\n\n"
+        "The next morning brought fresh chaos. A client in Denver had found a "
+        "critical bug in the billing module. Sarah spent two hours on a call "
+        "with their CTO, walking through the issue step by step. By lunch, "
+        "Marcus had pushed a hotfix and the Denver team confirmed it worked. "
+        "Small victories kept the week moving forward, one crisis at a time.\n\n"
+        "Wednesday brought a surprise visit from the regional VP, Janet Torres. "
+        "She toured the floor, shook hands with the engineers, and pulled "
+        "Sarah aside to ask about the Acme account. Sarah gave her a five "
+        "minute summary and Janet nodded slowly, then said the board had "
+        "flagged the account as at-risk. Sarah promised a full recovery plan "
+        "by Friday. She had no idea yet what that plan would look like."
+    )
+
+
+@pytest.fixture
+def analytical_text():
+    """Text in analytical/argumentative mode — present tense, abstract concepts. 500+ words."""
+    return (
+        "Software architecture fundamentally determines system maintainability. "
+        "The principle of separation of concerns dictates that each component "
+        "handles exactly one responsibility. When boundaries blur, complexity "
+        "increases exponentially. This observation holds across all scales of "
+        "software development, from individual functions to distributed systems.\n\n"
+        "Coupling and cohesion represent the two most important metrics for "
+        "evaluating code quality. High cohesion means related functionality "
+        "lives together. Low coupling means components interact through narrow, "
+        "well-defined interfaces. These properties are inversely correlated — "
+        "improving one typically improves the other. Teams that track these "
+        "metrics consistently produce more maintainable codebases over time.\n\n"
+        "The dependency inversion principle states that high-level modules "
+        "should not depend on low-level modules. Both should depend on "
+        "abstractions. This principle is essential for testability because it "
+        "allows substitution of mock implementations during testing without "
+        "modifying production code. Static analysis tools can detect violations "
+        "automatically and enforce boundaries at the module level.\n\n"
+        "Immutability reduces the cognitive load of reasoning about state. "
+        "When data cannot change after creation, entire categories of bugs "
+        "become impossible. Race conditions disappear. Cache invalidation "
+        "simplifies dramatically. The tradeoff is increased memory allocation, "
+        "but modern garbage collectors handle this efficiently. Persistent data "
+        "structures share structure between versions, minimizing overhead.\n\n"
+        "Event-driven architecture decouples producers from consumers. The "
+        "publisher does not know or care who processes its events. This "
+        "pattern enables horizontal scaling because new consumers can subscribe "
+        "without modifying the producer. The downside is increased complexity "
+        "in debugging — tracing an event through multiple handlers requires "
+        "distributed tracing infrastructure. Correlation IDs propagate across "
+        "service boundaries and appear in centralized log aggregation systems.\n\n"
+        "The CAP theorem proves that distributed systems must choose between "
+        "consistency and availability during network partitions. This is not "
+        "a theoretical concern — network partitions happen regularly in "
+        "production environments. The choice between CP and AP systems depends "
+        "on business requirements. Financial systems typically require "
+        "consistency. Social media platforms prioritize availability. "
+        "Understanding these tradeoffs is essential for making informed "
+        "architecture decisions in modern distributed computing.\n\n"
+        "Microservices introduce organizational benefits alongside technical "
+        "complexity. Each service can be deployed independently, enabling "
+        "faster iteration cycles. Teams own their services end-to-end, "
+        "reducing coordination overhead. However, distributed transactions "
+        "require careful saga pattern implementation. Network latency becomes "
+        "a first-class concern. Observability tooling must span service "
+        "boundaries to provide meaningful insights into system behavior.\n\n"
+        "Testing strategies differ across architectural layers. Unit tests "
+        "verify individual functions in isolation. Integration tests confirm "
+        "that components interact correctly at boundaries. End-to-end tests "
+        "validate full user journeys through the system. Each layer serves "
+        "a distinct purpose and no single layer provides sufficient coverage "
+        "on its own. A healthy test pyramid contains many unit tests, fewer "
+        "integration tests, and a small number of end-to-end tests.\n\n"
+        "Observability requires three pillars: metrics, logs, and traces. "
+        "Metrics aggregate numeric signals over time. Logs capture discrete "
+        "events with structured context. Traces link operations across service "
+        "boundaries into coherent request flows. Effective alerting depends on "
+        "meaningful thresholds derived from baseline measurements, not arbitrary "
+        "values chosen before the system runs in production. Teams that invest "
+        "in observability early detect anomalies faster and recover more quickly."
+    )
+
+
+class TestDiscourseSpacyElements:
+    """Tests for spaCy-based discourse-adjacent elements."""
+
+    def test_paragraph_opening_pos_entropy_exists(self, focused_topic_text):
+        profile = generate_voice_profile(focused_topic_text)
+        assert "paragraph_opening_pos_entropy" in profile
+        elem = profile["paragraph_opening_pos_entropy"]
+        assert elem["category"] == "structural"
+        assert elem["element_type"] == "metric"
+        assert elem["target_value"] >= 0.0
+
+    def test_entropy_is_reasonable_value(self, mixed_sentiment_text):
+        profile = generate_voice_profile(mixed_sentiment_text)
+        assert profile["paragraph_opening_pos_entropy"]["target_value"] >= 0.0
+        assert profile["paragraph_opening_pos_entropy"]["target_value"] <= 4.0
+
+    def test_narrative_text_high_ratio(self, narrative_text):
+        profile = generate_voice_profile(narrative_text)
+        assert "narrative_vs_analytical_ratio" in profile
+        assert profile["narrative_vs_analytical_ratio"]["target_value"] > 0.3
+
+    def test_analytical_text_low_ratio(self, analytical_text):
+        profile = generate_voice_profile(analytical_text)
+        assert "narrative_vs_analytical_ratio" in profile
+        assert profile["narrative_vs_analytical_ratio"]["target_value"] < 0.5
+
+    def test_discourse_spacy_element_structure(self, narrative_text):
+        profile = generate_voice_profile(narrative_text)
+        for key in ["paragraph_opening_pos_entropy", "narrative_vs_analytical_ratio"]:
+            elem = profile[key]
+            assert "tier3" in elem["tags"]
+            assert "weight" in elem
+
+
+class TestDiscourseSpacyFallback:
+    """Tests for spaCy unavailable fallback on discourse elements."""
+
+    def test_spacy_unavailable_skips_discourse(self, narrative_text):
+        with patch("utils.voice_generator._spacy_available", False), \
+             patch("utils.voice_generator._nlp", None):
+            profile = generate_voice_profile(narrative_text)
+            assert "paragraph_opening_pos_entropy" not in profile
+            assert "narrative_vs_analytical_ratio" not in profile
+            assert "sentiment_mean" in profile
+
+    def test_too_few_paragraphs_skips_spacy_discourse(self):
+        para = "This is a sentence about testing topics and more. " * 50
+        text = para + "\n\n" + para
+        profile = generate_voice_profile(text)
+        assert "paragraph_opening_pos_entropy" not in profile
+        assert "narrative_vs_analytical_ratio" not in profile

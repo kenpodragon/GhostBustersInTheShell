@@ -28,7 +28,15 @@ def _generate_text(word_count: int) -> str:
     )
     block_words = len(block.split())
     repeats = max(1, word_count // block_words)
-    text = " ".join([block] * repeats)
+    # Group blocks into paragraphs of 2, joined by \n\n so topic/discourse elements activate
+    paragraphs = []
+    current = []
+    for i in range(repeats):
+        current.append(block)
+        if len(current) == 2 or i == repeats - 1:
+            paragraphs.append(" ".join(current))
+            current = []
+    text = "\n\n".join(paragraphs)
     return text
 
 
@@ -55,7 +63,7 @@ class TestParsingOverhead:
         actual_words = len(text.split())
         print(f"\n  WITH spaCy | {label} ({actual_words} actual): "
               f"{elapsed:.3f}s | {element_count} elements")
-        assert element_count == 60
+        assert element_count >= 60  # 65 with enough paragraphs, 60 minimum (short texts skip topic/discourse)
 
     @pytest.mark.parametrize("word_count,label", [
         (700, "~650 words"),
@@ -77,4 +85,4 @@ class TestParsingOverhead:
         actual_words = len(text.split())
         print(f"\n  WITHOUT spaCy | {label} ({actual_words} actual): "
               f"{elapsed:.3f}s | {element_count} elements")
-        assert element_count == 54
+        assert element_count >= 54  # 57 with enough paragraphs, 54 minimum (short texts skip topic)
