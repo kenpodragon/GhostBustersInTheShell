@@ -18,6 +18,7 @@ RUN npm install -g @anthropic-ai/claude-code || echo "Claude CLI install skipped
 COPY requirements.txt .
 RUN pip install --no-cache-dir setuptools && pip install --no-cache-dir -r requirements.txt
 RUN python -m spacy download en_core_web_sm
+RUN python -c "import nltk; nltk.download('vader_lexicon', download_dir='/usr/local/nltk_data')"
 
 COPY . .
 
