@@ -56,4 +56,24 @@ export const voiceProfilesApi = {
   // Style guide
   getStyleGuide: (id: number) => fetch(`${API}/voice-profiles/${id}/style-guide`).then(json),
   getFullGuide: (id: number) => fetch(`${API}/voice-profiles/${id}/full-guide`).then(json),
+
+  // Enhanced parse (with AI, dedup)
+  parseEnhanced: (id: number, text: string, filename?: string, use_ai?: boolean, force_near_duplicate?: boolean) =>
+    post(`${API}/voice-profiles/${id}/parse`, { text, filename, use_ai, force_near_duplicate }),
+
+  // Consolidation
+  consolidate: (id: number) =>
+    post(`${API}/voice-profiles/${id}/consolidate`),
+
+  // Re-parse
+  reparse: (id: number, use_ai?: boolean) =>
+    post(`${API}/voice-profiles/${id}/reparse`, { use_ai }),
+  acceptReparse: (id: number, new_profile_id: number) =>
+    post(`${API}/voice-profiles/${id}/reparse/accept`, { new_profile_id }),
+  rejectReparse: (id: number, new_profile_id: number) =>
+    post(`${API}/voice-profiles/${id}/reparse/reject`, { new_profile_id }),
+
+  // Samples
+  getSamples: (id: number, limit: number = 5) =>
+    fetch(`${API}/voice-profiles/${id}/samples?limit=${limit}`).then(json),
 }

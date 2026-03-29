@@ -140,3 +140,120 @@ export interface VersionInfo {
   rules_version: string
   rules_version_date: string | null
 }
+
+// --- Scoring & AI Extraction Types ---
+
+export interface FidelityScoreResult {
+  mode: 'quantitative' | 'qualitative' | 'both'
+  quantitative?: {
+    aggregate_similarity: number
+    per_element: ElementScore[]
+    matched: number
+    missing: number
+  }
+  qualitative?: {
+    matches: string[]
+    gaps: string[]
+    overall_assessment: string
+  }
+}
+
+export interface ElementScore {
+  name: string
+  profile_value: number
+  generated_value: number
+  similarity: number
+  weight: number
+}
+
+export interface AIExtraction {
+  status: 'success' | 'skipped' | 'error'
+  qualitative_prompts: QualitativePrompt[]
+  metric_descriptions: MetricDescription[]
+  discovered_patterns: DiscoveredPattern[]
+}
+
+export interface QualitativePrompt {
+  prompt: string
+  confidence: number
+}
+
+export interface MetricDescription {
+  element: string
+  value: number
+  description: string
+  ai_assessment: 'accurate' | 'misleading' | 'insufficient_data'
+}
+
+export interface DiscoveredPattern {
+  pattern: string
+  suggested_element_name: string
+  description: string
+}
+
+export interface ConsolidatedPrompt {
+  prompt: string
+  source_prompts: string[]
+  frequency: number
+  confidence: number
+}
+
+export interface ConsolidationResult {
+  consolidated_prompts: ConsolidatedPrompt[]
+  metric_consensus: MetricConsensus[]
+  discovered_patterns: DiscoveredPatternAgg[]
+  observation_count: number
+  document_count: number
+}
+
+export interface MetricConsensus {
+  element: string
+  consensus_description: string
+  agreement_count: number
+  disagreement_count: number
+  flagged_misleading: boolean
+}
+
+export interface DiscoveredPatternAgg {
+  suggested_element_name: string
+  pattern: string
+  description: string
+  occurrences: number
+}
+
+export interface CorpusDocument {
+  id: number
+  filename: string
+  word_count: number
+  created_at: string
+  has_ai_observations: boolean
+}
+
+export interface CorpusInfo {
+  documents: CorpusDocument[]
+  stats: {
+    total_documents: number
+    total_words: number
+    ai_observations_count: number
+  }
+}
+
+export interface ReparseResult {
+  old_profile_id: number
+  new_profile_id: number
+  parsed_count: number
+  total_documents: number
+  errors: { document_id: number; filename: string; error: string }[]
+  old_elements: ProfileElement[]
+  new_elements: ProfileElement[]
+  snapshot_name: string
+}
+
+export interface ParseResult {
+  elements: ProfileElement[]
+  findings: string[]
+  parse_count: number
+  document_id: number
+  ai_extraction: AIExtraction
+  same_name_warning?: string
+}
