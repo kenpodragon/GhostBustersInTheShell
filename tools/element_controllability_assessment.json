@@ -1,0 +1,410 @@
+{
+  "assessments": [
+    {
+      "element": "adjective_to_noun_ratio",
+      "controllable": "partially",
+      "implementation": "Target 0.316 means ~1 adjective per 3 nouns. Consciously add/remove adjectives before nouns during revision. Favor bare nouns for lower ratio, stack modifiers for higher.",
+      "notes": "Topic-dependent — descriptive passages inflate this naturally. Controllable within ~0.05 tolerance."
+    },
+    {
+      "element": "adverb_density",
+      "controllable": "yes",
+      "implementation": "Target 0.43 adverbs per sentence. Deliberately insert or strip adverbs (manner, degree, frequency types). Choose whether to qualify verbs and adjectives on a per-sentence basis.",
+      "notes": "Directly controllable by word choice. One of the easier metrics to manage."
+    },
+    {
+      "element": "archaic_vocabulary_rate",
+      "controllable": "yes",
+      "implementation": "Target ~0.0014 — essentially zero. Avoid 'hitherto', 'wherein', 'henceforth', 'thereby'. Use modern equivalents. Allow maybe 1 archaic word per 700 words.",
+      "notes": "Trivially controllable. The target is 'almost never use archaic words'."
+    },
+    {
+      "element": "article_rate",
+      "controllable": "partially",
+      "implementation": "Target 0.077. Articles are grammatically required in most noun phrases. Adjust at margins by choosing plural/mass nouns ('use strategies' vs 'use a strategy') or restructuring.",
+      "notes": "Heavily constrained by grammar. Adjustable at margins but not freely."
+    },
+    {
+      "element": "automated_readability_index",
+      "controllable": "no",
+      "implementation": "Target ARI ~10.15. Emergent from chars/words and words/sentences. Cannot target directly — control avg_word_length and avg_sentence_length instead, and ARI follows.",
+      "notes": "Composite metric. Control the two input metrics and this converges."
+    },
+    {
+      "element": "avg_clause_complexity",
+      "controllable": "partially",
+      "implementation": "Target 1.24 clauses per sentence. Keep most sentences single-clause or two-clause. Occasional compound-complex sentences. Avoid stacking subordination.",
+      "notes": "Controllable through sentence construction but hard to count clauses in real-time without tooling."
+    },
+    {
+      "element": "avg_sentence_length",
+      "controllable": "yes",
+      "implementation": "Target 17.65 words/sentence. Count words per sentence. Mix short (5-10), medium (15-20), and long (25-35) to average out. Split or merge sentences to adjust.",
+      "notes": "One of the most directly controllable metrics. Can be monitored sentence-by-sentence."
+    },
+    {
+      "element": "avg_word_length",
+      "controllable": "partially",
+      "implementation": "Target 4.79 chars. Balance common short words with longer precise terms. Choose synonyms to steer: 'use' (3) vs 'utilize' (7), 'help' (4) vs 'facilitate' (10).",
+      "notes": "Constrained by topic — technical subjects force longer words. Adjustable through synonym selection."
+    },
+    {
+      "element": "clause_depth_avg",
+      "controllable": "partially",
+      "implementation": "Target ~4.85 parse tree depth. Build moderate embedding: main clause + 1-2 levels of subordination. Avoid deeply nested relative clauses or multiple 'that' chains.",
+      "notes": "Hard to measure without tooling. Emergent from syntactic choices. I can steer it but not precisely target a number."
+    },
+    {
+      "element": "coleman_liau_index",
+      "controllable": "no",
+      "implementation": "Target 10.52. Emergent from avg letters per 100 words and avg sentences per 100 words. Same control levers as ARI — word length and sentence length.",
+      "notes": "Redundant composite metric. Controlling word length + sentence length controls this automatically."
+    },
+    {
+      "element": "colon_usage",
+      "controllable": "yes",
+      "implementation": "Target ~0.62 per unit. Use colons for list introductions, elaborations, explanations. Roughly 1 colon every 2-3 paragraphs.",
+      "notes": "Directly controllable punctuation choice."
+    },
+    {
+      "element": "comma_rate",
+      "controllable": "yes",
+      "implementation": "Target ~1.01 commas per sentence. Use commas for lists, introductory phrases, appositives, compound sentences. Roughly one comma per sentence on average.",
+      "notes": "Some commas are grammatically mandatory, but overall density is a style choice I can manage."
+    },
+    {
+      "element": "conjunction_opening_rate",
+      "controllable": "yes",
+      "implementation": "Target 0.394 — start ~39% of sentences with And/But/Or/Yet/So/Nor. Deliberately begin roughly 2 in 5 sentences with a conjunction.",
+      "notes": "Fully controllable sentence-start word choice."
+    },
+    {
+      "element": "contraction_rate",
+      "controllable": "yes",
+      "implementation": "Target 0.0 — never use contractions. Always write 'do not', 'cannot', 'it is', 'they are'. Simple binary choice per instance.",
+      "notes": "The single easiest metric to control perfectly."
+    },
+    {
+      "element": "coordinating_conjunction_rate",
+      "controllable": "yes",
+      "implementation": "Target 0.047 — coordinating conjunctions at ~4.7% of words. Use compound sentences moderately. Control by choosing to join or separate clauses.",
+      "notes": "Controllable through sentence structure. Compound sentences raise it; simple sentences lower it."
+    },
+    {
+      "element": "discourse_marker_rate",
+      "controllable": "yes",
+      "implementation": "Target 0.131. Use markers (however, moreover, indeed, in fact, consequently) at ~1 per 7-8 sentences. Sprinkle for flow without formula.",
+      "notes": "Direct vocabulary insertion. Risk of sounding mechanical if placed too regularly."
+    },
+    {
+      "element": "ellipsis_usage",
+      "controllable": "yes",
+      "implementation": "Target 0.058 — roughly 1 ellipsis per 17 sentences. Use very sparingly for trailing thoughts or deliberate omissions.",
+      "notes": "Completely controllable punctuation choice."
+    },
+    {
+      "element": "em_dash_usage",
+      "controllable": "yes",
+      "implementation": "Target 0.038 — roughly 1 em dash per 26 sentences. Use for parenthetical asides or abrupt shifts.",
+      "notes": "Completely controllable punctuation choice."
+    },
+    {
+      "element": "exclamation_rate",
+      "controllable": "yes",
+      "implementation": "Target 0.026 — roughly 1 exclamation per 39 sentences. Reserve for genuine emphasis or surprise.",
+      "notes": "Completely controllable punctuation choice."
+    },
+    {
+      "element": "figurative_language_markers",
+      "controllable": "partially",
+      "implementation": "Target 0.234 — roughly 1 figurative expression per 4-5 sentences. Weave in similes ('like a'), metaphorical verbs, personification. Requires creative effort.",
+      "notes": "I can insert figurative devices deliberately, but making them feel natural rather than forced is the challenge. Easier in narrative than analytical contexts."
+    },
+    {
+      "element": "first_person_usage",
+      "controllable": "yes",
+      "implementation": "Target 0.184 — use I/me/my/we/our in ~18% of sentences. Mix personal perspective with impersonal analysis. Roughly 1 in 5-6 sentences.",
+      "notes": "Directly controllable through pronoun choice and perspective framing."
+    },
+    {
+      "element": "flesch_kincaid_grade",
+      "controllable": "no",
+      "implementation": "Target 10.0. Emergent from words/sentences and syllables/words. Control via sentence length and syllable density — same inputs as other readability indices.",
+      "notes": "Composite metric. Cannot be independently targeted."
+    },
+    {
+      "element": "flesch_reading_ease",
+      "controllable": "no",
+      "implementation": "Target 55.4. Mathematical inverse of FK grade. Same control mechanism — sentence length and word complexity.",
+      "notes": "Redundant with FK grade. Controlling one controls the other."
+    },
+    {
+      "element": "function_word_rate",
+      "controllable": "partially",
+      "implementation": "Target 0.317. Function words are largely grammatically required. Can slightly adjust by choosing more/fewer prepositional phrases, relative clauses, determiner structures.",
+      "notes": "Heavily constrained by grammar. More a consequence of lexical density than independently controllable."
+    },
+    {
+      "element": "gunning_fog_index",
+      "controllable": "no",
+      "implementation": "Target 13.3. Emergent from sentence length and polysyllabic word percentage. Control those two inputs.",
+      "notes": "Composite metric. Redundant with other readability indices."
+    },
+    {
+      "element": "hapax_legomena_ratio",
+      "controllable": "partially",
+      "implementation": "Target 0.684 — 68.4% of unique words appear only once. Use diverse vocabulary, reach for synonyms, avoid repeating content words. Each new concept should introduce new terms.",
+      "notes": "Heavily dependent on text length (short texts naturally have higher ratios). In tension with repetition_rate — suggests content words vary while structural words repeat."
+    },
+    {
+      "element": "hedging_language_rate",
+      "controllable": "yes",
+      "implementation": "Target 0.196. Use hedges (perhaps, might, seems, appears, arguably, likely, tends to) in ~1 in 5 sentences. Balance confidence with epistemic humility.",
+      "notes": "Directly controllable word choice."
+    },
+    {
+      "element": "intensifier_rate",
+      "controllable": "yes",
+      "implementation": "Target 0.103. Use intensifiers (very, extremely, highly, particularly, especially, quite) in ~1 in 10 sentences. Restrained emphasis.",
+      "notes": "Directly controllable vocabulary choice."
+    },
+    {
+      "element": "inverted_syntax_rate",
+      "controllable": "yes",
+      "implementation": "Target 0.458 — nearly half of sentences use inversion. Front adverbials ('From this perspective, ...'), prepositional phrases before subject, inverted conditionals. Deliberately reorder sentence elements.",
+      "notes": "Requires conscious syntactic rearrangement. High target suggests a distinctive stylistic habit I must maintain consistently."
+    },
+    {
+      "element": "lexical_density",
+      "controllable": "partially",
+      "implementation": "Target 0.683 — 68.3% content words. Use concise, information-rich prose. Avoid filler phrases ('it is the case that' → 'this shows'). Favor nouns and verbs over auxiliary constructions.",
+      "notes": "Complementary to function_word_rate. Adjustable through conciseness but grammar constrains the floor."
+    },
+    {
+      "element": "long_sentence_ratio",
+      "controllable": "yes",
+      "implementation": "Target 0.147 — ~14.7% of sentences 30+ words. Write 1 in 7 sentences as extended complex constructions. Rest should be medium or short.",
+      "notes": "Directly controllable. Count words and construct deliberately."
+    },
+    {
+      "element": "long_word_frequency",
+      "controllable": "partially",
+      "implementation": "Target 0.249 — ~25% of words 7+ characters. Mix longer vocabulary ('significant', 'demonstrate', 'establish') with shorter common words. One in four words should be substantial.",
+      "notes": "Topic-constrained. Adjustable through synonym selection."
+    },
+    {
+      "element": "modal_verb_rate",
+      "controllable": "yes",
+      "implementation": "Target 0.239. Use modals (can, could, may, might, should, would, must) in ~24% of sentences. Creates speculative, possibility-oriented tone.",
+      "notes": "Directly controllable. Choose modal vs indicative mood deliberately."
+    },
+    {
+      "element": "named_entity_density",
+      "controllable": "partially",
+      "implementation": "Target 0.022 — very low. ~2.2% of words as named entities. Keep references abstract and conceptual rather than citing specific names.",
+      "notes": "Heavily topic-dependent. A biographical piece will naturally have more. I can guide by choosing to name or generalize."
+    },
+    {
+      "element": "narrative_vs_analytical_ratio",
+      "controllable": "partially",
+      "implementation": "Target 0.20 — strongly analytical (80/20). Favor analysis, argumentation, exposition. Use narrative elements (anecdotes, scene-setting) sparingly as supporting examples.",
+      "notes": "Controllable through rhetorical mode selection but topic constrains the natural ratio."
+    },
+    {
+      "element": "nominalization_rate",
+      "controllable": "yes",
+      "implementation": "Target 0.363. Convert ~36% of verbal constructions to nominal forms: 'investigation' not 'investigate', 'consideration' not 'consider'. Alternate between nominal and verbal style.",
+      "notes": "Directly controllable. Academic/formal writing naturally does this."
+    },
+    {
+      "element": "paragraph_avg_length",
+      "controllable": "yes",
+      "implementation": "Target ~15.78 (likely words per paragraph, given single_sentence_paragraph_ratio of 0.318). Write a mix: ~32% single-sentence paragraphs (~10-15 words) and ~68% multi-sentence paragraphs (~18-25 words) to average ~16.",
+      "notes": "The unit (words vs sentences) is ambiguous. Given 31.8% single-sentence paragraphs, this almost certainly means words. Directly controllable through paragraph break placement."
+    },
+    {
+      "element": "paragraph_opening_pos_entropy",
+      "controllable": "partially",
+      "implementation": "Target 2.82 bits. Vary POS at paragraph openings: nouns, verbs, adverbs, conjunctions, pronouns, prepositions. Never start 3+ paragraphs the same way in sequence.",
+      "notes": "Controllable by conscious variation but impossible to calculate exact entropy while writing. Aim for maximum variety."
+    },
+    {
+      "element": "parenthetical_usage",
+      "controllable": "yes",
+      "implementation": "Target 0.215 — parenthetical asides in ~21.5% of sentences (~1 in 5). Use parentheses, em-dash pairs, or comma-offset asides for clarifications and tangential notes.",
+      "notes": "Directly controllable structural choice."
+    },
+    {
+      "element": "passive_voice_rate",
+      "controllable": "yes",
+      "implementation": "Target 0.267 — ~26.7% of clauses passive. Roughly 1 in 4 clauses should use passive ('was examined', 'is considered'). Choose passive for emphasis on object/action.",
+      "notes": "Directly controllable. One of the easier syntactic metrics."
+    },
+    {
+      "element": "preposition_rate",
+      "controllable": "partially",
+      "implementation": "Target 0.104 — prepositions at ~10.4% of words. Use moderate prepositional phrases. Avoid chaining ('the end of the part of') but don't strip them entirely.",
+      "notes": "Partially constrained by grammar and content. Adjustable by restructuring phrases."
+    },
+    {
+      "element": "quotation_density",
+      "controllable": "yes",
+      "implementation": "Target 0.116 — quoted material in ~1 in 9 sentences. Include direct quotes, scare quotes, or cited phrases.",
+      "notes": "Depends on having quotable material, but I can always use scare quotes or term-quoting to hit the target."
+    },
+    {
+      "element": "rare_word_rate",
+      "controllable": "partially",
+      "implementation": "Target 0.219 — ~22% rare words. Use precise, domain-specific, or uncommon vocabulary regularly. One in 5 words non-common.",
+      "notes": "Depends on the frequency list used for measurement. Steerable through synonym choice but hard to calibrate precisely."
+    },
+    {
+      "element": "repetition_rate",
+      "controllable": "partially",
+      "implementation": "Target 0.777 — high repetition. Deliberately reuse key terms rather than reaching for synonyms. Echo important words across sentences. Let structural words recur naturally.",
+      "notes": "In tension with hapax_legomena_ratio (0.684). Resolution: repeat function/structural words heavily, vary content words. Requires balancing two competing targets."
+    },
+    {
+      "element": "rhetorical_question_rate",
+      "controllable": "yes",
+      "implementation": "Target 0.092 — ~1 rhetorical question per 11 sentences. Ask questions to engage reader, introduce topics, or challenge assumptions.",
+      "notes": "Directly controllable sentence type choice."
+    },
+    {
+      "element": "second_person_usage",
+      "controllable": "yes",
+      "implementation": "Target 0.303 — 'you'/'your' in ~30% of sentences. Address reader directly and frequently. Nearly 1 in 3 sentences should reference 'you'.",
+      "notes": "Directly controllable. Requires reader-directed rhetorical mode."
+    },
+    {
+      "element": "semicolon_usage",
+      "controllable": "yes",
+      "implementation": "Target 0.072 — ~1 semicolon per 14 sentences. Join related independent clauses occasionally.",
+      "notes": "Completely controllable punctuation choice."
+    },
+    {
+      "element": "sentence_length_stddev",
+      "controllable": "yes",
+      "implementation": "Target 11.65 words stddev. Create substantial variation: mix very short (3-7 words) with very long (25-35 words). Avoid monotonous same-length sentences.",
+      "notes": "Controllable by deliberately varying sentence length. High stddev demands intentional rhythmic contrast."
+    },
+    {
+      "element": "sentence_opener_variety",
+      "controllable": "yes",
+      "implementation": "Target 0.836 — 83.6% unique openers. Vary: subject-first, adverbial fronting, conjunction starts, prepositional phrases, participial phrases, inverted structures. Rarely repeat opening patterns consecutively.",
+      "notes": "Directly controllable through conscious variation."
+    },
+    {
+      "element": "sentiment_mean",
+      "controllable": "partially",
+      "implementation": "Target 0.138 — slightly positive. Maintain mildly constructive tone. Balance critical analysis with positive framing.",
+      "notes": "Steerable through word choice and framing but heavily topic-influenced. Cannot precisely target a sentiment score."
+    },
+    {
+      "element": "sentiment_shift_rate",
+      "controllable": "partially",
+      "implementation": "Target 0.184 — moderate shifts. Follow critical sentences with hopeful ones, neutral with concerned. ~18% of sentence transitions shift sentiment.",
+      "notes": "Partially controllable through tonal variation. Hard to quantify precisely while writing."
+    },
+    {
+      "element": "sentiment_variance",
+      "controllable": "partially",
+      "implementation": "Target 0.153 — moderate variance. Include both mildly positive and mildly negative evaluations. Don't write in monotone emotional register.",
+      "notes": "Emergent from sentiment distribution. Steerable but not precisely targetable."
+    },
+    {
+      "element": "short_sentence_ratio",
+      "controllable": "yes",
+      "implementation": "Target 0.264 — ~26.4% of sentences under 10 words. 1 in 4 sentences should be punchy. Use for emphasis, transitions, rhythm.",
+      "notes": "Directly controllable. Pair with long_sentence_ratio for deliberate rhythm."
+    },
+    {
+      "element": "single_sentence_paragraph_ratio",
+      "controllable": "yes",
+      "implementation": "Target 0.318 — ~32% of paragraphs are single sentences. 1 in 3 paragraphs should stand alone. Use for emphasis, transitions, standalone points.",
+      "notes": "Directly controllable through paragraph break placement."
+    },
+    {
+      "element": "smog_index",
+      "controllable": "no",
+      "implementation": "Target 12.28. Emergent from polysyllabic word count relative to sentences. Same levers as other readability metrics.",
+      "notes": "Redundant composite metric. Controlling polysyllabic word density and sentence length controls this."
+    },
+    {
+      "element": "subordinating_conjunction_rate",
+      "controllable": "yes",
+      "implementation": "Target 0.013 — very low. Use subordinate clauses (because, although, while, if, since) very sparingly. ~1.3% of words. Prefer coordination or independent sentences.",
+      "notes": "Directly controllable through clause structure choices."
+    },
+    {
+      "element": "third_person_usage",
+      "controllable": "yes",
+      "implementation": "Target 0.181 — he/she/they/it/one in ~18% of sentences. Balance with first-person and second-person. Use for discussing concepts and systems.",
+      "notes": "Directly controllable pronoun choice."
+    },
+    {
+      "element": "topic_coherence_score",
+      "controllable": "partially",
+      "implementation": "Target 0.258 — moderate coherence. Maintain thematic throughline but allow topical branching. Don't hyper-focus on one narrow point.",
+      "notes": "Emergent from content organization. Steerable through outlining but not precisely targetable."
+    },
+    {
+      "element": "topic_drift_rate",
+      "controllable": "partially",
+      "implementation": "Target 0.945 — high drift. Allow topics to evolve significantly. Each section can shift focus. Essayistic, exploratory style rather than laser-focused thesis.",
+      "notes": "Emergent from content breadth. Steerable through content planning but hard to quantify in real-time."
+    },
+    {
+      "element": "transition_word_rate",
+      "controllable": "yes",
+      "implementation": "Target 0.120. Use transitions (however, therefore, moreover, consequently, meanwhile) in ~12% of sentences, roughly 1 in 8.",
+      "notes": "Directly controllable. Overlaps with discourse_marker_rate."
+    },
+    {
+      "element": "verb_tense_past_ratio",
+      "controllable": "yes",
+      "implementation": "Target 0.288 — ~29% past tense verbs. Use past for examples, anecdotes, references. Present remains dominant.",
+      "notes": "Directly controllable through tense selection. Complement of present_ratio."
+    },
+    {
+      "element": "verb_tense_present_ratio",
+      "controllable": "yes",
+      "implementation": "Target 0.712 — ~71% present tense. Default to present for analysis, assertions, general statements. This is the dominant tense.",
+      "notes": "Directly controllable. Complement of past_ratio."
+    },
+    {
+      "element": "vocabulary_concentration",
+      "controllable": "partially",
+      "implementation": "Target 0.418 — moderate concentration. Establish recurring key terms for core topic but don't over-rely on a small word set. Balance repetition of anchoring terms with variety elsewhere.",
+      "notes": "Emergent from topic and repetition patterns. Related to repetition_rate and hapax_legomena_ratio."
+    },
+    {
+      "element": "vocabulary_richness",
+      "controllable": "partially",
+      "implementation": "Target 0.553 TTR. Moderately rich vocabulary — introduce new words regularly but allow natural repetition. Vary word choice while maintaining some recurring terms.",
+      "notes": "TTR naturally decreases with text length, making this harder to control in longer pieces. Adjustable through synonym variation."
+    },
+    {
+      "element": "vocative_usage",
+      "controllable": "yes",
+      "implementation": "Target 0.180 — direct address in ~18% of sentences. Use 'Consider this...', 'Notice how...', direct reader address. Overlaps with second_person_usage.",
+      "notes": "Directly controllable. Natural in persuasive/instructional writing."
+    }
+  ],
+  "summary": {
+    "yes_count": 37,
+    "partially_count": 23,
+    "no_count": 5,
+    "directly_controllable_pct": 56.9,
+    "partially_controllable_pct": 35.4,
+    "emergent_pct": 7.7,
+    "key_insights": [
+      "Punctuation metrics (comma, colon, semicolon, em-dash, ellipsis, exclamation) are all fully controllable",
+      "Pronoun/perspective metrics (first/second/third person, vocative) are fully controllable",
+      "Readability indices (ARI, Coleman-Liau, FK, FRE, Gunning Fog, SMOG) are all emergent composites — control sentence length + word length and all 5 converge",
+      "Sentiment metrics are the hardest to control precisely — steerable but not targetable to decimal precision",
+      "The tension between high repetition_rate (0.777) and high hapax_legomena_ratio (0.684) resolves via: repeat function/structural words, vary content words",
+      "Topic drift and coherence are content-level properties that resist precise numeric targeting"
+    ]
+  }
+}

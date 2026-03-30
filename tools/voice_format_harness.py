@@ -17,7 +17,7 @@ from pathlib import Path
 
 import requests
 
-from tools.harness_config import PROFILE_ID, API_BASE, RESULTS_DIR, TEST_INPUTS_DIR, CLAUDE_TIMEOUT
+from harness_config import PROFILE_ID, API_BASE, RESULTS_DIR, TEST_INPUTS_DIR, CLAUDE_TIMEOUT
 
 
 def load_profile_elements(profile_id: int = PROFILE_ID) -> list[dict]:
@@ -53,12 +53,71 @@ def format_elements_english(elements: list[dict]) -> str:
     return "\n".join(lines)
 
 
-def call_claude(prompt: str) -> dict:
-    """Call Claude via the backend provider's CLI method."""
-    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "backend"))
-    from ai_providers.claude_provider import ClaudeProvider
-    provider = ClaudeProvider()
-    return provider._run_cli(prompt)
+def call_claude(prompt: str, timeout: int = 300) -> dict:
+    """Call Claude via CLI with configurable timeout.
+
+    The Claude CLI with --output-format json wraps responses in:
+      {"type": "result", "result": "<text>", ...}
+
+    The "result" field is a TEXT string, NOT parsed JSON. Claude may also
+    write files instead of returning data inline. We handle both cases.
+    """
+    import subprocess
+    import re
+    import glob
+
+    # Snapshot existing JSON files in tools/ before the call
+    tools_dir = Path(__file__).resolve().parent
+    pre_files = set(tools_dir.glob("*.json"))
+
+    cmd = ["claude", "-p", prompt, "--output-format", "json"]
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+
+    if result.returncode != 0:
+        raise RuntimeError(f"Claude CLI error: {result.stderr.strip()[:300]}")
+
+    output = result.stdout.strip()
+
+    # Step 1: Unwrap the CLI wrapper to get the inner text
+    inner_text = output
+    try:
+        parsed = json.loads(output)
+        if isinstance(parsed, dict) and "result" in parsed:
+            inner_text = parsed["result"]
+            if not isinstance(inner_text, str):
+                return inner_text  # Already a dict/list
+    except json.JSONDecodeError:
+        pass  # output wasn't JSON at all, use as-is
+
+    # Step 2: Try to parse inner_text as JSON directly
+    try:
+        # Strip code fences if present
+        fence_match = re.search(r'```(?:json)?\s*\n?(.*?)```', inner_text, re.DOTALL)
+        if fence_match:
+            return json.loads(fence_match.group(1).strip())
+        return json.loads(inner_text)
+    except (json.JSONDecodeError, ValueError):
+        pass
+
+    # Step 3: Claude may have written a file — check for new JSON files
+    post_files = set(tools_dir.glob("*.json"))
+    new_files = post_files - pre_files
+    if new_files:
+        # Read the newest file Claude wrote
+        newest = max(new_files, key=lambda f: f.stat().st_mtime)
+        print(f"  (Claude wrote file: {newest.name}, reading it)")
+        with open(newest) as f:
+            return json.load(f)
+
+    # Step 4: Try to extract JSON from mixed text
+    match = re.search(r'\{[\s\S]*\}', inner_text)
+    if match:
+        try:
+            return json.loads(match.group())
+        except json.JSONDecodeError:
+            pass
+
+    raise RuntimeError(f"Claude returned no parseable JSON. Response: {inner_text[:500]}")
 
 
 def score_output(generated_text: str, profile_elements: list[dict]) -> dict:
@@ -100,7 +159,7 @@ def run_self_assessment():
     elements = load_profile_elements()
     elements_json = format_elements_json(elements)
 
-    from tools.format_experiments import build_self_assessment_prompt
+    from format_experiments import build_self_assessment_prompt
     prompt = build_self_assessment_prompt(elements_json)
 
     print(f"Sending {len(elements)} elements to Claude for self-assessment...")
@@ -108,6 +167,16 @@ def run_self_assessment():
     response = call_claude(prompt)
     elapsed = time.time() - t0
     print(f"Response received in {elapsed:.1f}s\n")
+
+    # Debug: dump response shape
+    print(f"Response type: {type(response).__name__}")
+    print(f"Response keys: {list(response.keys()) if isinstance(response, dict) else 'N/A'}")
+    # Save raw response for debugging
+    debug_path = RESULTS_DIR / "e1_debug_raw_response.json"
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    with open(debug_path, "w", encoding="utf-8") as f:
+        json.dump(response, f, indent=2)
+    print(f"Raw response saved to: {debug_path}\n")
 
     assessments = response.get("assessments", [])
 
@@ -196,7 +265,7 @@ def run_json_tests():
     """E.2: Test JSON-only and JSON-enforced generation."""
     print("=== E.2: JSON Generation Tests ===\n")
 
-    from tools.format_experiments import build_json_only_prompt, build_json_enforced_prompt
+    from format_experiments import build_json_only_prompt, build_json_enforced_prompt
 
     all_results = []
     for input_name in ["neutral_passage", "ai_sounding_passage"]:
@@ -228,7 +297,7 @@ def run_english_test():
     """E.3a: Test English-only generation (current format baseline)."""
     print("=== E.3a: English-Only Generation Test (Baseline) ===\n")
 
-    from tools.format_experiments import build_english_only_prompt
+    from format_experiments import build_english_only_prompt
 
     elements = load_profile_elements()
     english = format_elements_english(elements)
@@ -282,7 +351,7 @@ def run_hybrid_test(assessment_path: str = None):
     controllable_json = format_elements_json(controllable_elements)
     indirect_english = format_elements_english(indirect_elements)
 
-    from tools.format_experiments import build_categorized_prompt
+    from format_experiments import build_categorized_prompt
 
     def hybrid_builder(_elements_json, input_text):
         return build_categorized_prompt(controllable_json, indirect_english, input_text)
