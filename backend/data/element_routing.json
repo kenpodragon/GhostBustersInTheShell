@@ -1,0 +1,461 @@
+{
+  "version": "1.0.0",
+  "version_date": "2026-04-02",
+  "routing": [
+    {
+      "element_name": "adjective_to_noun_ratio",
+      "strategy": "english",
+      "best_score": 0.9271,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "adverb_density",
+      "strategy": "json_enforced",
+      "best_score": 0.9551,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "archaic_vocabulary_rate",
+      "strategy": "json",
+      "best_score": 0.0,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "article_rate",
+      "strategy": "targeted_enforcement",
+      "best_score": 0.9806,
+      "detection_override": null,
+      "enforcement_template": "Target an article usage rate (a, an, the) of approximately {count} per 100 words"
+    },
+    {
+      "element_name": "automated_readability_index",
+      "strategy": "json_enforced",
+      "best_score": 0.988,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "avg_clause_complexity",
+      "strategy": "hybrid",
+      "best_score": 0.9434,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "avg_sentence_length",
+      "strategy": "hybrid",
+      "best_score": 0.953,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "avg_word_length",
+      "strategy": "english",
+      "best_score": 0.9239,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "clause_depth_avg",
+      "strategy": "json_enforced",
+      "best_score": 0.994,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "coleman_liau_index",
+      "strategy": "english",
+      "best_score": 0.818,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "colon_usage",
+      "strategy": "hybrid",
+      "best_score": 0.8893,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "comma_rate",
+      "strategy": "hybrid",
+      "best_score": 0.9491,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "conjunction_opening_rate",
+      "strategy": "json_enforced",
+      "best_score": 0.9754,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "contraction_rate",
+      "strategy": "json",
+      "best_score": 1.0,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "coordinating_conjunction_rate",
+      "strategy": "hybrid",
+      "best_score": 0.9947,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "discourse_marker_rate",
+      "strategy": "hybrid",
+      "best_score": 0.99,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "ellipsis_usage",
+      "strategy": "targeted_enforcement",
+      "best_score": 0.8485,
+      "detection_override": null,
+      "enforcement_template": "Include {count} ellipses (...) for trailing thoughts or pauses"
+    },
+    {
+      "element_name": "em_dash_usage",
+      "strategy": "json",
+      "best_score": 0.0,
+      "detection_override": "detection_wins",
+      "enforcement_template": null
+    },
+    {
+      "element_name": "exclamation_rate",
+      "strategy": "targeted_enforcement",
+      "best_score": 0.8429,
+      "detection_override": null,
+      "enforcement_template": "Include {count} sentence(s) ending with an exclamation mark"
+    },
+    {
+      "element_name": "figurative_language_markers",
+      "strategy": "json",
+      "best_score": 0.8583,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "first_person_usage",
+      "strategy": "targeted_enforcement",
+      "best_score": 0.8409,
+      "detection_override": null,
+      "enforcement_template": "Use first-person pronouns (I, me, my, we, our) approximately {count} times"
+    },
+    {
+      "element_name": "flesch_kincaid_grade",
+      "strategy": "json_enforced",
+      "best_score": 0.9965,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "flesch_reading_ease",
+      "strategy": "english",
+      "best_score": 0.9698,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "function_word_rate",
+      "strategy": "json",
+      "best_score": 0.9464,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "gunning_fog_index",
+      "strategy": "json_enforced",
+      "best_score": 0.9814,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "hapax_legomena_ratio",
+      "strategy": "english",
+      "best_score": 0.9707,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "hedging_language_rate",
+      "strategy": "targeted_enforcement",
+      "best_score": 0.7862,
+      "detection_override": null,
+      "enforcement_template": "Include hedging phrases (perhaps, might, seems, arguably) approximately {count} times"
+    },
+    {
+      "element_name": "intensifier_rate",
+      "strategy": "hybrid",
+      "best_score": 0.579,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "inverted_syntax_rate",
+      "strategy": "hybrid",
+      "best_score": 0.697,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "lexical_density",
+      "strategy": "json",
+      "best_score": 0.9752,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "long_sentence_ratio",
+      "strategy": "targeted_enforcement",
+      "best_score": 0.9182,
+      "detection_override": null,
+      "enforcement_template": "Approximately {count}% of sentences should be 25+ words"
+    },
+    {
+      "element_name": "long_word_frequency",
+      "strategy": "english",
+      "best_score": 0.8813,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "modal_verb_rate",
+      "strategy": "json",
+      "best_score": 0.9698,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "named_entity_density",
+      "strategy": "targeted_enforcement",
+      "best_score": 0.8762,
+      "detection_override": null,
+      "enforcement_template": "Include specific names, places, or organizations \u2014 approximately {count} per 100 words"
+    },
+    {
+      "element_name": "narrative_vs_analytical_ratio",
+      "strategy": "targeted_enforcement",
+      "best_score": 0.965,
+      "detection_override": null,
+      "enforcement_template": "Write {count}% analytical, the remainder narrative/anecdotal"
+    },
+    {
+      "element_name": "nominalization_rate",
+      "strategy": "english",
+      "best_score": 0.7869,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "paragraph_avg_length",
+      "strategy": "english",
+      "best_score": 0.4506,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "paragraph_opening_pos_entropy",
+      "strategy": "json_enforced",
+      "best_score": 0.9641,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "parenthetical_usage",
+      "strategy": "hybrid",
+      "best_score": 0.6885,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "passive_voice_rate",
+      "strategy": "targeted_enforcement",
+      "best_score": 0.9122,
+      "detection_override": null,
+      "enforcement_template": "Use passive voice in approximately {count}% of sentences"
+    },
+    {
+      "element_name": "preposition_rate",
+      "strategy": "json_enforced",
+      "best_score": 0.9814,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "quotation_density",
+      "strategy": "targeted_enforcement",
+      "best_score": 0.7731,
+      "detection_override": null,
+      "enforcement_template": "Include {count} direct quotes or cited phrases in quotation marks"
+    },
+    {
+      "element_name": "rare_word_rate",
+      "strategy": "english",
+      "best_score": 0.8252,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "repetition_rate",
+      "strategy": "hybrid",
+      "best_score": 0.7659,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "rhetorical_question_rate",
+      "strategy": "json",
+      "best_score": 0.6382,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "second_person_usage",
+      "strategy": "hybrid",
+      "best_score": 0.8239,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "semicolon_usage",
+      "strategy": "json_enforced",
+      "best_score": 0.8897,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "sentence_length_stddev",
+      "strategy": "targeted_enforcement",
+      "best_score": 0.8066,
+      "detection_override": null,
+      "enforcement_template": "Vary sentence lengths significantly \u2014 mix very short (under 8 words) with long (25+ words)"
+    },
+    {
+      "element_name": "sentence_opener_variety",
+      "strategy": "json_enforced",
+      "best_score": 0.998,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "sentiment_mean",
+      "strategy": "hybrid",
+      "best_score": 0.9266,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "sentiment_shift_rate",
+      "strategy": "json",
+      "best_score": 0.9963,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "sentiment_variance",
+      "strategy": "hybrid",
+      "best_score": 0.8758,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "short_sentence_ratio",
+      "strategy": "targeted_enforcement",
+      "best_score": 0.9856,
+      "detection_override": null,
+      "enforcement_template": "Approximately {count}% of sentences should be under 8 words"
+    },
+    {
+      "element_name": "single_sentence_paragraph_ratio",
+      "strategy": "targeted_enforcement",
+      "best_score": 0.7405,
+      "detection_override": null,
+      "enforcement_template": "Make approximately {count}% of paragraphs a single sentence for emphasis"
+    },
+    {
+      "element_name": "smog_index",
+      "strategy": "json_enforced",
+      "best_score": 0.9708,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "subordinating_conjunction_rate",
+      "strategy": "json_enforced",
+      "best_score": 0.982,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "third_person_usage",
+      "strategy": "english",
+      "best_score": 0.9519,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "topic_coherence_score",
+      "strategy": "targeted_enforcement",
+      "best_score": 0.923,
+      "detection_override": null,
+      "enforcement_template": "Stay focused on a coherent topic thread \u2014 target coherence around {count}"
+    },
+    {
+      "element_name": "topic_drift_rate",
+      "strategy": "json_enforced",
+      "best_score": 0.9956,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "transition_word_rate",
+      "strategy": "hybrid",
+      "best_score": 0.8846,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "verb_tense_past_ratio",
+      "strategy": "targeted_enforcement",
+      "best_score": 0.9021,
+      "detection_override": null,
+      "enforcement_template": "Use past tense in approximately {count}% of verbs"
+    },
+    {
+      "element_name": "verb_tense_present_ratio",
+      "strategy": "targeted_enforcement",
+      "best_score": 0.9605,
+      "detection_override": null,
+      "enforcement_template": "Use present tense in approximately {count}% of verbs"
+    },
+    {
+      "element_name": "vocabulary_concentration",
+      "strategy": "english",
+      "best_score": 0.9298,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "vocabulary_richness",
+      "strategy": "english",
+      "best_score": 0.8916,
+      "detection_override": null,
+      "enforcement_template": null
+    },
+    {
+      "element_name": "vocative_usage",
+      "strategy": "json",
+      "best_score": 0.888,
+      "detection_override": null,
+      "enforcement_template": null
+    }
+  ]
+}
