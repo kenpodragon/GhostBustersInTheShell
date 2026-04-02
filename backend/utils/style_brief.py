@@ -232,10 +232,9 @@ def generate_style_brief(
     # Voice instructions — only for voice and combined modes
     voice_rules_text = ""
     if mode in ("voice", "combined") and voice_elements:
-        from utils.weight_translator import translate_elements_to_english
-        translated = translate_elements_to_english(voice_elements)
-        if translated:
-            voice_rules_text = translated
+        from utils.style_guide_builder import build_style_guide
+        estimated_words = 600  # floor matching scorer minimum
+        voice_rules_text = build_style_guide(voice_elements, target_word_count=estimated_words)
 
     # Assemble the brief based on mode
     if mode == "voice":
@@ -291,7 +290,6 @@ def generate_style_brief(
     # Voice profile rules — voice and combined modes only
     if mode in ("voice", "combined") and voice_rules_text:
         sections.append("")
-        sections.append("VOICE PROFILE RULES (highest priority — follow these above all else):")
         sections.append(voice_rules_text)
 
     # Voice prompts — voice and combined modes only

@@ -211,7 +211,7 @@ def check_updates():
     from db import query_one
     from version import APP_VERSION
 
-    row = query_one("SELECT rules_version FROM settings WHERE id = 1")
+    row = query_one("SELECT rules_version, routing_version FROM settings WHERE id = 1")
     current_version = row["rules_version"] if row else "unknown"
 
     try:
@@ -229,12 +229,29 @@ def check_updates():
     update_available = remote_version > current_version
     app_update_required = APP_VERSION < min_app_version
 
+    # Check element routing version
+    routing_version_current = row.get("routing_version", "0.0.0") if row else "0.0.0"
+    routing_update = False
+    routing_remote_version = "unknown"
+    try:
+        routing_url = _GITHUB_BASE + "element_routing_version.json"
+        req2 = urllib.request.Request(routing_url, headers={"User-Agent": "GhostBusters/1.0"})
+        with urllib.request.urlopen(req2, timeout=10) as resp2:
+            routing_remote = json.loads(resp2.read().decode("utf-8"))
+        routing_remote_version = routing_remote.get("version", "unknown")
+        routing_update = routing_remote_version > routing_version_current
+    except Exception:
+        pass
+
     return jsonify({
-        "update_available": update_available,
+        "update_available": update_available or routing_update,
         "current_version": current_version,
         "remote_version": remote_version,
         "changelog": changelog,
         "app_update_required": app_update_required,
+        "routing_update_available": routing_update,
+        "routing_current_version": routing_version_current,
+        "routing_remote_version": routing_remote_version,
     })
 
 
@@ -278,6 +295,22 @@ def apply_update():
         )
 
     rules_config.reload()
+
+    # Update element routing if available
+    try:
+        routing_url = _GITHUB_BASE + "element_routing.json"
+        req = urllib.request.Request(routing_url, headers={"User-Agent": "GhostBusters/1.0"})
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            routing_data = json.loads(resp.read().decode("utf-8"))
+
+        from utils.style_guide_builder import seed_routing_table
+        from db import get_cursor
+        with get_cursor() as cur:
+            cur.execute("DELETE FROM element_routing")
+        seed_routing_table()
+    except Exception as e:
+        print(f"[update] Element routing update failed: {e}")
+
     return jsonify({"status": "updated", "version": version})
 
 

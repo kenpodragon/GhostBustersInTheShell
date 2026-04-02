@@ -63,6 +63,10 @@ def main():
     rules_config.seed_db()
     rules_config.load()
 
+    # Seed element routing table if empty or outdated
+    from utils.style_guide_builder import seed_routing_table
+    seed_routing_table()
+
     # AI provider startup health check
     from ai_providers.router import startup_health_check
     startup_health_check()

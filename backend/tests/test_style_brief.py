@@ -168,7 +168,7 @@ class TestGenerateStyleBrief:
         assert "JSON" in brief
 
     def test_voice_elements_adds_profile_rules_section(self):
-        """voice_elements triggers VOICE PROFILE RULES section via weight_translator."""
+        """voice_elements triggers Voice Profile section via style_guide_builder."""
         elements = [
             {"name": "em_dash_usage", "category": "punctuation", "element_type": "directional",
              "direction": "less", "weight": 0.9, "target_value": None},
@@ -176,8 +176,8 @@ class TestGenerateStyleBrief:
              "direction": "more", "weight": 0.7, "target_value": None},
         ]
         brief = generate_style_brief(self._make_detection(), voice_elements=elements)
-        assert "VOICE PROFILE RULES" in brief
-        # weight_translator should produce English instructions
+        assert "Voice Profile" in brief
+        # style_guide_builder should produce English instructions
         assert "em dash" in brief.lower() or "contraction" in brief.lower()
 
     def test_voice_prompts_appended_to_brief(self):
@@ -200,12 +200,12 @@ class TestGenerateStyleBrief:
         # Should not raise even without DB access
         brief = generate_style_brief(self._make_detection(), voice_elements=elements)
         assert isinstance(brief, str)
-        assert "VOICE PROFILE RULES" in brief
+        assert "Voice Profile" in brief
 
     def test_empty_voice_elements_no_profile_section(self):
-        """Empty voice_elements list should not produce a VOICE PROFILE RULES section."""
+        """Empty voice_elements list should not produce a Voice Profile section."""
         brief = generate_style_brief(self._make_detection(), voice_elements=[])
-        assert "VOICE PROFILE RULES" not in brief
+        assert "Voice Profile" not in brief
 
     def test_empty_voice_prompts_no_prompts_section(self):
         """Empty voice_prompts list should not produce ADDITIONAL VOICE INSTRUCTIONS section."""
@@ -256,7 +256,7 @@ class TestGenerateStyleBriefModes:
         assert "voice and style" in brief.lower()
 
     def test_detection_fix_mode_excludes_voice_elements(self):
-        """mode='detection_fix' should NOT have VOICE PROFILE RULES."""
+        """mode='detection_fix' should NOT have Voice Profile section."""
         patterns = [{"pattern": "hedge_cluster", "detail": "4 consecutive hedges"}]
         brief = generate_style_brief(
             self._make_detection(patterns=patterns),
@@ -264,20 +264,20 @@ class TestGenerateStyleBriefModes:
             voice_prompts=[{"prompt_text": "Write casually."}],
             mode="detection_fix",
         )
-        assert "VOICE PROFILE RULES" not in brief
+        assert "Voice Profile" not in brief
         assert "ADDITIONAL VOICE INSTRUCTIONS" not in brief
         assert "STYLE RULES" not in brief
         # Should have detection framing
         assert "DETECTED ISSUES" in brief
 
     def test_combined_mode_includes_both(self):
-        """mode='combined' should have both VOICE PROFILE and BANNED WORDS."""
+        """mode='combined' should have both Voice Profile and BANNED WORDS."""
         brief = generate_style_brief(
             self._make_detection(),
             voice_elements=self._voice_elements(),
             mode="combined",
         )
-        assert "VOICE PROFILE RULES" in brief
+        assert "Voice Profile" in brief
         assert "BANNED WORDS" in brief
         assert "STYLE RULES" in brief
 
@@ -290,7 +290,7 @@ class TestGenerateStyleBriefModes:
         )
         assert isinstance(brief, str)
         assert "voice and style" in brief.lower()
-        assert "VOICE PROFILE RULES" in brief
+        assert "Voice Profile" in brief
         assert "{text}" in brief
 
     def test_detection_fix_mode_minimal_changes_instruction(self):
