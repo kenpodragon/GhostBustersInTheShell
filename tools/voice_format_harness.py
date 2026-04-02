@@ -367,6 +367,76 @@ def run_hybrid_test(assessment_path: str = None):
 
 
 # ---------------------------------------------------------------------------
+# E.4 Targeted Enforcement
+# ---------------------------------------------------------------------------
+
+def run_targeted_test():
+    """E.4a: JSON-enforced + targeted enforcement for problem elements."""
+    print("=== E.4a: JSON-Enforced + Targeted Enforcement ===\n")
+
+    from format_experiments import build_targeted_enforcement_prompt
+
+    all_results = []
+    for input_name in ["neutral_passage", "ai_sounding_passage"]:
+        print(f"\n--- Input: {input_name} ---")
+        result = run_experiment("e4a_targeted", build_targeted_enforcement_prompt, input_name)
+        all_results.append(result)
+
+    save_result("e4a_targeted", {"experiments": all_results})
+    return all_results
+
+
+def run_hybrid_targeted_test(assessment_path: str = None):
+    """E.4b: Hybrid + targeted enforcement for problem elements."""
+    print("=== E.4b: Hybrid + Targeted Enforcement ===\n")
+
+    if assessment_path:
+        assess_file = Path(assessment_path)
+    else:
+        result_files = sorted(RESULTS_DIR.glob("e1_self_assessment_*.json"), reverse=True)
+        if not result_files:
+            print("ERROR: No E.1 assessment results found. Run 'assess' first.")
+            sys.exit(1)
+        assess_file = result_files[0]
+
+    print(f"Using assessment: {assess_file.name}")
+    with open(assess_file) as f:
+        assessment = json.load(f)
+
+    assessments_by_name = {a["element"]: a for a in assessment["assessments"]}
+    elements = load_profile_elements()
+
+    controllable_elements = []
+    indirect_elements = []
+    for e in elements:
+        a = assessments_by_name.get(e["name"], {})
+        if a.get("controllable") == "yes":
+            controllable_elements.append(e)
+        else:
+            indirect_elements.append(e)
+
+    print(f"  Controllable (JSON): {len(controllable_elements)} elements")
+    print(f"  Indirect (English):  {len(indirect_elements)} elements")
+
+    controllable_json = format_elements_json(controllable_elements)
+    indirect_english = format_elements_english(indirect_elements)
+
+    from format_experiments import build_hybrid_targeted_prompt
+
+    def hybrid_targeted_builder(_elements_json, input_text):
+        return build_hybrid_targeted_prompt(controllable_json, indirect_english, input_text)
+
+    all_results = []
+    for input_name in ["neutral_passage", "ai_sounding_passage"]:
+        print(f"\n--- Input: {input_name} ---")
+        result = run_experiment("e4b_hybrid_targeted", hybrid_targeted_builder, input_name)
+        all_results.append(result)
+
+    save_result("e4b_hybrid_targeted", {"experiments": all_results})
+    return all_results
+
+
+# ---------------------------------------------------------------------------
 # Compare Command
 # ---------------------------------------------------------------------------
 
@@ -430,7 +500,7 @@ def run_compare():
 def main():
     if len(sys.argv) < 2:
         print("Usage: python tools/voice_format_harness.py <command>")
-        print("Commands: assess, test-json, test-english, test-hybrid, test-all, compare")
+        print("Commands: assess, test-json, test-english, test-hybrid, test-targeted, test-all, compare")
         sys.exit(1)
 
     command = sys.argv[1]
@@ -442,10 +512,15 @@ def main():
         run_english_test()
     elif command == "test-hybrid":
         run_hybrid_test(sys.argv[2] if len(sys.argv) > 2 else None)
+    elif command == "test-targeted":
+        run_targeted_test()
+        run_hybrid_targeted_test()
     elif command == "test-all":
         run_json_tests()
         run_english_test()
         run_hybrid_test()
+        run_targeted_test()
+        run_hybrid_targeted_test()
     elif command == "compare":
         run_compare()
     else:
