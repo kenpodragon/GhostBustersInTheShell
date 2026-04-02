@@ -36,7 +36,7 @@ def _load_routing(db_conn=None) -> dict:
         return {}
 
 
-def _compute_count(element: dict, target_word_count: int, template: str) -> str:
+def _compute_count(element: dict, target_word_count: int) -> str:
     """Compute a concrete count string for a targeted_enforcement template."""
     name = element.get("name", "")
     weight = element.get("weight", 0.5)
@@ -116,7 +116,7 @@ def _build_json_section(elements: list) -> str:
         for el in elements
     ]
     block = json.dumps(items, indent=2)
-    return f"## Hard Targets\n\nMatch these values precisely:\n\n```json\n{block}\n```"
+    return f"## Voice Profile — Hard Targets\n\nMatch these quantitative targets precisely:\n\n```json\n{block}\n```"
 
 
 def _build_english_section(elements: list) -> str:
@@ -125,7 +125,7 @@ def _build_english_section(elements: list) -> str:
         return ""
     lines = [translate_element(el) for el in elements]
     guidance = "\n".join(f"- {line}" for line in lines)
-    return f"## Style Guidance\n\n{guidance}"
+    return f"## Voice Profile — Style Guidance\n\nFollow these voice patterns:\n\n{guidance}"
 
 
 def _build_enforcement_section(elements: list, routing: dict, target_word_count: int) -> str:
@@ -140,11 +140,16 @@ def _build_enforcement_section(elements: list, routing: dict, target_word_count:
             # Fallback: simple English instruction
             instruction = translate_element(el)
         else:
-            count_str = _compute_count(el, target_word_count, template)
+            count_str = _compute_count(el, target_word_count)
             instruction = template.replace("{count}", count_str)
-        lines.append(f"- {instruction}")
+        lines.append(f"{len(lines) + 1}. {instruction}")
     body = "\n".join(lines)
-    return f"## MANDATORY Enforcement\n\nThese rules are non-negotiable:\n\n{body}"
+    return (
+        "## MANDATORY Style Fingerprint Rules\n\n"
+        "These specific patterns are NON-NEGOTIABLE. The author's voice depends on them.\n"
+        "Verify each one before returning your text.\n\n"
+        + body
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -203,52 +208,67 @@ def build_style_guide(
 # ---------------------------------------------------------------------------
 
 def seed_routing_table(db_conn=None):
-    """Seed element_routing table from JSON file if empty."""
+    """Seed element_routing table from JSON file if empty or outdated."""
     import os
+
     data_file = os.path.join(os.path.dirname(__file__), "..", "data", "element_routing.json")
     data_file = os.path.normpath(data_file)
     if not os.path.exists(data_file):
         return
 
+    close_conn = False
     try:
         if db_conn is None:
             from db import get_connection
             db_conn = get_connection()
+            close_conn = True
 
+        with open(data_file, encoding="utf-8") as f:
+            data = json.load(f)
+
+        seed_version = data.get("version", "1.0.0")
+        entries = data.get("routing", data if isinstance(data, list) else [])
+
+        # Check current version in settings
         cur = db_conn.cursor()
-        cur.execute("SELECT COUNT(*) FROM element_routing")
-        count = cur.fetchone()[0]
-        if count > 0:
-            return  # already seeded
+        cur.execute("SELECT routing_version FROM settings WHERE id = 1")
+        row = cur.fetchone()
+        current_version = row[0] if row else "0.0.0"
 
-        with open(data_file) as f:
-            rows = json.load(f)
+        if current_version >= seed_version:
+            return  # Already up to date
 
-        for row in rows:
+        # Upsert all routing entries
+        for entry in entries:
             cur.execute(
-                """
-                INSERT INTO element_routing
-                    (element_name, strategy, best_score, detection_override, enforcement_template)
-                VALUES (%s, %s, %s, %s, %s)
-                ON CONFLICT (element_name) DO UPDATE SET
-                    strategy = EXCLUDED.strategy,
-                    best_score = EXCLUDED.best_score,
-                    detection_override = EXCLUDED.detection_override,
-                    enforcement_template = EXCLUDED.enforcement_template
+                """INSERT INTO element_routing
+                   (element_name, strategy, best_score, detection_override, enforcement_template)
+                   VALUES (%s, %s, %s, %s, %s)
+                   ON CONFLICT (element_name) DO UPDATE SET
+                       strategy = EXCLUDED.strategy,
+                       best_score = EXCLUDED.best_score,
+                       detection_override = EXCLUDED.detection_override,
+                       enforcement_template = EXCLUDED.enforcement_template,
+                       updated_at = NOW()
                 """,
                 (
-                    row["element_name"],
-                    row.get("strategy", "english"),
-                    row.get("best_score"),
-                    row.get("detection_override"),
-                    row.get("enforcement_template"),
+                    entry["element_name"],
+                    entry.get("strategy", "english"),
+                    entry.get("best_score"),
+                    entry.get("detection_override"),
+                    entry.get("enforcement_template"),
                 ),
             )
 
+        # Update version in settings
         cur.execute(
-            "INSERT INTO settings (key, value) VALUES ('routing_version', '1') "
-            "ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value"
+            "UPDATE settings SET routing_version = %s WHERE id = 1",
+            (seed_version,),
         )
         db_conn.commit()
+        print(f"[startup] Seeded element_routing table ({len(entries)} elements, v{seed_version})")
     except Exception as e:
         print(f"[seed_routing_table] Warning: {e}")
+    finally:
+        if close_conn and db_conn:
+            db_conn.close()

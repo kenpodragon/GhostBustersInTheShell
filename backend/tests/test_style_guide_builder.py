@@ -106,7 +106,7 @@ class TestDetectionOverride:
         routing_voice_wins["em_dash_usage"]["enforcement_template"] = "Use {count} em dashes"
         with patch("utils.style_guide_builder._load_routing", return_value=routing_voice_wins):
             result = build_style_guide(sample_elements)
-        assert "em" in result.lower()
+        assert "em dash" in result.lower()
 
 
 # ---------------------------------------------------------------------------
@@ -117,8 +117,8 @@ class TestCountComputation:
     def test_count_scales_with_word_count(self):
         from utils.style_guide_builder import _compute_count
         element = {"name": "ellipsis_usage", "weight": 0.5, "target_value": 0.5}
-        result_short = _compute_count(element, 200, "Include {count} ellipses")
-        result_long = _compute_count(element, 800, "Include {count} ellipses")
+        result_short = _compute_count(element, 200)
+        result_long = _compute_count(element, 800)
         # Extract numeric value from result strings; longer text should give higher count
         def first_int(s):
             import re
@@ -130,7 +130,7 @@ class TestCountComputation:
         from utils.style_guide_builder import _compute_count
         # Very low weight + very short text should still produce at least "1"
         element = {"name": "ellipsis_usage", "weight": 0.001, "target_value": 0.001}
-        result = _compute_count(element, 50, "Include {count} ellipses")
+        result = _compute_count(element, 50)
         import re
         nums = re.findall(r"\d+", result)
         assert nums, "Expected at least one digit in count result"
@@ -173,6 +173,13 @@ class TestOutputStructure:
         assert mandatory_pos != -1, "MANDATORY section missing"
         assert hard_pos < guidance_pos < mandatory_pos
 
+    def test_enforcement_uses_numbered_list(self, sample_elements, mock_routing):
+        from utils.style_guide_builder import build_style_guide
+        with patch("utils.style_guide_builder._load_routing", return_value=mock_routing):
+            result = build_style_guide(sample_elements)
+        # Enforcement section should use numbered list
+        assert "1. " in result
+
     def test_json_section_contains_valid_json(self, sample_elements, mock_routing):
         from utils.style_guide_builder import build_style_guide
         import re
@@ -185,3 +192,57 @@ class TestOutputStructure:
         assert isinstance(parsed, list)
         names = [item["name"] for item in parsed]
         assert "contraction_rate" in names
+
+
+# ---------------------------------------------------------------------------
+# TestSeedRoutingTable
+# ---------------------------------------------------------------------------
+
+class TestSeedRoutingTable:
+    @patch("utils.style_guide_builder.json.load")
+    @patch("builtins.open", create=True)
+    @patch("os.path.exists", return_value=True)
+    def test_seeds_when_version_is_newer(self, mock_exists, mock_open, mock_json_load):
+        from utils.style_guide_builder import seed_routing_table
+
+        mock_json_load.return_value = {
+            "version": "1.0.0",
+            "routing": [
+                {"element_name": "test_el", "strategy": "json", "best_score": 0.9,
+                 "detection_override": None, "enforcement_template": None}
+            ]
+        }
+
+        mock_conn = MagicMock()
+        mock_cur = MagicMock()
+        mock_conn.cursor.return_value = mock_cur
+        # routing_version query returns old version
+        mock_cur.fetchone.return_value = ("0.0.0",)
+
+        seed_routing_table(db_conn=mock_conn)
+
+        # Should have called INSERT
+        assert mock_cur.execute.call_count >= 2  # SELECT + INSERT + UPDATE
+        mock_conn.commit.assert_called_once()
+
+    @patch("utils.style_guide_builder.json.load")
+    @patch("builtins.open", create=True)
+    @patch("os.path.exists", return_value=True)
+    def test_skips_when_version_is_current(self, mock_exists, mock_open, mock_json_load):
+        from utils.style_guide_builder import seed_routing_table
+
+        mock_json_load.return_value = {
+            "version": "1.0.0",
+            "routing": [{"element_name": "test_el", "strategy": "json"}]
+        }
+
+        mock_conn = MagicMock()
+        mock_cur = MagicMock()
+        mock_conn.cursor.return_value = mock_cur
+        # routing_version already at 1.0.0
+        mock_cur.fetchone.return_value = ("1.0.0",)
+
+        seed_routing_table(db_conn=mock_conn)
+
+        # Should NOT have committed (skipped)
+        mock_conn.commit.assert_not_called()
