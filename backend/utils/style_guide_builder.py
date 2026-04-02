@@ -21,17 +21,12 @@ from utils.weight_translator import translate_element
 def _load_routing(db_conn=None) -> dict:
     """Load element routing from DB. Returns dict keyed by element_name."""
     try:
-        if db_conn is None:
-            from db import get_connection
-            db_conn = get_connection()
-        cur = db_conn.cursor()
-        cur.execute(
+        from db import query_all
+        rows = query_all(
             "SELECT element_name, strategy, best_score, detection_override, enforcement_template "
             "FROM element_routing"
         )
-        rows = cur.fetchall()
-        cols = [d[0] for d in cur.description]
-        return {row[cols.index("element_name")]: dict(zip(cols, row)) for row in rows}
+        return {row["element_name"]: dict(row) for row in rows}
     except Exception:
         return {}
 
@@ -207,22 +202,17 @@ def build_style_guide(
 # Seeding (Task 5 integration point)
 # ---------------------------------------------------------------------------
 
-def seed_routing_table(db_conn=None):
+def seed_routing_table():
     """Seed element_routing table from JSON file if empty or outdated."""
     import os
+    from db import get_conn, query_one
 
     data_file = os.path.join(os.path.dirname(__file__), "..", "data", "element_routing.json")
     data_file = os.path.normpath(data_file)
     if not os.path.exists(data_file):
         return
 
-    close_conn = False
     try:
-        if db_conn is None:
-            from db import get_connection
-            db_conn = get_connection()
-            close_conn = True
-
         with open(data_file, encoding="utf-8") as f:
             data = json.load(f)
 
@@ -230,45 +220,42 @@ def seed_routing_table(db_conn=None):
         entries = data.get("routing", data if isinstance(data, list) else [])
 
         # Check current version in settings
-        cur = db_conn.cursor()
-        cur.execute("SELECT routing_version FROM settings WHERE id = 1")
-        row = cur.fetchone()
-        current_version = row[0] if row else "0.0.0"
+        row = query_one("SELECT routing_version FROM settings WHERE id = 1")
+        current_version = row["routing_version"] if row else "0.0.0"
 
         if current_version >= seed_version:
             return  # Already up to date
 
         # Upsert all routing entries
-        for entry in entries:
+        with get_conn() as conn:
+            cur = conn.cursor()
+            for entry in entries:
+                cur.execute(
+                    """INSERT INTO element_routing
+                       (element_name, strategy, best_score, detection_override, enforcement_template)
+                       VALUES (%s, %s, %s, %s, %s)
+                       ON CONFLICT (element_name) DO UPDATE SET
+                           strategy = EXCLUDED.strategy,
+                           best_score = EXCLUDED.best_score,
+                           detection_override = EXCLUDED.detection_override,
+                           enforcement_template = EXCLUDED.enforcement_template,
+                           updated_at = NOW()
+                    """,
+                    (
+                        entry["element_name"],
+                        entry.get("strategy", "english"),
+                        entry.get("best_score"),
+                        entry.get("detection_override"),
+                        entry.get("enforcement_template"),
+                    ),
+                )
+            # Update version in settings
             cur.execute(
-                """INSERT INTO element_routing
-                   (element_name, strategy, best_score, detection_override, enforcement_template)
-                   VALUES (%s, %s, %s, %s, %s)
-                   ON CONFLICT (element_name) DO UPDATE SET
-                       strategy = EXCLUDED.strategy,
-                       best_score = EXCLUDED.best_score,
-                       detection_override = EXCLUDED.detection_override,
-                       enforcement_template = EXCLUDED.enforcement_template,
-                       updated_at = NOW()
-                """,
-                (
-                    entry["element_name"],
-                    entry.get("strategy", "english"),
-                    entry.get("best_score"),
-                    entry.get("detection_override"),
-                    entry.get("enforcement_template"),
-                ),
+                "UPDATE settings SET routing_version = %s WHERE id = 1",
+                (seed_version,),
             )
-
-        # Update version in settings
-        cur.execute(
-            "UPDATE settings SET routing_version = %s WHERE id = 1",
-            (seed_version,),
-        )
-        db_conn.commit()
+            cur.close()
+        # get_conn auto-commits on exit
         print(f"[startup] Seeded element_routing table ({len(entries)} elements, v{seed_version})")
     except Exception as e:
         print(f"[seed_routing_table] Warning: {e}")
-    finally:
-        if close_conn and db_conn:
-            db_conn.close()

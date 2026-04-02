@@ -1,5 +1,6 @@
 """Tests for the style brief generator."""
 import pytest
+from unittest.mock import patch
 from utils.style_brief import PATTERN_RULES, ALWAYS_ON_RULES, TONE_REFERENCES, map_patterns_to_rules
 from utils.style_brief import build_banned_words, get_tone_reference
 
@@ -191,7 +192,8 @@ class TestGenerateStyleBrief:
         assert "friendly, conversational tone" in brief
         assert "starting sentences with 'The'" in brief
 
-    def test_voice_elements_without_profile_id_no_db_call(self):
+    @patch("utils.style_guide_builder._load_routing", return_value={})
+    def test_voice_elements_without_profile_id_no_db_call(self, mock_routing):
         """Providing voice_elements alone should not attempt DB queries for legacy schema."""
         elements = [
             {"name": "passive_voice_rate", "category": "syntax", "element_type": "directional",

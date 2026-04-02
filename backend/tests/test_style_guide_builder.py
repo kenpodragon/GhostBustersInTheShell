@@ -199,50 +199,34 @@ class TestOutputStructure:
 # ---------------------------------------------------------------------------
 
 class TestSeedRoutingTable:
-    @patch("utils.style_guide_builder.json.load")
-    @patch("builtins.open", create=True)
+    @patch("db.query_one")
+    @patch("db.get_conn")
     @patch("os.path.exists", return_value=True)
-    def test_seeds_when_version_is_newer(self, mock_exists, mock_open, mock_json_load):
+    def test_seeds_when_version_is_newer(self, mock_exists, mock_get_conn, mock_query):
         from utils.style_guide_builder import seed_routing_table
 
-        mock_json_load.return_value = {
-            "version": "1.0.0",
-            "routing": [
-                {"element_name": "test_el", "strategy": "json", "best_score": 0.9,
-                 "detection_override": None, "enforcement_template": None}
-            ]
-        }
-
+        mock_query.return_value = {"routing_version": "0.0.0"}
         mock_conn = MagicMock()
         mock_cur = MagicMock()
         mock_conn.cursor.return_value = mock_cur
-        # routing_version query returns old version
-        mock_cur.fetchone.return_value = ("0.0.0",)
+        mock_get_conn.return_value.__enter__ = MagicMock(return_value=mock_conn)
+        mock_get_conn.return_value.__exit__ = MagicMock(return_value=False)
 
-        seed_routing_table(db_conn=mock_conn)
+        # The real seed file exists, so it will read it
+        seed_routing_table()
 
-        # Should have called INSERT
-        assert mock_cur.execute.call_count >= 2  # SELECT + INSERT + UPDATE
-        mock_conn.commit.assert_called_once()
+        # Should have called INSERT statements on cursor
+        assert mock_cur.execute.call_count >= 2
 
-    @patch("utils.style_guide_builder.json.load")
-    @patch("builtins.open", create=True)
+    @patch("db.query_one")
+    @patch("db.get_conn")
     @patch("os.path.exists", return_value=True)
-    def test_skips_when_version_is_current(self, mock_exists, mock_open, mock_json_load):
+    def test_skips_when_version_is_current(self, mock_exists, mock_get_conn, mock_query):
         from utils.style_guide_builder import seed_routing_table
 
-        mock_json_load.return_value = {
-            "version": "1.0.0",
-            "routing": [{"element_name": "test_el", "strategy": "json"}]
-        }
+        mock_query.return_value = {"routing_version": "99.0.0"}
 
-        mock_conn = MagicMock()
-        mock_cur = MagicMock()
-        mock_conn.cursor.return_value = mock_cur
-        # routing_version already at 1.0.0
-        mock_cur.fetchone.return_value = ("1.0.0",)
+        seed_routing_table()
 
-        seed_routing_table(db_conn=mock_conn)
-
-        # Should NOT have committed (skipped)
-        mock_conn.commit.assert_not_called()
+        # Should NOT have opened a connection for writing
+        mock_get_conn.assert_not_called()

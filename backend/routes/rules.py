@@ -296,17 +296,11 @@ def apply_update():
 
     rules_config.reload()
 
-    # Update element routing if available
+    # Re-seed element routing from bundled data (version check triggers re-seed)
     try:
-        routing_url = _GITHUB_BASE + "element_routing.json"
-        req = urllib.request.Request(routing_url, headers={"User-Agent": "GhostBusters/1.0"})
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            routing_data = json.loads(resp.read().decode("utf-8"))
-
+        from db import execute
+        execute("UPDATE settings SET routing_version = '0.0.0' WHERE id = 1")
         from utils.style_guide_builder import seed_routing_table
-        from db import get_cursor
-        with get_cursor() as cur:
-            cur.execute("DELETE FROM element_routing")
         seed_routing_table()
     except Exception as e:
         print(f"[update] Element routing update failed: {e}")
