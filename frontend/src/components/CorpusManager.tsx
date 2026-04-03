@@ -1,10 +1,15 @@
 import { useState, useEffect } from 'react'
-import type { CorpusInfo, CorpusDocument } from '../types'
+import type { CorpusInfo, CorpusDocument, CompletenessData } from '../types'
 import { scoringApi } from '../services/scoringApi'
+import CategoryConvergence from './CategoryConvergence'
 
-interface Props { profileId: number }
+interface Props {
+  profileId: number
+  completeness?: CompletenessData | null
+  onCorpusChange?: () => void
+}
 
-export default function CorpusManager({ profileId }: Props) {
+export default function CorpusManager({ profileId, completeness, onCorpusChange }: Props) {
   const [corpus, setCorpus] = useState<CorpusInfo | null>(null)
   const [loading, setLoading] = useState(true)
   const [msg, setMsg] = useState('')
@@ -26,6 +31,7 @@ export default function CorpusManager({ profileId }: Props) {
       await scoringApi.removeCorpusDoc(profileId, docId)
       setMsg(`Removed ${filename}.`)
       loadCorpus()
+      onCorpusChange?.()
     } catch { setMsg('Failed to remove document.') }
   }
 
@@ -35,6 +41,7 @@ export default function CorpusManager({ profileId }: Props) {
   const { documents, stats } = corpus
   return (
     <div>
+      <CategoryConvergence data={completeness ?? null} />
       <div className="terminal-output" style={{ padding: '8px', marginBottom: '8px', display: 'flex', gap: '16px', fontSize: '13px' }}>
         <span>{stats.total_documents} documents</span>
         <span>{Math.round(stats.total_words / 1000)}K chars</span>

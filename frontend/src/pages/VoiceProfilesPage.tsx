@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import type { VoiceProfile, ProfileElement, ProfilePrompt, ProfileSnapshot, FidelityScoreResult } from '../types'
+import type { VoiceProfile, ProfileElement, ProfilePrompt, ProfileSnapshot, FidelityScoreResult, CompletenessData } from '../types'
 import { voiceProfilesApi } from '../services/voiceProfilesApi'
 import { scoringApi } from '../services/scoringApi'
 import FidelityScore from '../components/FidelityScore'
 import CorpusManager from '../components/CorpusManager'
+import CompletenessBar from '../components/CompletenessBar'
 import ConsolidationView from '../components/ConsolidationView'
 import ReparseView from '../components/ReparseView'
 
@@ -879,6 +880,7 @@ export default function VoiceProfilesPage() {
   const [deleting, setDeleting] = useState<number | null>(null)
   const [editingName, setEditingName] = useState(false)
   const [nameDraft, setNameDraft] = useState('')
+  const [completeness, setCompleteness] = useState<CompletenessData | null>(null)
   const nameInputRef = useRef<HTMLInputElement>(null)
 
   const loadProfiles = useCallback(async (autoSelectFirst = false) => {
@@ -898,7 +900,25 @@ export default function VoiceProfilesPage() {
 
   useEffect(() => { loadProfiles(true) }, [loadProfiles])
 
+  const loadCompleteness = useCallback(async (pid: number) => {
+    try {
+      const data = await voiceProfilesApi.fetchCompleteness(pid)
+      setCompleteness(data)
+    } catch {
+      setCompleteness(null)
+    }
+  }, [])
+
   const selectedProfile = profiles.find(p => p.id === selectedId) ?? null
+
+  // Load completeness when selected profile changes
+  useEffect(() => {
+    if (selectedId) {
+      loadCompleteness(selectedId)
+    } else {
+      setCompleteness(null)
+    }
+  }, [selectedId, loadCompleteness])
 
   const handleDelete = async (id: number) => {
     if (!confirm('Delete this voice profile? This cannot be undone.')) return
@@ -1120,13 +1140,15 @@ export default function VoiceProfilesPage() {
               ))}
             </div>
 
+            <CompletenessBar data={completeness} />
+
             <div className="vp-tab-content card">
               {activeTab === 'elements' && <ElementsTab key={selectedProfile.id} profileId={selectedProfile.id} />}
               {activeTab === 'prompts' && <PromptsTab key={selectedProfile.id} profileId={selectedProfile.id} />}
               {activeTab === 'finetune' && <FineTuneTab key={selectedProfile.id} profile={selectedProfile} />}
               {activeTab === 'freeze' && <FreezeVoiceTab key={selectedProfile.id} profileId={selectedProfile.id} />}
               {activeTab === 'testvox' && <TestVoiceTab key={selectedProfile.id} profileId={selectedProfile.id} />}
-              {activeTab === 'corpus' && <CorpusManager key={selectedProfile.id} profileId={selectedProfile.id} />}
+              {activeTab === 'corpus' && <CorpusManager key={selectedProfile.id} profileId={selectedProfile.id} completeness={completeness} onCorpusChange={() => loadCompleteness(selectedProfile.id)} />}
               {activeTab === 'consolidate' && <ConsolidationView key={selectedProfile.id} profileId={selectedProfile.id} observationCount={0} />}
               {activeTab === 'reparse' && selectedProfile && <ReparseView key={selectedProfile.id} profileId={selectedProfile.id} profileName={selectedProfile.name} />}
             </div>
