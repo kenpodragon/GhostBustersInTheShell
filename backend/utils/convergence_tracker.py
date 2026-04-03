@@ -19,6 +19,52 @@ COMPLETENESS_TIERS = {
     "gold": 90,
 }
 
+# Starter tier: word-count-based milestones before Bronze
+STARTER_MILESTONES = [2000, 5000, 10000, 20000]
+STARTER_WORD_GATE = 20000  # Must have this many words AND 50% convergence for Bronze
+
+STARTER_LABELS = {0: None, 1: "¼", 2: "½", 3: "¾", 4: "complete"}
+
+
+def get_starter_milestone(total_words: int) -> dict:
+    """Return current milestone progress based on word count.
+
+    Returns dict with: milestone (0-4), milestone_label, words_current,
+    words_next, milestone_pct.
+    """
+    # Find which milestone we've reached
+    milestone = 0
+    for i, threshold in enumerate(STARTER_MILESTONES):
+        if total_words >= threshold:
+            milestone = i + 1
+        else:
+            break
+
+    # Clamp at 4 (full/complete)
+    milestone = min(milestone, 4)
+    label = STARTER_LABELS[milestone]
+
+    # Calculate progress toward next milestone
+    if milestone >= 4:
+        # At or past word gate
+        words_next = STARTER_WORD_GATE
+        milestone_pct = 100
+    else:
+        words_next = STARTER_MILESTONES[milestone]
+        prev_threshold = STARTER_MILESTONES[milestone - 1] if milestone > 0 else 0
+        range_size = words_next - prev_threshold
+        progress = total_words - prev_threshold
+        milestone_pct = int(progress * 100 / range_size) if range_size > 0 else 0
+
+    return {
+        "milestone": milestone,
+        "milestone_label": label,
+        "words_current": total_words,
+        "words_next": words_next,
+        "milestone_pct": milestone_pct,
+    }
+
+
 # Mapping of all 65 elements to their category
 ELEMENT_CATEGORIES = {
     # lexical (13)

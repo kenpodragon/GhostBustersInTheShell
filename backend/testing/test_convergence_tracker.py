@@ -124,3 +124,71 @@ class TestConvergenceComputer:
         cats = result["categories"]
         assert cats["readability"]["converged"] == 1
         assert cats["idiosyncratic"]["converged"] == 0
+
+
+from utils.convergence_tracker import (
+    STARTER_MILESTONES,
+    STARTER_WORD_GATE,
+    get_starter_milestone,
+)
+
+
+class TestStarterMilestones:
+    """Test Starter tier milestone logic."""
+
+    def test_starter_milestones_defined(self):
+        assert STARTER_MILESTONES == [2000, 5000, 10000, 20000]
+
+    def test_starter_word_gate(self):
+        assert STARTER_WORD_GATE == 20000
+
+    def test_zero_words(self):
+        result = get_starter_milestone(0)
+        assert result["milestone"] == 0
+        assert result["milestone_label"] is None
+        assert result["words_next"] == 2000
+        assert result["milestone_pct"] == 0
+
+    def test_under_first_milestone(self):
+        result = get_starter_milestone(1000)
+        assert result["milestone"] == 0
+        assert result["milestone_label"] is None
+        assert result["words_current"] == 1000
+        assert result["words_next"] == 2000
+        assert result["milestone_pct"] == 50
+
+    def test_at_first_milestone(self):
+        result = get_starter_milestone(2000)
+        assert result["milestone"] == 1
+        assert result["milestone_label"] == "¼"
+        assert result["words_current"] == 2000
+        assert result["words_next"] == 5000
+
+    def test_between_second_and_third(self):
+        result = get_starter_milestone(7500)
+        assert result["milestone"] == 2
+        assert result["milestone_label"] == "½"
+        assert result["words_current"] == 7500
+        assert result["words_next"] == 10000
+        assert result["milestone_pct"] == 50
+
+    def test_at_third_milestone(self):
+        result = get_starter_milestone(10000)
+        assert result["milestone"] == 3
+        assert result["milestone_label"] == "¾"
+        assert result["words_current"] == 10000
+        assert result["words_next"] == 20000
+
+    def test_at_word_gate(self):
+        result = get_starter_milestone(20000)
+        assert result["milestone"] == 4
+        assert result["milestone_label"] == "complete"
+        assert result["words_current"] == 20000
+        assert result["words_next"] == 20000
+        assert result["milestone_pct"] == 100
+
+    def test_above_word_gate(self):
+        result = get_starter_milestone(50000)
+        assert result["milestone"] == 4
+        assert result["milestone_label"] == "complete"
+        assert result["milestone_pct"] == 100
