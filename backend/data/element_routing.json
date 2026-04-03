@@ -137,10 +137,10 @@
     },
     {
       "element_name": "figurative_language_markers",
-      "strategy": "json",
+      "strategy": "targeted_enforcement",
       "best_score": 0.8583,
       "detection_override": null,
-      "enforcement_template": null
+      "enforcement_template": "Include {count} figurative expression(s) such as metaphors, similes, or vivid imagery"
     },
     {
       "element_name": "first_person_usage",
@@ -193,10 +193,10 @@
     },
     {
       "element_name": "intensifier_rate",
-      "strategy": "hybrid",
+      "strategy": "targeted_enforcement",
       "best_score": 0.579,
       "detection_override": null,
-      "enforcement_template": null
+      "enforcement_template": "Use {count} intensifier(s) (very, really, extremely, incredibly, absolutely) naturally in your sentences"
     },
     {
       "element_name": "inverted_syntax_rate",
@@ -270,10 +270,10 @@
     },
     {
       "element_name": "parenthetical_usage",
-      "strategy": "hybrid",
+      "strategy": "targeted_enforcement",
       "best_score": 0.6885,
       "detection_override": null,
-      "enforcement_template": null
+      "enforcement_template": "Include {count} parenthetical aside(s) using parentheses (like this) to add conversational commentary"
     },
     {
       "element_name": "passive_voice_rate",
@@ -326,10 +326,10 @@
     },
     {
       "element_name": "semicolon_usage",
-      "strategy": "json_enforced",
+      "strategy": "targeted_enforcement",
       "best_score": 0.8897,
       "detection_override": null,
-      "enforcement_template": null
+      "enforcement_template": "Use {count} semicolon(s) to join related independent clauses"
     },
     {
       "element_name": "sentence_length_stddev",
@@ -378,7 +378,7 @@
       "strategy": "targeted_enforcement",
       "best_score": 0.7405,
       "detection_override": null,
-      "enforcement_template": "Make approximately {count}% of paragraphs a single sentence for emphasis"
+      "enforcement_template": "Make approximately {count} of your paragraphs a single sentence for emphasis"
     },
     {
       "element_name": "smog_index",

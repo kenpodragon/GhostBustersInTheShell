@@ -1,7 +1,53 @@
 """Tests for voice fidelity scoring module."""
 import pytest
 from unittest.mock import patch, MagicMock
-from utils.voice_fidelity_scorer import score_fidelity
+from utils.voice_fidelity_scorer import score_fidelity, _compute_similarity
+
+
+class TestComputeSimilarity:
+    """Unit tests for the similarity formula."""
+
+    def test_identical_values(self):
+        assert _compute_similarity(0.5, 0.5) == 1.0
+
+    def test_both_zero(self):
+        assert _compute_similarity(0.0, 0.0) == 1.0
+
+    def test_one_zero_one_nonzero(self):
+        assert _compute_similarity(0.0, 0.5) == 0.0
+        assert _compute_similarity(0.5, 0.0) == 0.0
+
+    def test_none_returns_zero(self):
+        assert _compute_similarity(None, 0.5) == 0.0
+        assert _compute_similarity(0.5, None) == 0.0
+
+    def test_symmetric_over_undershoot(self):
+        """2x overshoot and 50% undershoot should score the same."""
+        over = _compute_similarity(0.1, 0.2)   # 2x overshoot
+        under = _compute_similarity(0.2, 0.1)  # 50% undershoot
+        assert over == under
+
+    def test_moderate_overshoot_not_zero(self):
+        """3.6x overshoot should score > 0, not floor to zero."""
+        sim = _compute_similarity(0.058, 0.208)  # ellipsis case
+        assert sim > 0.2, f"3.6x overshoot scored {sim}, expected > 0.2"
+
+    def test_close_values_high_similarity(self):
+        sim = _compute_similarity(12.0, 12.3)
+        assert sim > 0.95
+
+    def test_large_divergence_low_similarity(self):
+        sim = _compute_similarity(0.01, 1.0)
+        assert sim < 0.05
+
+    def test_result_always_0_to_1(self):
+        test_pairs = [
+            (0.001, 10.0), (10.0, 0.001), (0.5, 0.5),
+            (0.0, 0.0), (100.0, 0.1), (0.058, 0.208),
+        ]
+        for pv, gv in test_pairs:
+            sim = _compute_similarity(pv, gv)
+            assert 0.0 <= sim <= 1.0, f"({pv}, {gv}) -> {sim}"
 
 
 class TestScoreFidelityQuantitative:

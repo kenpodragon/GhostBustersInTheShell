@@ -64,22 +64,42 @@ def _compute_count(element: dict, target_word_count: int) -> str:
 
     if name == "narrative_vs_analytical_ratio":
         pct = round((1 - weight) * 100)
-        return f"~{pct}% analytical"
+        return f"~{pct}"
 
     if name in ("long_sentence_ratio", "short_sentence_ratio",
                 "passive_voice_rate", "verb_tense_past_ratio",
                 "verb_tense_present_ratio"):
         pct = round(weight * 100)
-        return f"~{pct}%"
+        return f"~{pct}"
 
     if name in ("article_rate", "named_entity_density"):
         val = round(weight * 100, 1)
-        return f"~{val} per 100 words"
+        return f"~{val}"
 
     if name == "hedging_language_rate":
         raw = weight * (twc / 20)
         n = max(1, round(raw))
         return f"~{n}"
+
+    if name == "parenthetical_usage":
+        raw = weight * (twc / 20)
+        n = max(1, round(raw))
+        return str(n)
+
+    if name == "intensifier_rate":
+        raw = weight * (twc / 20)
+        n = max(1, round(raw))
+        return str(n)
+
+    if name == "semicolon_usage":
+        raw = weight * 0.5 * (twc / 20)
+        n = max(1, round(raw))
+        return str(n)
+
+    if name == "figurative_language_markers":
+        raw = weight * 0.3 * (twc / 20)
+        n = max(1, round(raw))
+        return str(n)
 
     if name == "topic_coherence_score":
         return f"~{round(weight, 2)}"

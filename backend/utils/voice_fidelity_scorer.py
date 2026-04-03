@@ -136,12 +136,20 @@ def _get_profile_value(elem: dict) -> float:
 
 
 def _compute_similarity(profile_value: float, generated_value: float) -> float:
-    """Compute similarity between two values as 1 - normalized deviation."""
+    """Compute similarity as min/max ratio — symmetric for over/undershoot.
+
+    A value 3x the target scores the same as 1/3 of the target (~33%).
+    This prevents small-target elements (e.g. ellipsis_usage=0.058)
+    from scoring 0% on moderate overshoots.
+    """
     if profile_value is None or generated_value is None:
         return 0.0
-    denom = max(abs(profile_value), EPSILON)
-    deviation = abs(generated_value - profile_value) / denom
-    return max(0.0, 1.0 - deviation)
+    ap, ag = abs(profile_value), abs(generated_value)
+    if ap < EPSILON and ag < EPSILON:
+        return 1.0
+    if ap < EPSILON or ag < EPSILON:
+        return 0.0
+    return min(ap, ag) / max(ap, ag)
 
 
 QUALITATIVE_PROMPT = """You are a voice fidelity analyst. Compare two writing samples and assess how well the GENERATED text matches the ORIGINAL author's voice.
