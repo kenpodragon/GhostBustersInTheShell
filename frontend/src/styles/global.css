@@ -2218,6 +2218,13 @@ input:focus, select:focus {
   font-weight: 500;
 }
 
+.completeness-secondary {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+  font-style: italic;
+}
+
 /* ── Task 12: Category Convergence ───────────────────────────────── */
 
 .category-convergence {
