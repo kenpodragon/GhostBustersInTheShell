@@ -359,7 +359,7 @@ def get_corpus_info(profile_id: int) -> dict:
            FROM documents WHERE voice_profile_id = %s AND purpose = 'voice_corpus'""",
         (profile_id, profile_id),
     )
-    return {
+    result = {
         "documents": docs,
         "stats": {
             "total_documents": stats_row["total_documents"] if stats_row else 0,
@@ -367,6 +367,20 @@ def get_corpus_info(profile_id: int) -> dict:
             "ai_observations_count": stats_row["ai_observations_count"] if stats_row else 0,
         },
     }
+
+    # Completeness data
+    completeness = None
+    try:
+        from db import get_conn
+        with get_conn() as conn:
+            from utils.voice_profile_service import VoiceProfileService
+            svc = VoiceProfileService(conn)
+            completeness = svc.get_completeness(profile_id)
+    except Exception:
+        pass
+
+    result["completeness"] = completeness
+    return result
 
 
 @mcp.tool()
