@@ -6,6 +6,16 @@ Sections:
   1. JSON Hard Targets  — strategy: json | json_enforced
   2. English Style Guidance — strategy: english | hybrid
   3. Mandatory Enforcement — strategy: targeted_enforcement
+
+Token budget note (Session 30 measurement, 65 elements):
+  - This guide produces ~1,350 tokens for a full 65-element profile.
+  - The complete rewrite prompt (guide + always-on rules + banned words +
+    voice prompts + JSON schema + input text) totals ~3,700 tokens.
+  - Keep total rewrite instructions under ~4,000 tokens for best
+    instruction-following quality from Claude.
+  - Optimization lever: 37/64 elements score >90% naturally. Adding a
+    skip_if_natural threshold (e.g. best_score >= 0.90) to build_style_guide()
+    would drop ~800 tokens by excluding elements Claude already hits.
 """
 
 import json
