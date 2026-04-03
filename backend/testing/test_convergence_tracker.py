@@ -83,7 +83,7 @@ class TestConvergenceComputer:
         cc = ConvergenceComputer()
         result = cc.compute_completeness()
         assert result["pct"] == 0
-        assert result["tier"] is None
+        assert result["tier"] == "starter"
 
     def test_bronze_tier(self):
         cc = ConvergenceComputer()
@@ -94,7 +94,7 @@ class TestConvergenceComputer:
         for i in range(31):
             t = ElementTracker(f"el_nc_{i}")
             cc.add_tracker(t)
-        result = cc.compute_completeness()
+        result = cc.compute_completeness(total_words=100000)
         assert result["tier"] == "bronze"
         assert result["pct"] == 51
 
@@ -107,7 +107,7 @@ class TestConvergenceComputer:
         for i in range(4):
             t = ElementTracker(f"el_nc_{i}")
             cc.add_tracker(t)
-        result = cc.compute_completeness()
+        result = cc.compute_completeness(total_words=100000)
         assert result["tier"] == "gold"
         assert result["pct"] == 93
 
@@ -192,3 +192,64 @@ class TestStarterMilestones:
         assert result["milestone"] == 4
         assert result["milestone_label"] == "complete"
         assert result["milestone_pct"] == 100
+
+
+class TestConvergenceComputerWordGate:
+    """Test that Bronze requires both convergence AND word gate."""
+
+    def _make_computer(self, converged_count: int, total: int = 10) -> ConvergenceComputer:
+        cc = ConvergenceComputer()
+        for i in range(total):
+            t = ElementTracker(f"el_{i}")
+            t.count = 5
+            t.mean = 0.5
+            t.m2 = 0.01
+            if i < converged_count:
+                t._converged = True
+            cc.add_tracker(t)
+        return cc
+
+    def test_high_convergence_low_words_stays_starter(self):
+        """60% converged but only 15K words -> still starter."""
+        cc = self._make_computer(6, 10)
+        result = cc.compute_completeness(total_words=15000)
+        assert result["tier"] == "starter"
+        assert result["starter_progress"] is not None
+        assert result["starter_progress"]["milestone"] == 3
+        assert result["starter_progress"]["milestone_label"] == "¾"
+
+    def test_high_convergence_high_words_gets_bronze(self):
+        """60% converged AND 25K words -> Bronze."""
+        cc = self._make_computer(6, 10)
+        result = cc.compute_completeness(total_words=25000)
+        assert result["tier"] == "bronze"
+        assert result["tier_label"] == "Bronze"
+        assert "starter_progress" not in result
+
+    def test_low_convergence_high_words_stays_starter_complete(self):
+        """30% converged, 25K words -> starter (complete), waiting on convergence."""
+        cc = self._make_computer(3, 10)
+        result = cc.compute_completeness(total_words=25000)
+        assert result["tier"] == "starter"
+        assert result["starter_progress"]["milestone"] == 4
+        assert result["starter_progress"]["milestone_label"] == "complete"
+
+    def test_silver_not_affected_by_word_gate(self):
+        """80% converged, 25K words -> Silver (word gate only blocks Bronze)."""
+        cc = self._make_computer(8, 10)
+        result = cc.compute_completeness(total_words=25000)
+        assert result["tier"] == "silver"
+        assert "starter_progress" not in result
+
+    def test_gold_not_affected_by_word_gate(self):
+        """95% converged, 30K words -> Gold."""
+        cc = self._make_computer(10, 10)
+        result = cc.compute_completeness(total_words=30000)
+        assert result["tier"] == "gold"
+
+    def test_zero_words_starter(self):
+        """0 words, no convergence -> starter milestone 0."""
+        cc = self._make_computer(0, 10)
+        result = cc.compute_completeness(total_words=0)
+        assert result["tier"] == "starter"
+        assert result["starter_progress"]["milestone"] == 0

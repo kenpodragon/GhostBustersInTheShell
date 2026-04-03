@@ -26,6 +26,16 @@ STARTER_WORD_GATE = 20000  # Must have this many words AND 50% convergence for B
 STARTER_LABELS = {0: None, 1: "¼", 2: "½", 3: "¾", 4: "complete"}
 
 
+def _starter_tier_label(starter_progress: dict) -> str:
+    """Build the display label for a Starter tier milestone."""
+    label = starter_progress["milestone_label"]
+    if label is None:
+        return "Starter"
+    if label == "complete":
+        return "Starter (complete)"
+    return f"Starter {label}"
+
+
 def get_starter_milestone(total_words: int) -> dict:
     """Return current milestone progress based on word count.
 
@@ -236,18 +246,26 @@ class ConvergenceComputer:
     def add_tracker(self, tracker: ElementTracker) -> None:
         self._trackers.append(tracker)
 
-    def compute_completeness(self) -> dict:
-        """Return completeness dict with tier, pct, and per-category breakdown."""
+    def compute_completeness(self, total_words: int = 0) -> dict:
+        """Return completeness dict with tier, pct, and per-category breakdown.
+
+        Args:
+            total_words: Total words in corpus. Used for Starter tier logic
+                         and Bronze word gate.
+        """
         total = len(self._trackers)
         if total == 0:
+            starter_progress = get_starter_milestone(total_words)
             return {
-                "tier": None,
-                "tier_label": None,
+                "tier": "starter",
+                "tier_label": _starter_tier_label(starter_progress),
                 "pct": 0,
                 "next_tier": "bronze",
                 "next_tier_label": "Bronze",
                 "elements_converged": 0,
                 "elements_total": 0,
+                "total_words": total_words,
+                "starter_progress": starter_progress,
                 "categories": {},
             }
 
@@ -266,8 +284,26 @@ class ConvergenceComputer:
                 tier = t_name
                 tier_label = t_name.capitalize()
 
+        # Bronze requires word gate — demote to starter if not met
+        if tier == "bronze" and total_words < STARTER_WORD_GATE:
+            tier = None
+            tier_label = None
+
+        # If no tier achieved (below Bronze or word-gated), use Starter
+        if tier is None:
+            tier = "starter"
+            starter_progress = get_starter_milestone(total_words)
+            tier_label = _starter_tier_label(starter_progress)
+        else:
+            starter_progress = None
+
         # Next tier
         for t_name, t_threshold in ordered_tiers:
+            if t_name == "bronze" and total_words < STARTER_WORD_GATE:
+                # Still need word gate for Bronze
+                next_tier = "bronze"
+                next_tier_label = "Bronze"
+                break
             if pct < t_threshold:
                 next_tier = t_name
                 next_tier_label = t_name.capitalize()
@@ -292,7 +328,7 @@ class ConvergenceComputer:
                 else:
                     data["status"] = "needs_more"
 
-        return {
+        result = {
             "tier": tier,
             "tier_label": tier_label,
             "pct": pct,
@@ -302,3 +338,6 @@ class ConvergenceComputer:
             "elements_total": total,
             "categories": categories,
         }
+        if starter_progress is not None:
+            result["starter_progress"] = starter_progress
+        return result
