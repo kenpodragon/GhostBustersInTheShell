@@ -232,22 +232,19 @@ class ConvergenceComputer:
         for tracker in self._trackers:
             cat = tracker._category
             if cat not in categories:
-                categories[cat] = {"converged": 0, "total": 0, "status": "incomplete"}
+                categories[cat] = {"converged": 0, "total": 0, "status": "needs_more"}
             categories[cat]["total"] += 1
             if tracker._converged:
                 categories[cat]["converged"] += 1
 
         for cat, data in categories.items():
             if data["total"] > 0:
-                cat_pct = data["converged"] * 100 // data["total"]
-                if cat_pct >= 90:
-                    data["status"] = "gold"
-                elif cat_pct >= 75:
-                    data["status"] = "silver"
-                elif cat_pct >= 50:
-                    data["status"] = "bronze"
+                if data["converged"] == data["total"]:
+                    data["status"] = "complete"
+                elif data["converged"] / data["total"] >= 0.5:
+                    data["status"] = "good"
                 else:
-                    data["status"] = "incomplete"
+                    data["status"] = "needs_more"
 
         return {
             "tier": tier,
