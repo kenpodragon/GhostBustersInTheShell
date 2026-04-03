@@ -257,6 +257,14 @@ def parse_text(profile_id):
             elements = svc.get_elements(profile_id)
             updated = svc.get_profile_summary(profile_id)
 
+            # Convergence tracking
+            word_count = len(text.split())
+            update_info = svc.update_convergence(
+                profile_id, document_id, parse_result, word_count
+            )
+            convergence_result = svc.get_completeness(profile_id)
+            convergence_result["newly_converged"] = update_info.get("newly_converged", [])
+
         # --- AI extraction (optional) ---
         ai_extraction = {"status": "skipped"}
         from ai_providers.router import should_use_ai
@@ -292,6 +300,8 @@ def parse_text(profile_id):
                 "discovered_patterns": ai_extraction.get("discovered_patterns", []),
             },
         }
+        if convergence_result:
+            response["completeness"] = convergence_result
         if same_name_warning:
             response["same_name_warning"] = same_name_warning
 
@@ -688,6 +698,24 @@ def consolidate(profile_id):
     try:
         from utils.ai_consolidator import consolidate_observations
         result = consolidate_observations(profile_id)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ---------------------------------------------------------------------------
+# Completeness / Convergence
+# ---------------------------------------------------------------------------
+
+@voice_profiles_bp.route("/voice-profiles/<int:profile_id>/completeness", methods=["GET"])
+def get_completeness(profile_id):
+    """Get profile completeness — convergence status and tier."""
+    try:
+        from db import get_conn
+        from utils.voice_profile_service import VoiceProfileService
+        with get_conn() as conn:
+            svc = VoiceProfileService(conn)
+            result = svc.get_completeness(profile_id)
         return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
