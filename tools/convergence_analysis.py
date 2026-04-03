@@ -19,7 +19,10 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "backend"))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "backend"))
+# Fallback for Docker where __file__ may resolve differently
+if not os.path.isdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "backend")):
+    sys.path.insert(0, "/app")
 
 from utils.voice_generator import generate_voice_profile
 from utils.convergence_tracker import ElementTracker, ConvergenceComputer, ELEMENT_CATEGORIES
