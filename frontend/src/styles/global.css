@@ -2146,3 +2146,123 @@ input:focus, select:focus {
 .ai-prompt-footer {
   font-size: 0.75rem;
 }
+
+/* ── Task 12: Completeness Bar ───────────────────────────────────── */
+
+.completeness-bar-container {
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-card);
+}
+
+.completeness-empty {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  text-align: center;
+  padding: 0.5rem;
+}
+
+.completeness-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.completeness-tier {
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.completeness-stats {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.completeness-track {
+  position: relative;
+  height: 8px;
+  background: var(--bg-input);
+  border-radius: 4px;
+  overflow: visible;
+}
+
+.completeness-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.completeness-marker {
+  position: absolute;
+  top: -2px;
+  width: 2px;
+  height: 12px;
+  background: var(--text-muted);
+  opacity: 0.4;
+  transform: translateX(-1px);
+}
+
+.completeness-hint {
+  margin-top: 0.4rem;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.completeness-toast {
+  margin-top: 0.4rem;
+  font-size: 0.7rem;
+  color: var(--teal-primary);
+  font-weight: 500;
+}
+
+/* ── Task 12: Category Convergence ───────────────────────────────── */
+
+.category-convergence {
+  margin-bottom: 1rem;
+}
+
+.convergence-category {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.convergence-category-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.5rem;
+  background: none;
+  border: none;
+  border-left: 3px solid transparent;
+  color: var(--text-white);
+  font-size: 0.75rem;
+  cursor: pointer;
+  text-align: left;
+}
+
+.convergence-category-header:hover {
+  background: var(--bg-hover);
+}
+
+.convergence-category-label {
+  flex: 1;
+}
+
+.convergence-category-count {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+}
+
+.convergence-expand {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+}
+
+.convergence-category-detail {
+  padding: 0.3rem 0.5rem 0.5rem 1.5rem;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
