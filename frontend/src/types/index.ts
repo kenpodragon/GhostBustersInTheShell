@@ -257,3 +257,23 @@ export interface ParseResult {
   ai_extraction: AIExtraction
   same_name_warning?: string
 }
+
+export interface CategoryConvergenceStatus {
+  converged: number
+  total: number
+  status: 'complete' | 'good' | 'needs_more'
+}
+
+export interface CompletenessData {
+  tier: 'bronze' | 'silver' | 'gold' | null
+  tier_label: string | null
+  pct: number
+  total_words: number
+  words_to_next_tier: string | null
+  next_tier: string | null
+  next_tier_label: string | null
+  elements_converged: number
+  elements_total: number
+  newly_converged?: string[]
+  categories: Record<string, CategoryConvergenceStatus>
+}

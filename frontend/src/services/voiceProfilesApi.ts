@@ -1,3 +1,5 @@
+import type { CompletenessData } from '../types'
+
 const API = 'http://localhost:8066/api'
 
 const json = (r: Response) => r.json()
@@ -76,4 +78,11 @@ export const voiceProfilesApi = {
   // Samples
   getSamples: (id: number, limit: number = 5) =>
     fetch(`${API}/voice-profiles/${id}/samples?limit=${limit}`).then(json),
+
+  // Completeness
+  async fetchCompleteness(profileId: number): Promise<CompletenessData> {
+    const res = await fetch(`${API}/voice-profiles/${profileId}/completeness`)
+    if (!res.ok) throw new Error('Failed to fetch completeness')
+    return res.json()
+  },
 }
