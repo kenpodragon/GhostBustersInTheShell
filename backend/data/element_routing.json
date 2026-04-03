@@ -133,7 +133,7 @@
       "strategy": "targeted_enforcement",
       "best_score": 0.8429,
       "detection_override": null,
-      "enforcement_template": "Include {count} sentence(s) ending with an exclamation mark"
+      "enforcement_template": "You MUST include at least {count} sentence that ends with an exclamation mark (!). This is a signature voice marker -- do not omit it."
     },
     {
       "element_name": "figurative_language_markers",
@@ -378,7 +378,7 @@
       "strategy": "targeted_enforcement",
       "best_score": 0.7405,
       "detection_override": null,
-      "enforcement_template": "Make approximately {count} of your paragraphs a single sentence for emphasis"
+      "enforcement_template": "Write at least {count} paragraph(s) that contain ONLY a single sentence -- one sentence then a paragraph break. Example: a short punchy statement standing alone as its own paragraph."
     },
     {
       "element_name": "smog_index",
@@ -417,10 +417,10 @@
     },
     {
       "element_name": "transition_word_rate",
-      "strategy": "hybrid",
+      "strategy": "targeted_enforcement",
       "best_score": 0.8846,
       "detection_override": null,
-      "enforcement_template": null
+      "enforcement_template": "Use {count} formal transition word(s) such as however, therefore, meanwhile, furthermore, or nevertheless"
     },
     {
       "element_name": "verb_tense_past_ratio",

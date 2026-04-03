@@ -101,6 +101,11 @@ def _compute_count(element: dict, target_word_count: int) -> str:
         n = max(1, round(raw))
         return str(n)
 
+    if name == "transition_word_rate":
+        raw = weight * 0.2 * (twc / 20)
+        n = max(1, round(raw))
+        return str(n)
+
     if name == "topic_coherence_score":
         return f"~{round(weight, 2)}"
 
