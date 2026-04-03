@@ -253,3 +253,27 @@ class TestConvergenceComputerWordGate:
         result = cc.compute_completeness(total_words=0)
         assert result["tier"] == "starter"
         assert result["starter_progress"]["milestone"] == 0
+
+
+class TestStarterGuidanceText:
+    """Test guidance text for each tier."""
+
+    def test_starter_quarter_guidance(self):
+        from utils.convergence_tracker import get_starter_guidance
+        assert "Getting started" in get_starter_guidance(1)
+
+    def test_starter_half_guidance(self):
+        from utils.convergence_tracker import get_starter_guidance
+        assert "Making progress" in get_starter_guidance(2)
+
+    def test_starter_three_quarter_guidance(self):
+        from utils.convergence_tracker import get_starter_guidance
+        assert "Almost there" in get_starter_guidance(3)
+
+    def test_starter_complete_guidance(self):
+        from utils.convergence_tracker import get_starter_guidance
+        assert "diverse writing" in get_starter_guidance(4)
+
+    def test_starter_zero_guidance(self):
+        from utils.convergence_tracker import get_starter_guidance
+        assert "Getting started" in get_starter_guidance(0)

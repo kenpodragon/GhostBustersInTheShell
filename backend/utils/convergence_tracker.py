@@ -36,6 +36,26 @@ def _starter_tier_label(starter_progress: dict) -> str:
     return f"Starter {label}"
 
 
+STARTER_GUIDANCE = {
+    0: "Getting started! Submit more writing samples to build your voice profile.",
+    1: "Getting started! Submit more writing samples to build your voice profile.",
+    2: "Making progress — your voice patterns are beginning to emerge.",
+    3: "Almost there — a few more samples will establish a solid baseline.",
+    4: "Submit diverse writing to reach Bronze.",
+}
+
+TIER_GUIDANCE = {
+    "bronze": "Your voice profile is usable. More text will refine accuracy.",
+    "silver": "Strong voice profile. Fine details are still converging.",
+    "gold": "Your voice profile is fully converged. High-fidelity rewrites.",
+}
+
+
+def get_starter_guidance(milestone: int) -> str:
+    """Return guidance text for a Starter milestone (0-4)."""
+    return STARTER_GUIDANCE.get(milestone, STARTER_GUIDANCE[0])
+
+
 def get_starter_milestone(total_words: int) -> dict:
     """Return current milestone progress based on word count.
 

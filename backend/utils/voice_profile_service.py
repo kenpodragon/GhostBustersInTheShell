@@ -2,6 +2,8 @@
 import json
 from datetime import datetime
 
+import psycopg2.extras
+
 
 class VoiceProfileService:
     STARTER_ELEMENTS = [
@@ -260,6 +262,211 @@ class VoiceProfileService:
             for elem in overlay_elements:
                 resolved[elem["name"]] = elem.copy()
         return list(resolved.values())
+
+    # -------------------------------------------------------------------------
+    # Convergence tracking
+    # -------------------------------------------------------------------------
+
+    def update_convergence(self, profile_id: int, document_id: int,
+                           parse_result: dict, word_count: int):
+        """Update convergence tracking after a document is parsed."""
+        from utils.convergence_tracker import ElementTracker, COMPLETENESS_TIERS
+
+        cur = self.conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+        # 1. Get current total_words_parsed
+        cur.execute("SELECT total_words_parsed FROM voice_profiles WHERE id = %s", (profile_id,))
+        row = cur.fetchone()
+        total_words = (row["total_words_parsed"] or 0) + word_count if row else word_count
+
+        # 2. Store per-document element values + update convergence
+        newly_converged = []
+
+        for el_name, el_data in parse_result.items():
+            weight = el_data.get("weight", 0)
+
+            # Insert into document_elements
+            cur.execute(
+                """INSERT INTO document_elements (profile_id, document_id, element_name, value)
+                   VALUES (%s, %s, %s, %s)
+                   ON CONFLICT (profile_id, document_id, element_name)
+                   DO UPDATE SET value = EXCLUDED.value""",
+                (profile_id, document_id, el_name, float(weight)),
+            )
+
+            # Load or create tracker
+            cur.execute(
+                """SELECT element_name, running_mean, running_count, rolling_delta,
+                          cv, m2, consecutive_stable, converged, converged_at_words
+                   FROM element_convergence
+                   WHERE profile_id = %s AND element_name = %s""",
+                (profile_id, el_name),
+            )
+            existing = cur.fetchone()
+
+            if existing:
+                # Map DB column names to ElementTracker.from_dict keys
+                tracker_data = {
+                    "name": existing["element_name"],
+                    "count": existing["running_count"],
+                    "mean": existing["running_mean"],
+                    "m2": existing["m2"],
+                    "rolling_delta": existing["rolling_delta"],
+                    "consecutive_stable": existing["consecutive_stable"],
+                    "converged": existing["converged"],
+                    "converged_at_words": existing["converged_at_words"],
+                }
+                tracker = ElementTracker.from_dict(tracker_data)
+                was_converged = tracker.converged
+            else:
+                tracker = ElementTracker(el_name)
+                was_converged = False
+
+            tracker.update(float(weight), total_words)
+
+            if tracker.converged and not was_converged:
+                newly_converged.append(el_name)
+
+            # Upsert convergence state
+            state = tracker.to_dict()
+            cur.execute(
+                """INSERT INTO element_convergence
+                   (profile_id, element_name, running_mean, running_count,
+                    rolling_delta, cv, m2, consecutive_stable, converged, converged_at_words)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                   ON CONFLICT (profile_id, element_name)
+                   DO UPDATE SET
+                    running_mean = EXCLUDED.running_mean,
+                    running_count = EXCLUDED.running_count,
+                    rolling_delta = EXCLUDED.rolling_delta,
+                    cv = EXCLUDED.cv,
+                    m2 = EXCLUDED.m2,
+                    consecutive_stable = EXCLUDED.consecutive_stable,
+                    converged = EXCLUDED.converged,
+                    converged_at_words = EXCLUDED.converged_at_words""",
+                (profile_id, state["name"], state["mean"],
+                 state["count"], state["rolling_delta"], tracker.cv,
+                 state["m2"], state["consecutive_stable"], state["converged"],
+                 state["converged_at_words"]),
+            )
+
+        # 3. Recompute completeness
+        cur.execute(
+            "SELECT element_name, converged FROM element_convergence WHERE profile_id = %s",
+            (profile_id,),
+        )
+        rows = cur.fetchall()
+        total_el = len(rows)
+        converged_el = sum(1 for r in rows if r["converged"])
+        pct = round(converged_el / total_el * 100) if total_el > 0 else 0
+
+        tier = None
+        for tier_name in ("gold", "silver", "bronze"):
+            if pct >= COMPLETENESS_TIERS[tier_name]:
+                tier = tier_name
+                break
+
+        cur.execute(
+            """UPDATE voice_profiles
+               SET total_words_parsed = %s, completeness_pct = %s, completeness_tier = %s
+               WHERE id = %s""",
+            (total_words, pct, tier, profile_id),
+        )
+
+        self.conn.commit()
+        cur.close()
+        return {
+            "newly_converged": newly_converged,
+            "completeness_pct": pct,
+            "completeness_tier": tier,
+            "total_words": total_words,
+            "elements_converged": converged_el,
+            "elements_total": total_el,
+        }
+
+    def get_completeness(self, profile_id: int) -> dict:
+        """Get full completeness data for a profile."""
+        from utils.convergence_tracker import (
+            ElementTracker, ConvergenceComputer,
+            STARTER_WORD_GATE, get_starter_guidance, TIER_GUIDANCE,
+        )
+
+        cur = self.conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+        cur.execute(
+            "SELECT total_words_parsed, completeness_pct, completeness_tier FROM voice_profiles WHERE id = %s",
+            (profile_id,),
+        )
+        profile = cur.fetchone()
+        if not profile:
+            cur.close()
+            return {"error": "Profile not found"}
+
+        total_words = profile["total_words_parsed"] or 0
+
+        cur.execute(
+            """SELECT element_name, running_mean, running_count, rolling_delta,
+                      cv, m2, consecutive_stable, converged, converged_at_words
+               FROM element_convergence WHERE profile_id = %s""",
+            (profile_id,),
+        )
+        rows = cur.fetchall()
+        cur.close()
+
+        if not rows:
+            from utils.convergence_tracker import get_starter_milestone
+            starter_progress = get_starter_milestone(total_words)
+            guidance = get_starter_guidance(starter_progress["milestone"])
+            return {
+                "tier": "starter",
+                "tier_label": f"Starter {starter_progress['milestone_label']}" if starter_progress["milestone_label"] else "Starter",
+                "pct": 0,
+                "total_words": total_words,
+                "elements_converged": 0,
+                "elements_total": 0,
+                "categories": {},
+                "starter_progress": starter_progress,
+                "guidance": guidance,
+                "words_to_next_tier": f"~{max(0, STARTER_WORD_GATE - total_words):,}",
+                "next_tier": "bronze",
+                "next_tier_label": "Bronze",
+            }
+
+        cc = ConvergenceComputer()
+        for row in rows:
+            tracker_data = {
+                "name": row["element_name"],
+                "count": row["running_count"],
+                "mean": row["running_mean"],
+                "m2": row["m2"],
+                "rolling_delta": row["rolling_delta"],
+                "consecutive_stable": row["consecutive_stable"],
+                "converged": row["converged"],
+                "converged_at_words": row["converged_at_words"],
+            }
+            tracker = ElementTracker.from_dict(tracker_data)
+            cc.add_tracker(tracker)
+
+        result = cc.compute_completeness(total_words=total_words)
+        result["total_words"] = total_words
+
+        # Guidance text
+        if result["tier"] == "starter":
+            milestone = result.get("starter_progress", {}).get("milestone", 0)
+            result["guidance"] = get_starter_guidance(milestone)
+        else:
+            result["guidance"] = TIER_GUIDANCE.get(result["tier"], "")
+
+        # Word estimates for next tier (research-derived)
+        TIER_WORD_ESTIMATES = {"bronze": 20000, "silver": 175000, "gold": 350000}
+        next_tier = result.get("next_tier")
+        if next_tier and next_tier in TIER_WORD_ESTIMATES:
+            target = TIER_WORD_ESTIMATES[next_tier]
+            result["words_to_next_tier"] = f"~{max(0, target - total_words):,}"
+        else:
+            result["words_to_next_tier"] = None
+
+        return result
 
     # -------------------------------------------------------------------------
     # Task 5: Snapshots, Export/Import, Reset

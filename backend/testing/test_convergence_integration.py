@@ -50,7 +50,7 @@ class TestCompletenessFromDB:
             t = ElementTracker(name)
             cc.add_tracker(t)
 
-        result = cc.compute_completeness()
+        result = cc.compute_completeness(total_words=25000)
         assert result["pct"] == 71
         assert result["tier"] == "bronze"
         assert result["categories"]["readability"]["status"] == "complete"
