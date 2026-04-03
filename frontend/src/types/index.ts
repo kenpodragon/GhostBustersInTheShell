@@ -264,8 +264,16 @@ export interface CategoryConvergenceStatus {
   status: 'complete' | 'good' | 'needs_more'
 }
 
+export interface StarterProgress {
+  milestone: number
+  milestone_label: string | null
+  words_current: number
+  words_next: number
+  milestone_pct: number
+}
+
 export interface CompletenessData {
-  tier: 'bronze' | 'silver' | 'gold' | null
+  tier: 'starter' | 'bronze' | 'silver' | 'gold' | null
   tier_label: string | null
   pct: number
   total_words: number
@@ -276,4 +284,6 @@ export interface CompletenessData {
   elements_total: number
   newly_converged?: string[]
   categories: Record<string, CategoryConvergenceStatus>
+  starter_progress?: StarterProgress
+  guidance?: string
 }
