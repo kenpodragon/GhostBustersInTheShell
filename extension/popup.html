@@ -14,6 +14,7 @@
       <span class="header-title">GBIS</span>
     </div>
     <div class="header-right">
+      <button id="ai-toggle-btn" class="ai-toggle off" title="AI is off">AI</button>
       <span id="status-dot" class="status-dot offline" title="Checking connection..."></span>
       <button id="options-btn" class="icon-btn" title="Settings">&#9881;</button>
     </div>
@@ -30,8 +31,8 @@
     <button id="scan-page-btn" class="action-btn secondary">Scan This Page</button>
   </div>
 
-  <!-- Voice Profile Selector -->
-  <div id="profile-section" class="section">
+  <!-- Voice Profile Selector (generate mode only) -->
+  <div id="profile-section" class="section" style="display:none;">
     <label class="field-label" for="profile-select">Voice Profile</label>
     <select id="profile-select" class="field-select">
       <option value="">Loading...</option>

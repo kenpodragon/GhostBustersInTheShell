@@ -84,6 +84,35 @@ body {
   background: var(--score-critical);
 }
 
+/* AI Toggle Button */
+.ai-toggle {
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: inherit;
+  font-size: 0.6rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.5px;
+}
+
+.ai-toggle.on {
+  background: var(--teal-primary);
+  color: var(--bg-primary);
+  border: 1px solid var(--teal-primary);
+  box-shadow: 0 0 6px var(--teal-glow);
+}
+
+.ai-toggle.off {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--text-secondary);
+}
+
+.ai-toggle:hover {
+  opacity: 0.8;
+}
+
 .icon-btn {
   background: none;
   border: none;

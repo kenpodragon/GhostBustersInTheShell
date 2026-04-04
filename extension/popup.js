@@ -84,6 +84,12 @@ function updateModeToggle() {
   const toggle = document.getElementById('mode-toggle');
   toggle.style.display = aiEnabled ? 'flex' : 'none';
 
+  // Update AI toggle button
+  const aiBtn = document.getElementById('ai-toggle-btn');
+  aiBtn.classList.toggle('on', aiEnabled);
+  aiBtn.classList.toggle('off', !aiEnabled);
+  aiBtn.title = aiEnabled ? 'AI is on — click to disable' : 'AI is off — click to enable';
+
   // Generate mode requires AI
   if (!aiEnabled && currentMode === 'generate') {
     switchMode('scan');
@@ -114,11 +120,26 @@ async function loadVoiceProfiles() {
 function bindEvents() {
   document.getElementById('mode-scan').addEventListener('click', () => switchMode('scan'));
   document.getElementById('mode-generate').addEventListener('click', () => switchMode('generate'));
+  document.getElementById('ai-toggle-btn').addEventListener('click', handleAiToggle);
   document.getElementById('analyze-btn').addEventListener('click', handleAnalyze);
   document.getElementById('generate-btn').addEventListener('click', handleGenerate);
   document.getElementById('rewrite-btn').addEventListener('click', handleRewrite);
   document.getElementById('report-btn').addEventListener('click', handleViewReport);
   document.getElementById('scan-page-btn').addEventListener('click', handleScanPage);
+}
+
+async function handleAiToggle() {
+  try {
+    const newState = !aiEnabled;
+    await apiCall('/settings', {
+      method: 'PATCH',
+      body: JSON.stringify({ ai_enabled: newState })
+    });
+    aiEnabled = newState;
+    updateModeToggle();
+  } catch (err) {
+    alert('Failed to toggle AI: ' + err.message);
+  }
 }
 
 function switchMode(mode) {
@@ -130,11 +151,13 @@ function switchMode(mode) {
 
   // Update UI visibility
   const scanPageSection = document.getElementById('scan-page-section');
+  const profileSection = document.getElementById('profile-section');
   const analyzeBtn = document.getElementById('analyze-btn');
   const generateBtn = document.getElementById('generate-btn');
   const textInput = document.getElementById('text-input');
 
   scanPageSection.style.display = mode === 'scan' ? 'block' : 'none';
+  profileSection.style.display = mode === 'generate' ? 'block' : 'none';
   analyzeBtn.style.display = mode === 'scan' ? 'block' : 'none';
   generateBtn.style.display = mode === 'generate' ? 'block' : 'none';
 
