@@ -33,3 +33,7 @@ export const scoringApi = {
       body: JSON.stringify({ purpose, older_than_days }),
     }).then(json),
 }
+
+export async function getAnalysisHistory(id: number) {
+  return json(await fetch(`${API}/analysis-history/${id}`))
+}
