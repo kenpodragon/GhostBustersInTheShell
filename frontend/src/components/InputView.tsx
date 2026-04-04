@@ -3,7 +3,8 @@ import { useDocument } from '../context/DocumentContext'
 import ScoreBadge from './ScoreBadge'
 import ScoreGauge from './ScoreGauge'
 import FidelityScore from './FidelityScore'
-import type { VoiceProfile, Pattern, SentenceResult, FidelityScoreResult } from '../types'
+import AnalysisReport from './AnalysisReport'
+import type { VoiceProfile, Pattern, SentenceResult, FidelityScoreResult, ClassificationBoundaries, EnrichedAnalyzeResponse } from '../types'
 import { voiceProfilesApi } from '../services/voiceProfilesApi'
 import { scoringApi } from '../services/scoringApi'
 
@@ -38,6 +39,7 @@ export default function InputView() {
   const [mode, setMode] = useState<Mode>('scan')
   const [fidelityResult, setFidelityResult] = useState<FidelityScoreResult | null>(null)
   const [scoringFidelity, setScoringFidelity] = useState(false)
+  const [boundaries, setBoundaries] = useState<ClassificationBoundaries>({ clean_upper: 20, ghost_written_lower: 40 })
   const fileRef = useRef<HTMLInputElement>(null)
 
   const baselines = profiles
@@ -54,6 +56,17 @@ export default function InputView() {
       })
       .catch(() => {})
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    fetch('/api/rules/config/classification')
+      .then(r => r.json())
+      .then(data => {
+        if (data.clean_upper && data.ghost_written_lower) {
+          setBoundaries({ clean_upper: data.clean_upper, ghost_written_lower: data.ghost_written_lower })
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   // When AI is turned off, switch back to scan mode (keep text)
   useEffect(() => {
@@ -407,60 +420,7 @@ export default function InputView() {
           </div>
           <ScoreGauge score={analysis.overall_score} />
 
-          {/* Tier Breakdown */}
-          {analysis.tiers && (
-            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', marginTop: '0.5rem' }}>
-              {[
-                { label: 'Sentence', score: analysis.tiers.sentence_score, weight: '45%' },
-                { label: 'Paragraph', score: analysis.tiers.paragraph_score, weight: '30%' },
-                { label: 'Document', score: analysis.tiers.document_score, weight: '25%' },
-              ].map((tier) => (
-                <div key={tier.label} style={{ flex: 1, background: 'var(--bg-primary)', borderRadius: '4px', padding: '0.5rem', textAlign: 'center', border: '1px solid var(--border-color)' }}>
-                  <div className="text-muted" style={{ fontSize: '0.6rem', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
-                    {tier.label} ({tier.weight})
-                  </div>
-                  <div style={{ fontSize: '1rem', fontWeight: 700, color: tier.score > 30 ? 'var(--score-critical)' : tier.score > 15 ? 'var(--score-medium)' : 'var(--score-low)' }}>
-                    {tier.score.toFixed(1)}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Detected Patterns */}
-          {analysis.patterns.length > 0 && (
-            <div style={{ marginBottom: '1rem' }}>
-              <div className="text-muted" style={{ fontSize: '0.75rem', marginBottom: '0.5rem', textTransform: 'uppercase' }}>
-                Detected Patterns ({analysis.patterns.length})
-              </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
-                {analysis.patterns.map((p, i) => (
-                  <span key={i} className="pattern-chip" title={typeof p === 'string' ? '' : p.detail || ''}>{typeof p === 'string' ? p : p.pattern || JSON.stringify(p)}</span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Sentence-level breakdown */}
-          {analysis.sentences.length > 0 && (
-            <div>
-              <div className="text-muted" style={{ fontSize: '0.75rem', marginBottom: '0.5rem', textTransform: 'uppercase' }}>
-                Sentence Scores
-              </div>
-              <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                {analysis.sentences.map((s, i) => (
-                  <div key={i} style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start', padding: '0.3rem 0', borderBottom: '1px solid var(--border-color)' }}>
-                    <span style={{ minWidth: '3rem' }}>
-                      <ScoreBadge score={s.score} size="small" />
-                    </span>
-                    <span className={s.score > 50 ? 'highlight-ai' : s.score < 20 ? 'highlight-human' : ''} style={{ fontSize: '0.8rem', color: 'var(--text-white)' }}>
-                      {s.text}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          <AnalysisReport data={analysis as EnrichedAnalyzeResponse} boundaries={boundaries} />
         </div>
       )}
 
