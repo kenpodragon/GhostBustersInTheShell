@@ -7,6 +7,7 @@ import CorpusManager from '../components/CorpusManager'
 import CompletenessBar from '../components/CompletenessBar'
 import ConsolidationView from '../components/ConsolidationView'
 import ReparseView from '../components/ReparseView'
+import BaselineUpdateNotice from '../components/voice/BaselineUpdateNotice'
 
 type TabId = 'elements' | 'prompts' | 'finetune' | 'freeze' | 'testvox' | 'corpus' | 'consolidate' | 'reparse'
 const TABS: { id: TabId; label: string }[] = [
@@ -881,6 +882,7 @@ export default function VoiceProfilesPage() {
   const [editingName, setEditingName] = useState(false)
   const [nameDraft, setNameDraft] = useState('')
   const [completeness, setCompleteness] = useState<CompletenessData | null>(null)
+  const [baselineVersion, setBaselineVersion] = useState<{ baseline_version?: string | null; baseline_version_date?: string | null } | null>(null)
   const nameInputRef = useRef<HTMLInputElement>(null)
 
   const loadProfiles = useCallback(async (autoSelectFirst = false) => {
@@ -899,6 +901,15 @@ export default function VoiceProfilesPage() {
   }, [])
 
   useEffect(() => { loadProfiles(true) }, [loadProfiles])
+
+  const loadBaselineVersion = useCallback(() => {
+    fetch('http://localhost:8066/api/version')
+      .then(r => r.json())
+      .then(data => setBaselineVersion(data))
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => { loadBaselineVersion() }, [loadBaselineVersion])
 
   const loadCompleteness = useCallback(async (pid: number) => {
     try {
@@ -1082,6 +1093,10 @@ export default function VoiceProfilesPage() {
 
       {/* Right panel */}
       <div className="vp-right-panel" style={{ position: 'relative' }}>
+        <BaselineUpdateNotice
+          version={baselineVersion}
+          onUpdate={() => { loadProfiles(); loadBaselineVersion() }}
+        />
         {showCreate && (
           <div className="vp-panel-modal-overlay">
             <CreateProfileModal onClose={() => setShowCreate(false)} onCreated={handleCreated} />
