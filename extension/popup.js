@@ -313,14 +313,131 @@ async function handleRewrite() {
   }
 }
 
-// --- Placeholder handlers (implemented in later tasks) ---
+// --- View Report ---
 
 async function handleViewReport() {
-  // Task 8 — needs backend analysis-history endpoint
-  alert('View Full Report will be available after backend setup.');
+  if (!lastAnalysis || !lastText) {
+    alert('No analysis to view. Run an analysis first.');
+    return;
+  }
+
+  const btn = document.getElementById('report-btn');
+  btn.disabled = true;
+  btn.innerHTML = 'SAVING<span class="spinner"></span>';
+
+  try {
+    const body = {
+      text: lastText,
+      result: lastAnalysis,
+      source: window._lastPageUrl ? 'page_scan' : (currentMode === 'generate' ? 'generate' : 'manual'),
+      page_url: window._lastPageUrl || null
+    };
+
+    const data = await apiCall('/analysis-history', {
+      method: 'POST',
+      body: JSON.stringify(body)
+    });
+
+    chrome.tabs.create({ url: `${config.frontendUrl}/report/${data.id}` });
+  } catch (err) {
+    alert('Failed to save report: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'VIEW FULL REPORT';
+  }
 }
 
+// --- Scan Page ---
+
 async function handleScanPage() {
-  // Task 9 — content script injection
-  alert('Scan This Page will be available soon.');
+  const btn = document.getElementById('scan-page-btn');
+  btn.disabled = true;
+  btn.innerHTML = 'SCANNING<span class="spinner"></span>';
+
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab || !tab.id) throw new Error('No active tab');
+
+    const results = await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: extractPageContent
+    });
+
+    const result = results[0]?.result;
+    if (!result || !result.text) {
+      alert('Could not extract text from this page.');
+      return;
+    }
+
+    // Populate textarea with extracted text
+    document.getElementById('text-input').value = result.text;
+
+    // Store page URL for later (report handoff)
+    window._lastPageUrl = tab.url;
+
+    // Auto-switch to scan mode if in generate
+    if (currentMode !== 'scan') {
+      switchMode('scan');
+    }
+  } catch (err) {
+    alert('Scan failed: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Scan This Page';
+  }
+}
+
+// This function is injected into the page — must be self-contained
+function extractPageContent() {
+  // Priority 1: User has text selected
+  const selection = window.getSelection().toString().trim();
+  if (selection.length > 0) {
+    return { text: selection, source: 'selection' };
+  }
+
+  // Priority 2: Smart extraction
+  const STRIP_SELECTORS = [
+    'nav', 'header', 'footer', 'aside',
+    '[role="navigation"]', '[role="banner"]', '[role="contentinfo"]',
+    'script', 'style', 'noscript', 'iframe',
+    '.ad', '.ads', '.advertisement', '.sidebar',
+    '[class*="cookie"]', '[class*="popup"]', '[class*="modal"]'
+  ];
+
+  // Try semantic elements
+  const semantic = document.querySelector('article') ||
+                   document.querySelector('main') ||
+                   document.querySelector('[role="main"]');
+
+  if (semantic) {
+    const clone = semantic.cloneNode(true);
+    clone.querySelectorAll('script, style, nav, aside, [role="navigation"]').forEach(e => e.remove());
+    return { text: clone.innerText.trim(), source: 'semantic' };
+  }
+
+  // Fallback: largest text-dense block
+  const bodyClone = document.body.cloneNode(true);
+  STRIP_SELECTORS.forEach(sel => {
+    bodyClone.querySelectorAll(sel).forEach(el => el.remove());
+  });
+
+  const blocks = bodyClone.querySelectorAll('div, section, article, main');
+  let best = null;
+  let bestScore = 0;
+
+  blocks.forEach(block => {
+    const text = block.innerText.trim();
+    const ratio = text.length / (block.innerHTML.length || 1);
+    const score = text.length * ratio;
+    if (score > bestScore && text.length > 200) {
+      bestScore = score;
+      best = block;
+    }
+  });
+
+  if (best) {
+    return { text: best.innerText.trim(), source: 'largest_block' };
+  }
+
+  return { text: bodyClone.innerText.trim(), source: 'body' };
 }
