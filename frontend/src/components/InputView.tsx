@@ -448,7 +448,10 @@ export default function InputView() {
                 try {
                   const data = await scoringApi.scoreFidelity(text, selectedProfileId, 'quantitative')
                   setFidelityResult(data)
-                } catch { /* ignore */ }
+                } catch (err: any) {
+                  console.error('Fidelity scoring error:', err)
+                  setError(err.message || 'Fidelity scoring failed')
+                }
                 finally { setScoringFidelity(false) }
               }}
               disabled={scoringFidelity || !text.trim()}

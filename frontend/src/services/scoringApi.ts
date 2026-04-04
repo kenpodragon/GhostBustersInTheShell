@@ -1,6 +1,10 @@
 const API = 'http://localhost:8066/api'
 
-const json = (r: Response) => r.json()
+const json = async (r: Response) => {
+  const data = await r.json()
+  if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`)
+  return data
+}
 
 export const scoringApi = {
   scoreFidelity: (generated_text: string, profile_id: number, mode: string = 'quantitative', sample_text?: string) =>

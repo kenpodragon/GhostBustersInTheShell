@@ -252,6 +252,7 @@ def route_rewrite(text: str, voice_profile_id: int = None, use_ai: bool = None, 
             detection_result=None,
             model=model_name,
             mode="voice",
+            comment=comment,
             voice_elements=voice_elements or None,
             voice_prompts=voice_prompts or None,
         )
