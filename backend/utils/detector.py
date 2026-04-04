@@ -34,7 +34,8 @@ from utils.heuristics.structural import (
     check_char_ngram_profile,
 )
 from utils.heuristics.stylometric import check_burrows_delta
-from utils.heuristics.scoring import combine_signals, composite_score, estimate_confidence, detect_genre
+from utils.heuristics.scoring import combine_signals, composite_score, composite_score_detailed, estimate_confidence, detect_genre
+from utils.heuristics.pattern_descriptions import get_pattern_info
 from utils.heuristics.severity import classify_severity, apply_severity, compound_across_levels
 from utils.heuristics.reference_data import (
     GENRE_BASELINES, HEURISTIC_WEIGHTS, BUZZWORDS, HARD_BAN_FILLER_PHRASES,
@@ -48,6 +49,24 @@ from utils.heuristics.crowdsourced import (
 )
 from utils.heuristics.ai_phrases import check_ai_phrases, check_ai_phrases_sentence
 from utils.heuristics.classification import classify_category
+
+
+def _enrich_pattern(pattern: dict) -> dict:
+    """Add display_name and description to a pattern dict."""
+    name = pattern.get("pattern", pattern.get("name", ""))
+    info = get_pattern_info(name)
+    return {**pattern, "name": name, "display_name": info["display_name"], "description": info["description"]}
+
+
+def _assign_sentences_to_paragraphs(raw_paragraphs, paragraph_results, sentence_results):
+    """Assign sentence results to their parent paragraphs by text matching."""
+    for pr, raw_para in zip(paragraph_results, raw_paragraphs):
+        para_sentences = []
+        for sr in sentence_results:
+            if sr["text"].strip() and sr["text"].strip() in raw_para:
+                para_sentences.append(sr)
+        pr["sentences"] = para_sentences
+        pr["sentence_count"] = len(para_sentences)
 
 
 def detect_ai_patterns(text: str, use_lm_signals: bool = False) -> dict:
@@ -122,7 +141,12 @@ def _detect_ai_patterns_inner(text: str, detail: bool = False, use_lm_signals: b
                 "sentence_score": 0,
                 "paragraph_score": 0,
                 "document_score": 0,
+                "score_math": {
+                    "sentence_weighted": 0.0, "paragraph_weighted": 0.0, "document_weighted": 0.0,
+                    "convergence_bonus": 0.0, "cross_tier_bonus": 0.0, "raw_composite": 0.0, "final_score": 0.0,
+                },
             },
+            "document_patterns": [],
         }
         if detail:
             result["report"] = {
@@ -146,6 +170,9 @@ def _detect_ai_patterns_inner(text: str, detail: bool = False, use_lm_signals: b
             "patterns": patterns,
         })
         all_patterns.extend(patterns)
+
+    for sr in sentence_results:
+        sr["patterns"] = [_enrich_pattern(p) for p in sr["patterns"]]
 
     scores = [s["score"] for s in sentence_results]
     sentence_overall = _weighted_overall(scores)
@@ -176,6 +203,11 @@ def _detect_ai_patterns_inner(text: str, detail: bool = False, use_lm_signals: b
                 "score": para_score,
             })
 
+    for pr in paragraph_results:
+        pr["patterns"] = [_enrich_pattern(p) for p in pr["patterns"]]
+
+    _assign_sentences_to_paragraphs(paragraphs, paragraph_results, sentence_results)
+
     if paragraph_results:
         para_scores = [p["score"] for p in paragraph_results]
         paragraph_overall = sum(para_scores) / len(para_scores)
@@ -194,7 +226,7 @@ def _detect_ai_patterns_inner(text: str, detail: bool = False, use_lm_signals: b
     paragraph_signal_count = len(paragraph_signals_all)
     document_signal_count = len(doc_signals)
 
-    overall = composite_score(
+    composite_result = composite_score_detailed(
         sentence_overall,
         paragraph_overall,
         doc_combined,
@@ -202,6 +234,7 @@ def _detect_ai_patterns_inner(text: str, detail: bool = False, use_lm_signals: b
         paragraph_signal_count,
         document_signal_count,
     )
+    overall = composite_result["score"]
     overall = min(100, overall)
 
     # Genre detection and genre-aware score adjustment
@@ -221,6 +254,21 @@ def _detect_ai_patterns_inner(text: str, detail: bool = False, use_lm_signals: b
 
     unique_patterns = list({p["pattern"]: p for p in all_patterns}.values())
 
+    document_patterns_enriched = []
+    for dp in doc_patterns:
+        enriched = _enrich_pattern(dp)
+        signal_name = dp.get("pattern", "")
+        signal_score = doc_signals.get(signal_name, 0)
+        if signal_score >= 60:
+            enriched["severity"] = "high"
+        elif signal_score >= 30:
+            enriched["severity"] = "medium"
+        else:
+            enriched["severity"] = "low"
+        if "count" in dp:
+            enriched["count"] = dp["count"]
+        document_patterns_enriched.append(enriched)
+
     result = {
         "overall_score": round(overall, 1),
         "sentences": sentence_results,
@@ -233,7 +281,9 @@ def _detect_ai_patterns_inner(text: str, detail: bool = False, use_lm_signals: b
             "sentence_score": round(sentence_overall, 1),
             "paragraph_score": round(paragraph_overall, 1),
             "document_score": round(doc_combined, 1),
+            "score_math": composite_result["score_math"],
         },
+        "document_patterns": document_patterns_enriched,
     }
 
     if detail:
@@ -267,10 +317,7 @@ def _detect_ai_patterns_inner(text: str, detail: bool = False, use_lm_signals: b
                 "sentence_overall": round(sentence_overall, 1),
                 "paragraph_overall": round(paragraph_overall, 1),
                 "document_combined": round(doc_combined, 1),
-                "raw_composite": round(min(100, composite_score(
-                    sentence_overall, paragraph_overall, doc_combined,
-                    sentence_signal_count, paragraph_signal_count, document_signal_count,
-                )), 1),
+                "raw_composite": composite_result["score_math"]["raw_composite"],
                 "genre": genre,
                 "genre_dampening_applied": human_ceil > 25 and overall < human_ceil + 10,
                 "final_score": round(overall, 1),

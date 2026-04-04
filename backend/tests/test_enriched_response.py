@@ -1,6 +1,7 @@
 """Tests for enriched analysis response (score_math, document_patterns, pattern attribution)."""
 import pytest
 from utils.heuristics.scoring import composite_score_detailed
+from utils.detector import detect_ai_patterns
 
 
 class TestScoreMathBreakdown:
@@ -49,3 +50,79 @@ class TestScoreMathBreakdown:
         original = composite_score(**args)
         detailed = composite_score_detailed(**args)
         assert detailed["score"] == original
+
+
+class TestEnrichedAnalyzeResponse:
+    SAMPLE_AI_TEXT = (
+        "In the rapidly evolving landscape of technology, it is essential to consider "
+        "the multifaceted implications of artificial intelligence. Furthermore, the "
+        "transformative potential of these innovations cannot be overstated. "
+        "This paradigm shift represents a fundamental change in how we approach "
+        "complex challenges.\n\n"
+        "Moreover, organizations must leverage synergies to optimize their strategic "
+        "initiatives. It is worth noting that these developments have far-reaching "
+        "consequences for stakeholders across various sectors."
+    )
+
+    def test_response_has_score_math(self):
+        result = detect_ai_patterns(self.SAMPLE_AI_TEXT)
+        assert "score_math" in result["tiers"]
+        math = result["tiers"]["score_math"]
+        for key in ["sentence_weighted", "paragraph_weighted", "document_weighted", "convergence_bonus", "cross_tier_bonus", "final_score"]:
+            assert key in math
+
+    def test_response_has_document_patterns(self):
+        result = detect_ai_patterns(self.SAMPLE_AI_TEXT)
+        assert "document_patterns" in result
+        assert isinstance(result["document_patterns"], list)
+        if result["document_patterns"]:
+            dp = result["document_patterns"][0]
+            assert "name" in dp
+            assert "display_name" in dp
+            assert "description" in dp
+            assert "severity" in dp
+
+    def test_paragraphs_have_enriched_patterns(self):
+        result = detect_ai_patterns(self.SAMPLE_AI_TEXT)
+        assert len(result["paragraphs"]) > 0
+        for para in result["paragraphs"]:
+            for p in para["patterns"]:
+                assert "name" in p
+                assert "display_name" in p
+                assert "description" in p
+
+    def test_sentences_have_enriched_patterns(self):
+        result = detect_ai_patterns(self.SAMPLE_AI_TEXT)
+        sentences_with_patterns = [s for s in result["sentences"] if s["patterns"]]
+        if sentences_with_patterns:
+            p = sentences_with_patterns[0]["patterns"][0]
+            assert "name" in p
+            assert "display_name" in p
+            assert "description" in p
+
+    def test_paragraphs_have_sentence_count(self):
+        result = detect_ai_patterns(self.SAMPLE_AI_TEXT)
+        for para in result["paragraphs"]:
+            assert "sentence_count" in para
+            assert isinstance(para["sentence_count"], int)
+
+    def test_paragraphs_have_sentences(self):
+        result = detect_ai_patterns(self.SAMPLE_AI_TEXT)
+        for para in result["paragraphs"]:
+            assert "sentences" in para
+            assert isinstance(para["sentences"], list)
+            if para["sentences"]:
+                s = para["sentences"][0]
+                assert "text" in s
+                assert "score" in s
+                assert "patterns" in s
+
+    def test_backward_compat_flat_sentences_still_present(self):
+        result = detect_ai_patterns(self.SAMPLE_AI_TEXT)
+        assert "sentences" in result
+        assert isinstance(result["sentences"], list)
+        assert len(result["sentences"]) > 0
+
+    def test_score_math_final_matches_overall(self):
+        result = detect_ai_patterns(self.SAMPLE_AI_TEXT)
+        assert result["tiers"]["score_math"]["final_score"] == result["overall_score"]
