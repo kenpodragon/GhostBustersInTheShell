@@ -4,6 +4,8 @@ import gzip
 import urllib.request
 from flask import Blueprint, request, jsonify
 
+from db import query_one
+
 rules_bp = Blueprint("rules", __name__)
 
 
@@ -315,13 +317,17 @@ def apply_update():
 @rules_bp.route("/version", methods=["GET"])
 def get_version():
     """Return app and rules version info."""
-    from db import query_one
     from version import APP_VERSION
 
-    row = query_one("SELECT rules_version, rules_version_date FROM settings WHERE id = 1")
+    row = query_one(
+        "SELECT rules_version, rules_version_date, baseline_version, baseline_version_date "
+        "FROM settings WHERE id = 1"
+    )
 
     return jsonify({
         "app_version": APP_VERSION,
         "rules_version": row["rules_version"] if row else "unknown",
         "rules_version_date": row["rules_version_date"] if row else None,
+        "baseline_version": row["baseline_version"] if row else None,
+        "baseline_version_date": row["baseline_version_date"] if row else None,
     })

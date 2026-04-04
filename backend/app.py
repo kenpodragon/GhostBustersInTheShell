@@ -38,6 +38,7 @@ from routes.settings import settings_bp
 from routes.rules import rules_bp
 from routes.scoring import scoring_bp
 from routes.corpus import corpus_bp
+from routes.baseline import baseline_bp
 
 app.register_blueprint(analyze_bp, url_prefix="/api")
 app.register_blueprint(rewrite_bp, url_prefix="/api")
@@ -47,6 +48,7 @@ app.register_blueprint(settings_bp, url_prefix="/api")
 app.register_blueprint(rules_bp, url_prefix="/api")
 app.register_blueprint(scoring_bp, url_prefix="/api")
 app.register_blueprint(corpus_bp, url_prefix="/api")
+app.register_blueprint(baseline_bp, url_prefix="/api")
 
 
 def main():
