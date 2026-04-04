@@ -23,7 +23,7 @@ def _make_profile_json():
 class TestSeedBaselineProfile:
     """Tests for seed_baseline_profile()."""
 
-    @patch("utils.baseline_seeder.VoiceProfileService")
+    @patch("utils.voice_profile_service.VoiceProfileService")
     @patch("utils.baseline_seeder.query_one")
     @patch("utils.baseline_seeder.execute")
     @patch("builtins.open", new_callable=mock_open)
@@ -56,10 +56,11 @@ class TestSeedBaselineProfile:
         assert "baseline_version" in sql
         assert "active_baseline_id" in sql
 
+    @patch("utils.voice_profile_service.VoiceProfileService")
     @patch("utils.baseline_seeder.query_one")
     @patch("builtins.open", new_callable=mock_open)
     @patch("os.path.exists", return_value=True)
-    def test_version_match_skips_import(self, mock_exists, mock_file, mock_query):
+    def test_version_match_skips_import(self, mock_exists, mock_file, mock_query, mock_svc_cls):
         """When seed version matches DB version, no import happens."""
         from utils.baseline_seeder import seed_baseline_profile
 
@@ -68,9 +69,9 @@ class TestSeedBaselineProfile:
 
         seed_baseline_profile()
 
-        # Should not attempt import — no VoiceProfileService instantiated
+        mock_svc_cls.assert_not_called()
 
-    @patch("utils.baseline_seeder.VoiceProfileService")
+    @patch("utils.voice_profile_service.VoiceProfileService")
     @patch("utils.baseline_seeder.query_one")
     @patch("utils.baseline_seeder.execute")
     @patch("builtins.open", new_callable=mock_open)

@@ -3,7 +3,6 @@ import json
 import os
 
 from db import query_one, execute
-from utils.voice_profile_service import VoiceProfileService
 
 
 def seed_baseline_profile():
@@ -35,13 +34,14 @@ def seed_baseline_profile():
         # Adapt export format to what import_profile expects
         import_data = {
             "name": profile_data.get("profile_name", profile_data.get("name", "Modern Human Baseline")),
-            "description": "System baseline voice profile — average of 325 human articles",
+            "description": f"System baseline voice profile — average of {profile_data.get('parse_count', 0)} human articles",
             "profile_type": "baseline",
             "parse_count": profile_data.get("parse_count", 0),
             "elements": profile_data.get("elements", []),
             "prompts": profile_data.get("prompts", []),
         }
 
+        from utils.voice_profile_service import VoiceProfileService
         svc = VoiceProfileService()
         result = svc.import_profile(import_data)
         new_id = result["id"]
