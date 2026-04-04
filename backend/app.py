@@ -39,6 +39,7 @@ from routes.rules import rules_bp
 from routes.scoring import scoring_bp
 from routes.corpus import corpus_bp
 from routes.baseline import baseline_bp
+from routes.analysis_history import analysis_history_bp
 
 app.register_blueprint(analyze_bp, url_prefix="/api")
 app.register_blueprint(rewrite_bp, url_prefix="/api")
@@ -49,6 +50,7 @@ app.register_blueprint(rules_bp, url_prefix="/api")
 app.register_blueprint(scoring_bp, url_prefix="/api")
 app.register_blueprint(corpus_bp, url_prefix="/api")
 app.register_blueprint(baseline_bp, url_prefix="/api")
+app.register_blueprint(analysis_history_bp, url_prefix="/api")
 
 
 def main():
@@ -72,6 +74,13 @@ def main():
     # Seed baseline voice profile if missing or outdated
     from utils.baseline_seeder import seed_baseline_profile
     seed_baseline_profile()
+
+    # Purge expired analysis history entries on startup
+    from routes.analysis_history import _purge_expired
+    try:
+        _purge_expired()
+    except Exception:
+        pass  # Don't block startup if analysis_history table doesn't exist yet
 
     # AI provider startup health check
     from ai_providers.router import startup_health_check
