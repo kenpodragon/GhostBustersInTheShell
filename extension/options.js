@@ -5,26 +5,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     const config = await resp.json();
     document.getElementById('config-display').textContent = JSON.stringify(config, null, 2);
 
-    // Test connection
-    document.getElementById('test-btn').addEventListener('click', async () => {
+    // Test connection via background worker (has host_permissions for localhost)
+    document.getElementById('test-btn').addEventListener('click', () => {
       const statusEl = document.getElementById('status');
       statusEl.className = 'status';
       statusEl.textContent = 'Testing...';
 
-      try {
-        const url = `http://${config.backend_host}:${config.backend_port}/api/health`;
-        const r = await fetch(url, { signal: AbortSignal.timeout(3000) });
-        const data = await r.json();
-        if (data.status === 'ok') {
+      chrome.runtime.sendMessage({ type: 'checkHealth' }, (connected) => {
+        if (connected) {
+          const url = `http://${config.backend_host}:${config.backend_port}/api/health`;
           statusEl.className = 'status ok';
-          statusEl.textContent = `Connected! Backend: ${url}, DB: ${data.db || 'ok'}`;
+          statusEl.textContent = `Connected! Backend: ${url}`;
         } else {
-          throw new Error('Unexpected response');
+          statusEl.className = 'status err';
+          statusEl.textContent = 'Connection failed. Is Docker running?';
         }
-      } catch (err) {
-        statusEl.className = 'status err';
-        statusEl.textContent = `Connection failed: ${err.message}. Is Docker running?`;
-      }
+      });
     });
   } catch (err) {
     document.getElementById('config-display').textContent = 'Error loading config.json: ' + err.message;
