@@ -1,0 +1,779 @@
+{
+  "profile_name": "Modern Human Baseline",
+  "element_count": 65,
+  "parse_count": 325,
+  "exported_at": "2026-04-04T17:01:24.805767",
+  "elements": [
+    {
+      "name": "adjective_to_noun_ratio",
+      "category": "syntactic",
+      "element_type": "metric",
+      "weight": 0.220642,
+      "tags": [
+        "spacy-extractable"
+      ]
+    },
+    {
+      "name": "adverb_density",
+      "category": "syntactic",
+      "element_type": "directional",
+      "weight": 0.315267,
+      "tags": [
+        "spacy-extractable"
+      ]
+    },
+    {
+      "name": "archaic_vocabulary_rate",
+      "category": "lexical",
+      "element_type": "directional",
+      "weight": 0.00041,
+      "tags": [
+        "python-extractable"
+      ]
+    },
+    {
+      "name": "article_rate",
+      "category": "lexical",
+      "element_type": "metric",
+      "weight": 0.798803,
+      "tags": [
+        "python-extractable"
+      ]
+    },
+    {
+      "name": "automated_readability_index",
+      "category": "idiosyncratic",
+      "element_type": "metric",
+      "weight": 0.570532,
+      "tags": [
+        "python-extractable",
+        "readability"
+      ]
+    },
+    {
+      "name": "avg_clause_complexity",
+      "category": "syntactic",
+      "element_type": "metric",
+      "weight": 0.2768,
+      "tags": [
+        "python-extractable"
+      ]
+    },
+    {
+      "name": "avg_sentence_length",
+      "category": "syntactic",
+      "element_type": "metric",
+      "weight": 0.500544,
+      "tags": [
+        "python-extractable"
+      ]
+    },
+    {
+      "name": "avg_word_length",
+      "category": "lexical",
+      "element_type": "metric",
+      "weight": 0.485253,
+      "tags": [
+        "python-extractable"
+      ]
+    },
+    {
+      "name": "clause_depth_avg",
+      "category": "syntactic",
+      "element_type": "metric",
+      "weight": 0.542158,
+      "tags": [
+        "spacy-extractable"
+      ]
+    },
+    {
+      "name": "coleman_liau_index",
+      "category": "idiosyncratic",
+      "element_type": "metric",
+      "weight": 0.552968,
+      "tags": [
+        "python-extractable",
+        "readability"
+      ]
+    },
+    {
+      "name": "colon_usage",
+      "category": "idiosyncratic",
+      "element_type": "directional",
+      "weight": 0.428444,
+      "tags": [
+        "python-extractable",
+        "punctuation"
+      ]
+    },
+    {
+      "name": "comma_rate",
+      "category": "idiosyncratic",
+      "element_type": "metric",
+      "weight": 0.285934,
+      "tags": [
+        "python-extractable",
+        "punctuation"
+      ]
+    },
+    {
+      "name": "conjunction_opening_rate",
+      "category": "syntactic",
+      "element_type": "directional",
+      "weight": 0.213407,
+      "tags": [
+        "python-extractable"
+      ]
+    },
+    {
+      "name": "contraction_rate",
+      "category": "lexical",
+      "element_type": "directional",
+      "weight": 0.0,
+      "tags": [
+        "python-extractable"
+      ]
+    },
+    {
+      "name": "coordinating_conjunction_rate",
+      "category": "syntactic",
+      "element_type": "metric",
+      "weight": 0.529902,
+      "tags": [
+        "python-extractable"
+      ]
+    },
+    {
+      "name": "discourse_marker_rate",
+      "category": "idiosyncratic",
+      "element_type": "directional",
+      "weight": 0.091522,
+      "tags": [
+        "python-extractable"
+      ]
+    },
+    {
+      "name": "ellipsis_usage",
+      "category": "idiosyncratic",
+      "element_type": "directional",
+      "weight": 0.016202,
+      "tags": [
+        "python-extractable",
+        "punctuation"
+      ]
+    },
+    {
+      "name": "em_dash_usage",
+      "category": "idiosyncratic",
+      "element_type": "directional",
+      "weight": 0.176941,
+      "tags": [
+        "python-extractable",
+        "punctuation"
+      ]
+    },
+    {
+      "name": "exclamation_rate",
+      "category": "idiosyncratic",
+      "element_type": "directional",
+      "weight": 0.008131,
+      "tags": [
+        "python-extractable",
+        "punctuation"
+      ]
+    },
+    {
+      "name": "figurative_language_markers",
+      "category": "idiosyncratic",
+      "element_type": "directional",
+      "weight": 0.206715,
+      "tags": [
+        "python-extractable"
+      ]
+    },
+    {
+      "name": "first_person_usage",
+      "category": "idiosyncratic",
+      "element_type": "directional",
+      "weight": 0.138257,
+      "tags": [
+        "python-extractable"
+      ]
+    },
+    {
+      "name": "flesch_kincaid_grade",
+      "category": "idiosyncratic",
+      "element_type": "metric",
+      "weight": 0.572472,
+      "tags": [
+        "python-extractable",
+        "readability"
+      ]
+    },
+    {
+      "name": "flesch_reading_ease",
+      "category": "idiosyncratic",
+      "element_type": "metric",
+      "weight": 0.487034,
+      "tags": [
+        "python-extractable",
+        "readability"
+      ]
+    },
+    {
+      "name": "function_word_rate",
+      "category": "lexical",
+      "element_type": "metric",
+      "weight": 0.552259,
+      "tags": [
+        "python-extractable"
+      ]
+    },
+    {
+      "name": "gunning_fog_index",
+      "category": "idiosyncratic",
+      "element_type": "metric",
+      "weight": 0.730208,
+      "tags": [
+        "python-extractable",
+        "readability"
+      ]
+    },
+    {
+      "name": "hapax_legomena_ratio",
+      "category": "lexical",
+      "element_type": "metric",
+      "weight": 0.63617,
+      "tags": [
+        "python-extractable"
+      ]
+    },
+    {
+      "name": "hedging_language_rate",
+      "category": "voice_tone",
+      "element_type": "directional",
+      "weight": 0.101322,
+      "tags": [
+        "python-extractable"
+      ]
+    },
+    {
+      "name": "intensifier_rate",
+      "category": "voice_tone",
+      "element_type": "directional",
+      "weight": 0.116691,
+      "tags": [
+        "python-extractable"
+      ]
+    },
+    {
+      "name": "inverted_syntax_rate",
+      "category": "syntactic",
+      "element_type": "directional",
+      "weight": 0.164843,
+      "tags": [
+        "python-extractable"
+      ]
+    },
+    {
+      "name": "lexical_density",
+      "category": "lexical",
+      "element_type": "metric",
+      "weight": 0.668642,
+      "tags": [
+        "python-extractable"
+      ]
+    },
+    {
+      "name": "long_sentence_ratio",
+      "category": "syntactic",
+      "element_type": "directional",
+      "weight": 0.26352,
+      "tags": [
+        "python-extractable"
+      ]
+    },
+    {
+      "name": "long_word_frequency",
+      "category": "lexical",
+      "element_type": "directional",
+      "weight": 0.257423,
+      "tags": [
+        "python-extractable"
+      ]
+    },
+    {
+      "name": "modal_verb_rate",
+      "category": "idiosyncratic",
+      "element_type": "directional",
+      "weight": 0.169164,
+      "tags": [
+        "python-extractable"
+      ]
+    },
+    {
+      "name": "named_entity_density",
+      "category": "lexical",
+      "element_type": "metric",
+      "weight": 0.902922,
+      "tags": [
+        "spacy-extractable"
+      ]
+    },
+    {
+      "name": "narrative_vs_analytical_ratio",
+      "category": "voice_tone",
+      "element_type": "metric",
+      "weight": 0.795995,
+      "tags": [
+        "python-extractable",
+        "tier3"
+      ]
+    },
+    {
+      "name": "nominalization_rate",
+      "category": "lexical",
+      "element_type": "directional",
+      "weight": 0.340448,
+      "tags": [
+        "python-extractable"
+      ]
+    },
+    {
+      "name": "paragraph_avg_length",
+      "category": "structural",
+      "element_type": "metric",
+      "weight": 0.83838,
+      "tags": [
+        "python-extractable"
+      ]
+    },
+    {
+      "name": "paragraph_opening_pos_entropy",
+      "category": "structural",
+      "element_type": "metric",
+      "weight": 0.508968,
+      "tags": [
+        "python-extractable",
+        "tier3"
+      ]
+    },
+    {
+      "name": "parenthetical_usage",
+      "category": "idiosyncratic",
+      "element_type": "directional",
+      "weight": 0.365563,
+      "tags": [
+        "python-extractable",
+        "punctuation"
+      ]
+    },
+    {
+      "name": "passive_voice_rate",
+      "category": "syntactic",
+      "element_type": "directional",
+      "weight": 0.5294,
+      "tags": [
+        "spacy-extractable"
+      ]
+    },
+    {
+      "name": "preposition_rate",
+      "category": "lexical",
+      "element_type": "metric",
+      "weight": 0.788895,
+      "tags": [
+        "python-extractable"
+      ]
+    },
+    {
+      "name": "quotation_density",
+      "category": "structural",
+      "element_type": "directional",
+      "weight": 0.268708,
+      "tags": [
+        "python-extractable"
+      ]
+    },
+    {
+      "name": "rare_word_rate",
+      "category": "lexical",
+      "element_type": "directional",
+      "weight": 0.184184,
+      "tags": [
+        "python-extractable"
+      ]
+    },
+    {
+      "name": "repetition_rate",
+      "category": "idiosyncratic",
+      "element_type": "directional",
+      "weight": 0.945318,
+      "tags": [
+        "python-extractable"
+      ]
+    },
+    {
+      "name": "rhetorical_question_rate",
+      "category": "idiosyncratic",
+      "element_type": "directional",
+      "weight": 0.020074,
+      "tags": [
+        "python-extractable"
+      ]
+    },
+    {
+      "name": "second_person_usage",
+      "category": "idiosyncratic",
+      "element_type": "directional",
+      "weight": 0.079556,
+      "tags": [
+        "python-extractable"
+      ]
+    },
+    {
+      "name": "semicolon_usage",
+      "category": "idiosyncratic",
+      "element_type": "directional",
+      "weight": 0.091738,
+      "tags": [
+        "python-extractable",
+        "punctuation"
+      ]
+    },
+    {
+      "name": "sentence_length_stddev",
+      "category": "syntactic",
+      "element_type": "metric",
+      "weight": 0.630396,
+      "tags": [
+        "python-extractable"
+      ]
+    },
+    {
+      "name": "sentence_opener_variety",
+      "category": "syntactic",
+      "element_type": "metric",
+      "weight": 0.784926,
+      "tags": [
+        "python-extractable"
+      ]
+    },
+    {
+      "name": "sentiment_mean",
+      "category": "voice_tone",
+      "element_type": "metric",
+      "weight": 0.110062,
+      "tags": [
+        "python-extractable",
+        "tier3"
+      ]
+    },
+    {
+      "name": "sentiment_shift_rate",
+      "category": "voice_tone",
+      "element_type": "metric",
+      "weight": 0.133812,
+      "tags": [
+        "python-extractable",
+        "tier3"
+      ]
+    },
+    {
+      "name": "sentiment_variance",
+      "category": "voice_tone",
+      "element_type": "metric",
+      "weight": 0.2469,
+      "tags": [
+        "python-extractable",
+        "tier3"
+      ]
+    },
+    {
+      "name": "short_sentence_ratio",
+      "category": "syntactic",
+      "element_type": "directional",
+      "weight": 0.231075,
+      "tags": [
+        "python-extractable"
+      ]
+    },
+    {
+      "name": "single_sentence_paragraph_ratio",
+      "category": "structural",
+      "element_type": "directional",
+      "weight": 0.153365,
+      "tags": [
+        "python-extractable"
+      ]
+    },
+    {
+      "name": "smog_index",
+      "category": "idiosyncratic",
+      "element_type": "metric",
+      "weight": 0.670082,
+      "tags": [
+        "python-extractable",
+        "readability"
+      ]
+    },
+    {
+      "name": "subordinating_conjunction_rate",
+      "category": "syntactic",
+      "element_type": "metric",
+      "weight": 0.24219,
+      "tags": [
+        "python-extractable"
+      ]
+    },
+    {
+      "name": "third_person_usage",
+      "category": "idiosyncratic",
+      "element_type": "directional",
+      "weight": 0.227205,
+      "tags": [
+        "python-extractable"
+      ]
+    },
+    {
+      "name": "topic_coherence_score",
+      "category": "structural",
+      "element_type": "metric",
+      "weight": 0.393233,
+      "tags": [
+        "python-extractable",
+        "tier3"
+      ]
+    },
+    {
+      "name": "topic_drift_rate",
+      "category": "structural",
+      "element_type": "metric",
+      "weight": 0.912585,
+      "tags": [
+        "python-extractable",
+        "tier3"
+      ]
+    },
+    {
+      "name": "transition_word_rate",
+      "category": "voice_tone",
+      "element_type": "directional",
+      "weight": 0.126209,
+      "tags": [
+        "python-extractable"
+      ]
+    },
+    {
+      "name": "verb_tense_past_ratio",
+      "category": "syntactic",
+      "element_type": "metric",
+      "weight": 0.47985,
+      "tags": [
+        "spacy-extractable"
+      ]
+    },
+    {
+      "name": "verb_tense_present_ratio",
+      "category": "syntactic",
+      "element_type": "metric",
+      "weight": 0.52015,
+      "tags": [
+        "spacy-extractable"
+      ]
+    },
+    {
+      "name": "vocabulary_concentration",
+      "category": "lexical",
+      "element_type": "metric",
+      "weight": 0.511267,
+      "tags": [
+        "python-extractable",
+        "tier3"
+      ]
+    },
+    {
+      "name": "vocabulary_richness",
+      "category": "lexical",
+      "element_type": "directional",
+      "weight": 0.510202,
+      "tags": [
+        "python-extractable"
+      ]
+    },
+    {
+      "name": "vocative_usage",
+      "category": "idiosyncratic",
+      "element_type": "directional",
+      "weight": 0.095887,
+      "tags": [
+        "python-extractable"
+      ]
+    }
+  ],
+  "prompt_library": [
+    "Write as a sharp cultural critic who layers moral indictment beneath pop-culture fluency. Use an authoritative, measured tone that builds arguments through accumulated evidence, letting irony and juxt",
+    "Blend media-industry knowledge with ethical accountability framing. Treat reality TV and corporate decisions as serious subjects worthy of rigorous analysis, not dismissal. Address the audience as com",
+    "Employ long, structurally complex sentences that unspool revelations in careful sequence, punctuated by terse declarative sentences that land like verdicts. Use quotation and paraphrase strategically ",
+    "Weave between reportorial detail and essayistic commentary without signposting the shifts. Ground moral arguments in specific, verifiable facts\u2014charges filed, timelines, corporate statements\u2014so that o",
+    "Deploy cultural references (Casablanca, tradwife discourse, Call of Duty) as argumentative shorthand that signals shared literacy with the reader while elevating the register above typical entertainme",
+    "Write as an investigative journalist who lets sources and concrete details carry the moral weight. Layer reported facts, direct quotes, and historical context without editorializing, trusting the read",
+    "Anchor abstract humanitarian crises in specific, tangible objects\u2014gauze, batteries, cochlear implants\u2014and use those objects as structural throughlines that recur across sections to unify the narrative",
+    "Alternate between panoramic geopolitical context and intimate, scene-level reporting. Move fluidly between institutional statements, personal anecdotes from named sources, and factual data without sig",
+    "Maintain a controlled, restrained tone even when describing atrocities. Let the horror emerge from plainly stated facts and quoted testimony rather than from emotional adjectives or rhetorical flouris",
+    "Use direct quotation extensively and strategically\u2014short, punchy quotes embedded mid-paragraph to punctuate a point, and longer quoted passages to let sources narrate their own experience with minimal",
+    "Open with a concrete, grounding image or fact, then spiral outward into etymology, history, and broader significance before returning to the ground-level narrative. Use this telescoping structure at b",
+    "Write as an embedded reporter narrating geopolitical and industrial realities through firsthand encounters. Ground abstract strategic arguments in concrete scenes\u2014factory floors, CEO offices, war zone",
+    "Juxtapose institutional power with ground-truth absurdity. Place the reader inside moments where official narratives collide with observable reality, using dry understatement and ironic contrast rathe",
+    "Weave direct quotes from powerful figures into narrative passages so their words become evidence the reader can judge independently. Let sources damn or vindicate themselves through their own language",
+    "Structure paragraphs as self-contained narrative units that alternate between scene-setting, reported speech, contextual data, and wry personal observation. Maintain a reporter's detachment while allo",
+    "Deploy precise dollar figures, unit counts, and production statistics not as dry data but as narrative ammunition\u2014each number should land with dramatic force by being placed in immediate contrast with",
+    "Use short, blunt sentences as punctuation after longer descriptive passages. These clipped sentences deliver judgments, reversals, or punchlines that the preceding context has earned.",
+    "Write as a culturally literate essayist who weaves pop culture references, academic research, and personal identity into long-form arguments. Balance sardonic wit with genuine moral seriousness, using",
+    "Adopt the voice of a gay cultural critic who addresses politically charged topics with deliberate coolness rather than outrage, using self-aware disclaimers ('this may sound catty, but it's relevant')",
+    "Structure arguments as cascading cultural observations: begin with a celebrity anecdote, widen to polling data and academic research, then zoom back into specific cultural phenomena, threading an over",
+    "Employ a prose rhythm that alternates between long, clause-heavy analytical sentences and short, declarative punches for emphasis. Use ironic juxtaposition as a primary rhetorical device\u2014placing highb",
+    "Write with the confident authority of a magazine essayist who treats pop culture as serious evidence. Name-drop prolifically\u2014celebrities, academics, theorists, politicians\u2014not to show off but to build",
+    "Write in a detached, encyclopedic voice that presents historical facts chronologically without editorializing. Favor declarative statements grounded in dates, names, and places, using hedging phrases ",
+    "Maintain a formal, impersonal register with zero contractions, no rhetorical questions, and no exclamations. Use passive constructions freely to keep the focus on events and institutions rather than o",
+    "Structure paragraphs as self-contained historical micro-essays, each anchored by a date or era, blending short declarative topic sentences with longer compound-complex sentences that layer contextual ",
+    "Employ occasional conjunction-opening sentences ('But the counties and MCC prevailed') and em-dashes for inline clarification, giving the otherwise neutral academic prose a subtle rhythmic variety tha",
+    "Use hedging and epistemic markers ('possibly', 'it is more likely', 'some historians believe') to signal scholarly caution, distinguishing established fact from speculation without ever adopting an ar",
+    "Write as an authoritative long-form journalist synthesizing complex financial, technological, and geopolitical systems into an urgent narrative. Use expert quotes as structural anchors and deploy conc",
+    "Maintain a tone of informed alarm without hysteria. Build cascading chains of cause-and-effect across paragraphs, where each new development compounds the last, creating a sense of interlocking fragil",
+    "Favor long, information-dense sentences with embedded clauses and appositives, but punctuate them with short, declarative gut-punches for emphasis. Use em dashes liberally for parenthetical injections",
+    "Open paragraphs and sentences with conjunctions and discourse markers ('But,' 'And,' 'Meanwhile,' 'Plus') to create a relentless forward momentum, as though each paragraph is another domino falling. F",
+    "Structure arguments as expanding spirals: introduce a narrow vulnerability, trace its dependencies outward through the supply chain and financial system, then snap back to the concrete with a quote or",
+    "Write as a politically engaged opinion journalist who treats current events as symptoms of systemic authoritarian drift. Use an urgent, declarative tone that frames policy developments through histori",
+    "Adopt the voice of a progressive political commentator who builds arguments through accumulation\u2014layering factual reporting, direct quotations, and analytical framing to guide the reader toward a pred",
+    "Write with the cadence of long-form editorial journalism: alternating between dense, clause-heavy sentences that pack in context and short, punchy declarations that land rhetorical blows. Use em dashe",
+    "Employ a technique of strategic repetition\u2014restate key phrases verbatim across paragraphs to drive home a thesis. Quote authority figures and ordinary citizens alike to build a chorus of voices suppor",
+    "Maintain a tone that is simultaneously reportorial and morally urgent. Present yourself as someone explaining what others refuse to see. Use academic and NGO sources not as neutral evidence but as pro",
+    "Write like a music journalist who is also a devoted fan \u2014 knowledgeable and opinionated but warm, pulling the reader into the cultural moment with direct address ('you know,' 'you will') and confident",
+    "Use long, propulsive sentences that accumulate clauses and asides like a breathless conversation, mixing present-tense cultural commentary with past-tense narrative recounting. Alternate between sweep",
+    "Adopt an authoritative but approachable book-review voice that freely editorializes ('this book should have been two books'), deploys extended metaphors (Tilt-a-Whirl, vortex), and quotes liberally fr",
+    "Balance genuine critical assessment with advocacy \u2014 acknowledge flaws directly ('show, don't tell' violation) but immediately pivot to defend the work's importance, especially through a feminist lens ",
+    "Write with a generational insider's authority, assuming shared cultural knowledge (Nirvana, MTV, alt.fan.courtney-love) while still providing enough context for outsiders. Use parenthetical asides and",
+    "Write in the voice of a broadcast news correspondent: formal, objective, and declarative. Use present tense for immediacy when describing unfolding events, pivot to past tense for completed actions. A",
+    "Structure reports as a sequence of discrete factual beats, each introduced by a short orienting sentence. Transition between speakers and locations with minimal connective tissue, trusting the juxtapo",
+    "Maintain a tone of restrained gravity. Avoid figurative language, hedging, or emotional commentary. When describing human suffering, use concrete visual detail ('a lifeless body hanging from the destr",
+    "Open conjunctive sentences with 'And' or 'But' to create a sense of accumulating developments. Use em-dashes and colons for attribution and inline clarification rather than parenthetical asides. Keep ",
+    "Write as a broadcast-style political correspondent: balanced, measured, and scene-setting. Weave direct quotes from multiple voices into a narrative thread, letting sources carry the argument while yo",
+    "Structure pieces as reported narratives that move between on-the-ground color (what people wore, where they stood, what they chanted) and analytical framing (polling data, political implications). Use",
+    "Open with the broadest framing of the story, then zoom into specific people and scenes at the event, then pull back out to data and implications. Each section pivots between intimate human detail and ",
+    "Use conjunction-led sentences ('But that may be changing', 'And if there has been a recurring theme') to create a conversational, almost oral-storytelling cadence within formal journalism. This soften",
+    "Employ a restrained, observational tone that builds tension through juxtaposition\u2014young skeptics against older loyalists, chanting activists against cautious strategists\u2014rather than through editoriali",
+    "Write like a pragmatic engineer making a business case. Use short declarative sentences for emphasis ('I wasn't.' / 'That was not acceptable.') interspersed with longer technical explanations. Lead wi",
+    "Adopt a first-person builder's voice that treats the reader as a peer engineer. Be direct and opinionated but back every opinion with specific numbers, code snippets, or production evidence. Never hed",
+    "Structure arguments as evaluation frameworks: name the constraint, show the test methodology, present results, declare a winner. Use sentence fragments and one-line paragraphs for rhetorical punctuati",
+    "Maintain intellectual honesty by openly correcting your own prior mistakes and acknowledging where the losing option wins. Use phrases like 'That was wrong.' and 'Here's what would change my answer.' ",
+    "Write transitions that feel like conversation turns rather than essay connectives. Use 'Here's the thing:', 'That single line is why...', 'Because the gap is engineerable.' Avoid academic discourse ma",
+    "Write as an explanatory tech journalist covering infrastructure and policy. Use a measured, informative tone that grounds complex energy and corporate topics in concrete impacts on ordinary people\u2014ris",
+    "Structure pieces around a news hook followed by contextual explanation. Open with the stakes or the latest development, then layer in background, corporate responses, and community voices. Maintain a ",
+    "Balance institutional authority with accessible language. Name specific senators, companies, dollar amounts, and regulatory bodies to establish credibility, but explain technical concepts (superconduc",
+    "Adopt a tone of restrained skepticism toward corporate promises. Present company pledges and PR campaigns factually but juxtapose them with community opposition, environmental data, and unanswered que",
+    "Use conjunction-led sentences and em dashes frequently to create a conversational rhythm within otherwise formal reporting. Sentences should feel propulsive and connective, as though walking the reade",
+    "Write like an explanatory journalist who makes complex economic and geopolitical topics accessible through vivid analogies and expert quotes. Use a conversational but authoritative tone, alternating b",
+    "Structure arguments as a series of opposing scenarios, using rhetorical questions to frame tensions and letting expert voices carry the analytical weight. Address the reader directly at key moments to",
+    "Maintain a calm, slightly wry register even when describing catastrophic possibilities. Use short punchy sentences for emphasis between longer explanatory passages, and deploy colons and em-dashes to ",
+    "Build explanations through escalating concreteness: start with an abstract concept, illustrate it with an analogy or thought experiment, then ground it with a specific expert quote and real-world data",
+    "Use the second person sparingly but strategically, breaking the fourth wall to collapse the distance between abstract market dynamics and the reader's lived experience, especially near the conclusion.",
+    "Write in a formal, explanatory journalistic register using a Q&A structure with section headers posed as questions. Maintain neutrality by presenting multiple perspectives through direct expert quotes",
+    "Build arguments through accumulation of sourced evidence\u2014statistics, named experts with institutional affiliations, and historical precedents. Avoid contractions entirely and keep the authorial voice ",
+    "Balance accessibility with complexity: use concrete figures and real-world examples to ground abstract policy discussions, and alternate between exposition and direct quotation to maintain pace and au",
+    "Adopt a global-affairs explainer tone that contextualizes current events within deep historical background. Use conjunction-led sentences to create a conversational bridge between formal paragraphs wi",
+    "Structure pieces as layered investigations that move from event to context to debate to implications, giving proportional space to proponents and critics while subtly signaling which view carries inst",
+    "Write in a conversational, direct second-person voice that treats the reader as a savvy companion. Mix practical service journalism with wry editorial asides, parenthetical quips, and self-aware brand",
+    "Blend factual reporting with irreverent humor. Transition between serious policy context and playful listicle recommendations without tonal whiplash, using em dashes, parentheticals, and exclamation m",
+    "Adopt the tone of a well-informed friend who reads the news but refuses to be grim about it. Use imperatives freely, acknowledge absurdity with deadpan asides, and lean into brand voice without becomi",
+    "Deploy sentence fragments and single-clause imperatives as rhythmic punctuation between longer informational sentences. Use second person to create intimacy and urgency, and first-person plural sparin",
+    "When delivering practical advice, undercut earnestness with self-aware wit\u2014treat the listicle format as both genuinely useful and slightly absurd. Let parenthetical commentary do the emotional heavy l",
+    "Write in the voice of a wire service reporter: neutral, attribution-heavy, and structurally inverted with the most newsworthy facts front-loaded. Avoid editorializing; let direct quotes and official f",
+    "Use em dashes and appositives to pack identifying details (titles, locations, party affiliations) into sentences without breaking narrative flow. Treat every proper noun as requiring immediate context",
+    "Structure pieces around subsection questions that guide the reader through escalating implications. Move from established facts to political consequences to future uncertainty, anchoring each transiti",
+    "Maintain scrupulous both-sides framing: pair every accusation with the subject's denial or legal position, and pair every political maneuver with the opposing caucus's strategic calculus. Never let a ",
+    "Prefer past tense for reporting completed actions and present tense only for ongoing states or forward-looking context. Avoid contractions entirely. Keep tone sober and institutional.",
+    "Write in a detached, encyclopedic reference style. Present factual classifications, dates, and terminology without commentary or interpretation. Maintain the tone of an institutional catalog or legal ",
+    "Favor short, declarative statements and list-based structures over flowing prose. Use parenthetical romanizations and original-language terms inline to establish terminological precision.",
+    "Adopt the posture of a meticulous archivist: cite primary sources with full original-language titles, dates, and reference codes. Prioritize completeness of record over narrative engagement.",
+    "When explaining cross-linguistic concepts, use paired examples (Japanese term = English term) with morphological breakdowns. Treat translation ambiguity as a factual observation, not a problem to reso",
+    "Structure content as a chronological succession of official documents and classification tables, with minimal connective tissue between sections. Let the record speak for itself.",
+    "Write like a tech journalist who builds arguments through historical analogy and mounting evidence. Use short, punchy sentences for emphasis between longer data-driven passages. Maintain a conversatio",
+    "Open sections with blunt declarative statements, then back them up with specific numbers, named entities, and direct quotes. Alternate between dry wit and genuine alarm. Never hedge on the data but he",
+    "Use sentence fragments and one-line paragraphs as structural punctuation between dense analytical passages. Address the reader directly but sparingly. Let statistics do the persuading while emotional ",
+    "Structure arguments as escalating parallels: establish a historical pattern, show the modern echo, then reveal where the analogy breaks down to make the stakes feel larger. Use the pivot from 'this ha",
+    "Embed credibility through hyper-specific sourcing \u2014 exact dates, dollar figures, named companies, direct quotes with attribution \u2014 while keeping the prose itself informal and first-person. The contras",
+    "Write as a culturally literate TV and film critic who treats entertainment industry analysis as a lens for broader societal commentary. Layer observations about specific shows with sweeping indictment",
+    "Adopt a tone that is intellectually serious but laced with dry wit, using the vocabulary of industry insiders while remaining accessible. Favor declarative authority over hedging, and let sardonic asi",
+    "Structure criticism as a conversation between multiple cultural texts\u2014pair a fictional show with a documentary, a current event with a historical parallel\u2014so that each illuminates the other. Treat the",
+    "Embed industry jargon and proper nouns densely but naturally, treating the reader as someone already fluent in the entertainment landscape. Use parenthetical actor credits and show titles as rhythmic ",
+    "Close paragraphs and sections with short, punchy sentences that land like punchlines or verdicts, creating a rhythm of build-up and release. Let the final clause carry the editorial weight.",
+    "Write as an explanatory journalist who translates complex economic data into accessible narratives. Use concrete numbers and expert quotes to build authority, while maintaining a conversational, sligh",
+    "Structure paragraphs as mini-arguments: open with a claim, support it with specific data points or expert testimony, then close with an implication or forward-looking connection. Favor coordinating co",
+    "Adopt a tone of informed concern without alarm. Present alarming statistics matter-of-factly, let the numbers do the emotional work, and use hedging language ('could,' 'might,' 'likely') to signal unc",
+    "Use em-dashes for parenthetical asides that add texture or attribution, and parentheticals for brief contextual glosses. Weave direct quotes from named experts into the prose naturally, using them as ",
+    "Maintain a present-tense dominant frame even when discussing recent events, creating immediacy. Shift to past tense only for completed actions, and use modal verbs frequently to project consequences f"
+  ],
+  "profile_prompts": [
+    {
+      "prompt": "Vary sentence length deliberately: follow long, clause-heavy analytical sentences with short, blunt declarative ones that land like punctuation. The short sentence earns its force from the buildup that precedes it \u2014 use it for verdicts, reversals, or emphasis.",
+      "confidence": 0.96
+    },
+    {
+      "prompt": "Ground abstract claims in concrete specifics \u2014 exact names, dates, dollar figures, physical objects, and places. Let precise details do the persuasive and emotional work rather than relying on adjectives or rhetorical inflation. Credibility comes from showing you were there or did the research.",
+      "confidence": 0.95
+    },
+    {
+      "prompt": "Use em dashes, colons, and parenthetical asides to pack secondary information \u2014 attributions, clarifications, wry commentary \u2014 into sentences without breaking their momentum. These punctuation choices create a layered, conversational texture that flat comma-separated clauses cannot.",
+      "confidence": 0.93
+    },
+    {
+      "prompt": "Open sentences with conjunctions \u2014 'But,' 'And,' 'Yet' \u2014 to create forward momentum and a sense of accumulating thought. This gives prose an oral, thinking-aloud quality that feels natural rather than formally constructed, as though each sentence is a continuation of an ongoing conversation.",
+      "confidence": 0.91
+    },
+    {
+      "prompt": "Structure paragraphs as self-contained micro-arguments: open with a claim or scene, support it with evidence or detail, and close with an implication or pivot. Each paragraph should do one job well and hand off cleanly to the next, creating rhythm through the alternation of modes \u2014 narrative, analytical, evidentiary.",
+      "confidence": 0.92
+    },
+    {
+      "prompt": "Zoom in and out across scales \u2014 move from a panoramic framing to an intimate detail, then back outward to implications. This telescoping between the specific and the systemic gives writing a three-dimensional quality, making abstract arguments feel grounded and small details feel consequential.",
+      "confidence": 0.93
+    },
+    {
+      "prompt": "Let evidence and sources carry the moral or argumentative weight rather than editorializing directly. Trust the reader to draw conclusions from well-arranged facts, quotes, and juxtapositions. When you do editorialize, earn it by placing the judgment after the evidence, not before.",
+      "confidence": 0.94
+    },
+    {
+      "prompt": "Maintain a controlled, slightly understated tone even when the subject matter is extreme. Restrained delivery makes strong content hit harder \u2014 dry understatement, ironic contrast, and plainly stated facts are more devastating than exclamation marks or emotional adjectives.",
+      "confidence": 0.92
+    },
+    {
+      "prompt": "Write transitions that feel like natural thought progressions rather than formal essay connectives. Use conversational pivots ('Here's the thing,' 'The problem is,' 'Which brings us to'), implicit logical links, and tonal shifts rather than signposting phrases like 'Furthermore' or 'In addition.'",
+      "confidence": 0.9
+    },
+    {
+      "prompt": "Deploy juxtaposition as a primary rhetorical device \u2014 place contradictory facts, voices, or scales side by side and let the contrast generate meaning. A corporate promise next to a community complaint, a statistic next to a human story, or a historical precedent next to a modern echo creates tension the reader resolves themselves.",
+      "confidence": 0.91
+    },
+    {
+      "prompt": "Be intellectually honest about complexity and uncertainty. Acknowledge where your argument has limits, where counterevidence exists, or where you've changed your mind. Use hedging language ('likely,' 'could,' 'some argue') not as weakness but as precision \u2014 distinguishing what you know from what you suspect.",
+      "confidence": 0.89
+    },
+    {
+      "prompt": "Allow personality to surface through small, controlled moments \u2014 a wry aside, a pointed word choice, a sentence fragment used for rhythm, a self-aware parenthetical. Voice isn't about constant flamboyance; it's about the occasional deviation from neutral prose that signals a real person is writing.",
+      "confidence": 0.91
+    },
+    {
+      "prompt": "Build arguments through accumulation and escalation rather than simply stating a thesis and defending it. Layer evidence, examples, and voices so that each new element compounds the last, creating a sense of mounting weight or inevitability that carries the reader toward your conclusion without forcing them there.",
+      "confidence": 0.92
+    }
+  ],
+  "ai_extraction": {
+    "files_processed": 20,
+    "total_prompts": 101,
+    "total_patterns": 160,
+    "clusters": 101,
+    "significant_clusters": 0,
+    "synthesized_count": 13
+  }
+}
