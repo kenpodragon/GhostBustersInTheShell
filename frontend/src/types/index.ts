@@ -272,6 +272,24 @@ export interface StarterProgress {
   milestone_pct: number
 }
 
+export interface BaselineUpdateCheckResult {
+  status: 'up_to_date' | 'update_available'
+  current_version: string
+  remote_version: string
+  remote_date?: string
+  changelog?: string
+  min_app_version?: string
+  app_version?: string
+  app_update_required?: boolean
+}
+
+export interface BaselineUpdateApplyResult {
+  success: boolean
+  version?: string
+  baseline_id?: number
+  error?: string
+}
+
 export interface CompletenessData {
   tier: 'starter' | 'bronze' | 'silver' | 'gold' | null
   tier_label: string | null

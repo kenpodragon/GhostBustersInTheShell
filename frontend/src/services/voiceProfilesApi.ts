@@ -85,4 +85,8 @@ export const voiceProfilesApi = {
     if (!res.ok) throw new Error('Failed to fetch completeness')
     return res.json()
   },
+
+  // Baseline version updates
+  checkBaselineUpdates: () => fetch(`${API}/baseline/updates/check`).then(json),
+  applyBaselineUpdate: () => fetch(`${API}/baseline/updates/apply`, { method: 'POST' }).then(json),
 }
