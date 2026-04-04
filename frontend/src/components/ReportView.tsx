@@ -5,11 +5,18 @@ import type { Classification, Pattern, SentenceResult } from '../types'
 import ScoreBadge from './ScoreBadge'
 import ScoreGauge from './ScoreGauge'
 
+interface Tiers {
+  sentence_score: number
+  paragraph_score: number
+  document_score: number
+}
+
 interface AnalysisResult {
   overall_score: number
   classification: Classification | null
   patterns: Pattern[]
   sentences: SentenceResult[]
+  tiers?: Tiers
 }
 
 interface HistoryEntry {
@@ -76,6 +83,26 @@ export default function ReportView() {
           <ScoreBadge score={result.overall_score} classification={result.classification} />
         </div>
         <ScoreGauge score={result.overall_score} />
+
+        {/* Tier Breakdown */}
+        {result.tiers && (
+          <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', marginTop: '0.5rem' }}>
+            {[
+              { label: 'Sentence', score: result.tiers.sentence_score, weight: '45%' },
+              { label: 'Paragraph', score: result.tiers.paragraph_score, weight: '30%' },
+              { label: 'Document', score: result.tiers.document_score, weight: '25%' },
+            ].map((tier) => (
+              <div key={tier.label} style={{ flex: 1, background: 'var(--bg-primary)', borderRadius: '4px', padding: '0.5rem', textAlign: 'center', border: '1px solid var(--border-color)' }}>
+                <div className="text-muted" style={{ fontSize: '0.6rem', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
+                  {tier.label} ({tier.weight})
+                </div>
+                <div style={{ fontSize: '1rem', fontWeight: 700, color: tier.score > 30 ? 'var(--score-critical)' : tier.score > 15 ? 'var(--score-medium)' : 'var(--score-low)' }}>
+                  {tier.score.toFixed(1)}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Detected Patterns */}
         {result.patterns && result.patterns.length > 0 && (
