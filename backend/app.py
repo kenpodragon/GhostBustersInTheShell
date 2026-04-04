@@ -67,6 +67,10 @@ def main():
     from utils.style_guide_builder import seed_routing_table
     seed_routing_table()
 
+    # Seed baseline voice profile if missing or outdated
+    from utils.baseline_seeder import seed_baseline_profile
+    seed_baseline_profile()
+
     # AI provider startup health check
     from ai_providers.router import startup_health_check
     startup_health_check()
@@ -74,6 +78,8 @@ def main():
     # Start MCP server in background thread
     if not args.no_mcp:
         def run_mcp():
+            import time
+            time.sleep(3)  # Delay to prevent race condition with eager SSE clients
             from mcp_server import mcp as mcp_instance
             mcp_instance.settings.host = "0.0.0.0"
             mcp_instance.settings.port = args.mcp_port
