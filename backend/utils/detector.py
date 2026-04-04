@@ -143,7 +143,8 @@ def _detect_ai_patterns_inner(text: str, detail: bool = False, use_lm_signals: b
                 "document_score": 0,
                 "score_math": {
                     "sentence_weighted": 0.0, "paragraph_weighted": 0.0, "document_weighted": 0.0,
-                    "convergence_bonus": 0.0, "cross_tier_bonus": 0.0, "raw_composite": 0.0, "final_score": 0.0,
+                    "convergence_bonus": 0.0, "cross_tier_bonus": 0.0, "raw_composite": 0.0,
+                    "genre_dampening": 0.0, "final_score": 0.0,
                 },
             },
             "document_patterns": [],
@@ -243,10 +244,12 @@ def _detect_ai_patterns_inner(text: str, detail: bool = False, use_lm_signals: b
     genre_baseline = _genre_baselines.get(genre, _genre_baselines.get("general", GENRE_BASELINES["general"]))
     human_ceil = genre_baseline["human_ceil"]
 
+    pre_dampen = overall
     if human_ceil > 25 and overall < human_ceil + 10:
         dampening = (human_ceil - 25) / 25
         dampened = overall * (1 - dampening * 0.3)
         overall = max(dampened, overall * 0.7)
+    genre_dampening = round(pre_dampen - overall, 1)
 
     word_count = len(re.findall(r"[a-z']+", text.lower()))
     signal_count = sentence_signal_count + paragraph_signal_count + document_signal_count
@@ -285,6 +288,10 @@ def _detect_ai_patterns_inner(text: str, detail: bool = False, use_lm_signals: b
         },
         "document_patterns": document_patterns_enriched,
     }
+
+    # Sync score_math.final_score with overall_score (genre dampening may have changed it)
+    result["tiers"]["score_math"]["genre_dampening"] = genre_dampening
+    result["tiers"]["score_math"]["final_score"] = result["overall_score"]
 
     if detail:
         # Build sentence signal counts from already-computed patterns
