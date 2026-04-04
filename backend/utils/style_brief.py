@@ -236,15 +236,29 @@ def generate_style_brief(
         estimated_words = 600  # floor matching scorer minimum
         voice_rules_text = build_style_guide(voice_elements, target_word_count=estimated_words)
 
+    # Detect generate mode from comment prefix
+    is_generate = comment and comment.strip().upper().startswith("GENERATE")
+
     # Assemble the brief based on mode
     if mode == "voice":
-        sections = [
-            "You are rewriting this text to match a specific author's voice and style.",
-            "",
-            f"TONE: {tone}",
-            "",
-            "STYLE RULES (follow ALL of these):",
-        ]
+        if is_generate:
+            sections = [
+                "You are generating NEW original content in a specific author's voice and style.",
+                "The text below is a PROMPT describing what to write — do NOT rewrite it.",
+                "Create 600+ words of original content following the prompt's instructions.",
+                "",
+                f"TONE: {tone}",
+                "",
+                "STYLE RULES (follow ALL of these):",
+            ]
+        else:
+            sections = [
+                "You are rewriting this text to match a specific author's voice and style.",
+                "",
+                f"TONE: {tone}",
+                "",
+                "STYLE RULES (follow ALL of these):",
+            ]
         for i, rule in enumerate(ALWAYS_ON_RULES, 1):
             sections.append(f"{i}. {rule}")
 
@@ -309,11 +323,12 @@ def generate_style_brief(
         sections.append(f'"""{example}"""')
 
     # Output format
+    text_label = "Generation prompt (write about this):" if is_generate else "Text to rewrite:"
     sections.extend([
         "",
         'Return ONLY valid JSON: {{"rewritten_text": "the full rewritten text", "changes": [{{"original": "phrase", "rewritten": "phrase", "reason": "why"}}]}}',
         "",
-        "Text to rewrite:",
+        text_label,
         "---",
         "{text}",
         "---",

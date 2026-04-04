@@ -112,11 +112,11 @@ export default function InputView() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          text: ' ',
+          text: text.trim(),
           use_ai: true,
           voice_profile_id: selectedProfileId || undefined,
           overlay_ids: selectedOverlayIds.length > 0 ? selectedOverlayIds : undefined,
-          comment: `GENERATE NEW CONTENT from this prompt (do NOT rewrite — create original content following the voice profile and anti-AI rules): ${text.trim()}`,
+          comment: 'GENERATE: Create original content from this prompt. Do NOT rewrite it — use it as instructions for what to write about.',
         }),
       })
       if (!res.ok) throw new Error('Generation failed')
