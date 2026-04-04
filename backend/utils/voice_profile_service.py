@@ -76,7 +76,8 @@ class VoiceProfileService:
         with self.conn.cursor() as cur:
             cur.execute("""
                 SELECT id, name, description, profile_type, parse_count,
-                       is_active, stack_order, created_at, updated_at
+                       is_active, stack_order, consolidated_ai_analysis,
+                       created_at, updated_at
                 FROM voice_profiles
                 WHERE id = %s
             """, (profile_id,))
@@ -618,10 +619,20 @@ class VoiceProfileService:
                     VALUES (%s, %s, %s)
                 """, (profile_id, p["prompt_text"], p.get("sort_order", 0)))
             parse_count = data.get("parse_count", 0)
-            if parse_count:
+            consolidated = data.get("consolidated_ai_analysis")
+            if parse_count or consolidated:
+                sets = []
+                vals = []
+                if parse_count:
+                    sets.append("parse_count = %s")
+                    vals.append(parse_count)
+                if consolidated:
+                    sets.append("consolidated_ai_analysis = %s::jsonb")
+                    vals.append(json.dumps(consolidated))
+                vals.append(profile_id)
                 cur.execute(
-                    "UPDATE voice_profiles SET parse_count = %s WHERE id = %s",
-                    (parse_count, profile_id)
+                    f"UPDATE voice_profiles SET {', '.join(sets)} WHERE id = %s",
+                    vals,
                 )
         self.conn.commit()
         return self.get_profile_summary(profile_id)

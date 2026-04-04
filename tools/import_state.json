@@ -1,0 +1,1152 @@
+{
+  "completed": {
+    "50_Things_-_April_14_2005_-_0232_part1": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 192.7
+    },
+    "50_Things_-_April_14_2005_-_0232_part2": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 202.1
+    },
+    "50_Things_-_April_14_2005_-_0232_part3": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 205.2
+    },
+    "50_Things_-_April_14_2005_-_0232_part4": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 208.6
+    },
+    "50_Things_-_April_14_2005_-_0232_part5": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 7,
+      "elapsed": 252.1
+    },
+    "50_Things_-_April_14_2005_-_0232_part6": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 318.8
+    },
+    "50_Things_-_April_14_2005_-_0232_part7": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 302.8
+    },
+    "50_Things_-_April_14_2005_-_0232_part8": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 7,
+      "elapsed": 256.0
+    },
+    "50_Things_-_April_14_2005_-_0232_part9": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 329.6
+    },
+    "50_Things_-_April_14_2005_-_0232_part10": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 300.0
+    },
+    "50_Things_-_April_14_2005_-_0232_part11": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 306.4
+    },
+    "50_Things_-_April_14_2005_-_0232_part12": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 360.3
+    },
+    "50_Things_-_April_14_2005_-_0232_part13": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 394.5
+    },
+    "50_Things_-_April_14_2005_-_0232_part14": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 399.4
+    },
+    "50_Things_-_April_14_2005_-_0232_part15": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 358.1
+    },
+    "50_Things_-_April_14_2005_-_0232_part16": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 420.7
+    },
+    "50_Things_-_April_14_2005_-_0232_part17": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 439.3
+    },
+    "50_Things_-_April_14_2005_-_0232_part18": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 463.8
+    },
+    "50_Things_-_April_14_2005_-_0232_part19": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 7,
+      "elapsed": 392.4
+    },
+    "50_Things_-_April_14_2005_-_0232_part20": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 447.1
+    },
+    "50_Things_-_April_14_2005_-_0232_part21": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 431.3
+    },
+    "50_Things_-_April_14_2005_-_0232_part22": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 448.9
+    },
+    "50_Things_-_April_14_2005_-_0232_part23": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 531.6
+    },
+    "50_Things_-_April_14_2005_-_0232_part25": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 7,
+      "elapsed": 473.8
+    },
+    "50_Things_-_April_14_2005_-_0232_part26": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 495.1
+    },
+    "50_Things_-_April_14_2005_-_0232_part27": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 570.8
+    },
+    "BLUE": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 552.3
+    },
+    "EFE_text_part2": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 554.9
+    },
+    "EFE_text_part4": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 567.7
+    },
+    "EFE_text_part20": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 7,
+      "elapsed": 549.0
+    },
+    "EFE_text_part22": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 8,
+      "elapsed": 540.3
+    },
+    "EF_text_part14": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 140.9
+    },
+    "EF_text_part15": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 164.8
+    },
+    "EF_text_part16": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 132.8
+    },
+    "EF_text_part17": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 161.4
+    },
+    "EF_text_part18": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 8,
+      "elapsed": 153.1
+    },
+    "EF_text_part19": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 141.6
+    },
+    "EF_text_part20": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 150.2
+    },
+    "EF_text_part21": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 161.0
+    },
+    "EF_text_part22": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 155.8
+    },
+    "EF_text_part23": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 8,
+      "elapsed": 177.4
+    },
+    "EF_text_part24": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 137.4
+    },
+    "EF_text_part25": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 8,
+      "elapsed": 152.4
+    },
+    "EF_text_part26": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 133.1
+    },
+    "EF_text_part27": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 153.6
+    },
+    "EF_text_part28": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 164.1
+    },
+    "EF_text_part29": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 7,
+      "elapsed": 175.4
+    },
+    "EF_text_part30": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 7,
+      "elapsed": 170.4
+    },
+    "EF_text_part31": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 164.0
+    },
+    "ER_text_part1": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 161.3
+    },
+    "ER_text_part2": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 130.8
+    },
+    "ER_text_part3": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 7,
+      "elapsed": 139.9
+    },
+    "ER_text_part4": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 133.2
+    },
+    "ER_text_part5": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 156.2
+    },
+    "ER_text_part6": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 140.5
+    },
+    "ER_text_part7": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 172.7
+    },
+    "ER_text_part8": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 127.2
+    },
+    "ER_text_part9": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 172.5
+    },
+    "ER_text_part10": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 7,
+      "elapsed": 138.2
+    },
+    "ER_text_part11": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 141.0
+    },
+    "ER_text_part12": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 171.4
+    },
+    "ER_text_part13": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 124.0
+    },
+    "ER_text_part14": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 150.5
+    },
+    "ER_text_part15": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 127.0
+    },
+    "ER_text_part16": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 151.7
+    },
+    "ER_text_part17": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 171.6
+    },
+    "ER_text_part18": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 4,
+      "elapsed": 150.9
+    },
+    "ER_text_part19": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 132.8
+    },
+    "ER_text_part20": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 143.5
+    },
+    "ER_text_part21": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 137.6
+    },
+    "ER_text_part23": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 156.3
+    },
+    "ER_text_part24": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 137.8
+    },
+    "ER_text_part25": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 127.0
+    },
+    "ER_text_part26": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 134.5
+    },
+    "ER_text_part27": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 141.1
+    },
+    "ER_text_part28": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 124.0
+    },
+    "ER_text_part29": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 141.5
+    },
+    "ER_text_part30": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 170.7
+    },
+    "ER_text_part31": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 145.9
+    },
+    "ER_text_part32": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 143.1
+    },
+    "ER_text_part33": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 140.5
+    },
+    "ER_text_part34": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 7,
+      "elapsed": 141.0
+    },
+    "ER_text_part35": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 144.2
+    },
+    "ER_text_part36": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 7,
+      "elapsed": 161.6
+    },
+    "ER_text_part37": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 130.5
+    },
+    "ER_text_part38": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 139.4
+    },
+    "ER_text_part39": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 131.9
+    },
+    "ER_text_part40": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 157.1
+    },
+    "ER_text_part41": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 133.2
+    },
+    "ER_text_part42": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 145.8
+    },
+    "ER_text_part43": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 162.0
+    },
+    "ER_text_part44": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 155.3
+    },
+    "ER_text_part45": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 149.8
+    },
+    "ER_text_part46": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 150.3
+    },
+    "ER_text_part47": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 169.0
+    },
+    "History_of_anger": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 136.4
+    },
+    "Medidations": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 183.5
+    },
+    "ai-dead-long-live-stephen-salaka-9ntfc": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 141.2
+    },
+    "ai-here-save-you-stephen-salaka-5aadc": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 137.2
+    },
+    "art-failing-gracefully-stephen-salaka-bfv8e": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 130.2
+    },
+    "beyond-bricklaying-building-better-borrowed-code-stephen-salaka-od59e": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 118.6
+    },
+    "career-progression-paths-developers-hamster-wheel-coding-salaka-l8ide": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 134.9
+    },
+    "change-hard-loss-hardest-stephen-salaka-t0a6c": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 137.9
+    },
+    "curse-unicorn-veteran-tech-leader-navigates-job-market-stephen-salaka-u8o4e": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 139.3
+    },
+    "ditch-code-embrace-chaos-essential-tasks-newly-promoted-salaka-3uitc": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 8,
+      "elapsed": 134.9
+    },
+    "ego-trip-cosmos-why-you-should-see-yourself-sun-your-devs-salaka-loume": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 134.3
+    },
+    "event-driven-apis-stephen-salaka-k0w0e": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 168.4
+    },
+    "every-dead-body-mt-everest-once-highly-motivated-person-salaka-vdkve": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 129.6
+    },
+    "firing-isnt-failure-navigating-performance-issues-software-salaka-4ayye": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 131.5
+    },
+    "from-bits-bard-how-tech-geek-learned-speak-language-stephen-nim9e": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 134.2
+    },
+    "from-coding-king-cat-herder-stephen-salaka-eydfc": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 141.6
+    },
+    "from-dust-bunnies-dance-floors-my-ems-got-glow-up-stephen-xn7de": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 124.7
+    },
+    "from-k-kafka-my-desperate-attempt-write-like-human-stephen-salaka-vow5e": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 128.5
+    },
+    "from-keyboard-warlock-people-whisperer-slightly-ineffable-salaka-6qege": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 151.0
+    },
+    "from-master-coder-evil-boss-why-developers-jump-dark-side-salaka-yhqoc": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 123.0
+    },
+    "from-muaddib-mentat-developers-guide-leading-tribe-stephen-salaka-8rcxe": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 133.8
+    },
+    "i-got-promoted-manager-now-what-stephen-salaka-riyke": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 128.9
+    },
+    "i-love-ai-art-stephen-salaka-pxvgc": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 150.2
+    },
+    "ill-take-zombie-jobs-500-alex-stephen-salaka-8lt9f": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 145.4
+    },
+    "its-all-money-software-development-managers-guide-profit-salaka-pghhf": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 143.2
+    },
+    "its-trap-when-managers-act-like-executives-why-hurts-everyone-salaka-abdwe": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 127.8
+    },
+    "knowing-half-battle-why-change-management-training-stephen-hvwre": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 137.3
+    },
+    "leading-distributed-team-strategies-success-space-age-stephen-salaka-3uqec": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 135.0
+    },
+    "linkedins-ai-missing-mark-networking-potential-stephen-salaka-k6lqe": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 124.7
+    },
+    "little-bucket-could-stephen-salaka-l9woc": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 162.8
+    },
+    "management-mind-games-level-up-your-mindset-stephen-salaka-7bmse": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 128.5
+    },
+    "management-squirrel-why-leadership-loves-chasing-nuts-stephen-salaka-2mh7e": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 122.7
+    },
+    "managers-guide-surviving-office-chaos-growing-your-team-salaka-hwvze": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 124.2
+    },
+    "maybe-its-time-you-fired-your-recruiters-stephen-salaka-hnome": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 138.4
+    },
+    "mcgyvering-lost-art-troubleshooting-stephen-salaka-qvule": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 143.1
+    },
+    "measurement-mania-how-track-your-software-development-stephen-salaka-lqn0e": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 138.8
+    },
+    "micromanagement-meltdown-how-cocky-admiral-almost-capsized-salaka-zc98e": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 140.8
+    },
+    "mindful-makers-mitigating-mental-mayhem-maximum-developer-salaka-hhync": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 127.2
+    },
+    "one-small-step-devs-giant-leap-your-code-stephen-salaka-3drle": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 133.4
+    },
+    "oop-dead-long-live-stephen-salaka-yqrue": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 134.6
+    },
+    "outsmart-bots-essential-skills-code-monkeys-stephen-salaka-b3sie": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 132.6
+    },
+    "parable-orator-reader-how-ai-shifting-knowledge-wisdom-stephen-salaka-ybuve": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 148.8
+    },
+    "positioning-yourself-master-all-things-stephen-salaka-uvuce": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 142.4
+    },
+    "power-pareto-fostering-sustainable-high-performance-workplace-salaka-pltee": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 118.1
+    },
+    "power-positivity-software-development-leadership-stephen-salaka-lkfue": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 134.3
+    },
+    "rapturing-fiddly-bits-surviving-software-development-face-salaka-aeude": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 126.2
+    },
+    "requirement-refinement-madness-how-we-lost-our-way-got-stephen-salaka-jkwxc": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 132.7
+    },
+    "resourcing-vacuum-software-development-leaders-guide-team-salaka-1cpke": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 124.5
+    },
+    "revenge-code-gremlins-stephen-salaka-bxnve": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 137.0
+    },
+    "robot-revolution-never-came-why-panicking-ai-fools-errand-salaka-vd0oe": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 128.5
+    },
+    "sanity-eye-storm-guide-development-management-stephen-salaka-rgf7e": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 138.2
+    },
+    "scale-fare-software-development-leaders-stephen-salaka-i5q6e": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 154.2
+    },
+    "six-sigma-meets-ai-drinking-ocean-teaspoon-stephen-yxnre": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 139.7
+    },
+    "squeaky-wheels-get-promotion-stephen-salaka-1ajze": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 140.1
+    },
+    "stop-hiding-your-light-why-tooting-teams-horn-key-own-stephen-salaka-tacdc": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 122.4
+    },
+    "stop-saying-yes-power-software-development-stephen-salaka-tybfe": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 135.9
+    },
+    "surprising-secret-happy-devs-its-more-free-coffee-stephen-salaka-6dzze": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 135.4
+    },
+    "survival-guide-tech-debt-skeleton-apocalypse-stephen-salaka-cmtve": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 132.0
+    },
+    "surviving-legacy-system-guide-upgrades-updates-brass-stephen-salaka-gbaxe": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 134.1
+    },
+    "sweet-corn-conundrum-mastering-art-measurement-software-salaka-fqode": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 126.6
+    },
+    "t-shaped-tech-leader-mastering-breadth-depth-world-stephen-salaka-cc10e": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 144.5
+    },
+    "tarot-method-making-tough-decisions-without-losing-your-salaka-hzthe": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 126.6
+    },
+    "tech-tribe-personality-test-discover-your-leadership-style-salaka-zyxte": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 139.8
+    },
+    "technical-hiring-survival-guide-slightly-unhinged-stephen-salaka-bxiac": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 135.5
+    },
+    "tik-tok-troubles-stephen-salaka-lvmre": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 6,
+      "elapsed": 146.5
+    },
+    "valentines-day-dead-long-live-job-hunt-stephen-salaka-mdite": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 143.6
+    },
+    "welcome-age-spec-driven-development-stephen-salaka-lgmle": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 148.6
+    },
+    "welcome-ai-20-stephen-salaka-eb1ff": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 129.6
+    },
+    "welcome-opentowork-metrics-merry-go-round-stephen-salaka-qtahe": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 140.0
+    },
+    "wheels-bus-go-round-roundand-sometimes-over-your-top-talent-salaka-gevke": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 139.6
+    },
+    "why-motivational-posters-corporate-equivalent-empty-calories-salaka-t6lbe": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 150.1
+    },
+    "zen-controlled-chaos-software-leaders-guide-staying-sane-salaka-xt51e": {
+      "status": "ok",
+      "ai": "success",
+      "prompts": 5,
+      "elapsed": 139.5
+    },
+    "50_Things_-_April_14_2005_-_0232_part24": {
+      "status": "dup",
+      "elapsed": 0.0
+    },
+    "50_Things_-_April_14_2005_-_0232_part28": {
+      "status": "dup",
+      "elapsed": 0.0
+    },
+    "EFE_text_part1": {
+      "status": "dup",
+      "elapsed": 0.0
+    },
+    "EFE_text_part3": {
+      "status": "dup",
+      "elapsed": 0.0
+    },
+    "EFE_text_part5": {
+      "status": "dup",
+      "elapsed": 0.0
+    },
+    "EFE_text_part6": {
+      "status": "dup",
+      "elapsed": 0.0
+    },
+    "EFE_text_part7": {
+      "status": "dup",
+      "elapsed": 0.0
+    },
+    "EFE_text_part8": {
+      "status": "dup",
+      "elapsed": 0.0
+    },
+    "EFE_text_part10": {
+      "status": "dup",
+      "elapsed": 0.0
+    },
+    "EFE_text_part11": {
+      "status": "dup",
+      "elapsed": 0.0
+    },
+    "EFE_text_part12": {
+      "status": "dup",
+      "elapsed": 0.0
+    },
+    "EFE_text_part13": {
+      "status": "dup",
+      "elapsed": 0.0
+    },
+    "EFE_text_part14": {
+      "status": "dup",
+      "elapsed": 0.0
+    },
+    "EFE_text_part15": {
+      "status": "dup",
+      "elapsed": 0.0
+    },
+    "EFE_text_part16": {
+      "status": "dup",
+      "elapsed": 0.0
+    },
+    "EFE_text_part17": {
+      "status": "dup",
+      "elapsed": 0.0
+    },
+    "EFE_text_part18": {
+      "status": "dup",
+      "elapsed": 0.0
+    },
+    "EFE_text_part19": {
+      "status": "dup",
+      "elapsed": 0.0
+    },
+    "EFE_text_part21": {
+      "status": "dup",
+      "elapsed": 0.0
+    },
+    "EFE_text_part23": {
+      "status": "dup",
+      "elapsed": 0.0
+    },
+    "EFE_text_part24": {
+      "status": "dup",
+      "elapsed": 0.0
+    },
+    "EFE_text_part25": {
+      "status": "dup",
+      "elapsed": 0.0
+    },
+    "EFE_text_part26": {
+      "status": "dup",
+      "elapsed": 0.0
+    },
+    "EF_text_part1": {
+      "status": "dup",
+      "elapsed": 0.0
+    },
+    "EF_text_part2": {
+      "status": "dup",
+      "elapsed": 0.0
+    },
+    "EF_text_part3": {
+      "status": "dup",
+      "elapsed": 0.0
+    },
+    "EF_text_part4": {
+      "status": "dup",
+      "elapsed": 0.0
+    },
+    "EF_text_part5": {
+      "status": "dup",
+      "elapsed": 0.0
+    },
+    "EF_text_part6": {
+      "status": "dup",
+      "elapsed": 0.0
+    },
+    "EF_text_part7": {
+      "status": "dup",
+      "elapsed": 0.0
+    },
+    "EF_text_part8": {
+      "status": "dup",
+      "elapsed": 0.0
+    },
+    "EF_text_part9": {
+      "status": "dup",
+      "elapsed": 0.0
+    },
+    "EF_text_part10": {
+      "status": "dup",
+      "elapsed": 0.0
+    },
+    "EF_text_part11": {
+      "status": "dup",
+      "elapsed": 0.0
+    },
+    "EF_text_part12": {
+      "status": "dup",
+      "elapsed": 0.0
+    },
+    "EF_text_part13": {
+      "status": "dup",
+      "elapsed": 0.0
+    }
+  },
+  "failed": {},
+  "duplicates": []
+}

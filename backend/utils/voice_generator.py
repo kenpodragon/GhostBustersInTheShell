@@ -83,15 +83,15 @@ def _check_tfidf():
 def generate_voice_profile(text: str) -> dict:
     """Analyze writing sample and return profile_elements dict.
 
-    Minimum 500 words required. 2000+ words recommended for accuracy.
+    Minimum 200 words required. 500+ words recommended for accuracy.
     Returns a dict where keys are element names and values are element dicts
     with: category, element_type, weight, tags, and optionally direction/target_value.
     """
     words = re.findall(r"\b[a-zA-Z']+\b", text)
     word_count = len(words)
 
-    if word_count < 500:
-        raise ValueError(f"Text must be at least 500 words for analysis (got {word_count}). "
+    if word_count < 200:
+        raise ValueError(f"Text must be at least 200 words for analysis (got {word_count}). "
                          "Provide a longer sample.")
 
     alpha_words = re.findall(r"\b[a-zA-Z]+\b", text)

@@ -65,7 +65,7 @@ class ClaudeProvider(AIProvider):
             cmd = [self.cli_command, "-p", prompt, "--output-format", "json"]
             result = subprocess.run(
                 cmd,
-                capture_output=True, text=True, timeout=120,
+                capture_output=True, text=True, timeout=600,
             )
             if result.returncode != 0:
                 raise RuntimeError(f"Claude CLI error: {result.stderr.strip()}")

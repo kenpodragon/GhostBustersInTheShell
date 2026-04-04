@@ -25,7 +25,11 @@ if not os.path.isdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".
 from utils.voice_generator import generate_voice_profile
 
 CORPUS_DIR = Path(__file__).resolve().parent.parent.parent / "local_data" / "modern_human_td"
+if not CORPUS_DIR.is_dir():
+    CORPUS_DIR = Path("/local_data/modern_human_td")  # Docker mount
 EXPORT_DIR = Path(__file__).resolve().parent.parent.parent / "docs" / "voice_profiles"
+if not EXPORT_DIR.is_dir():
+    EXPORT_DIR = Path("/local_data")  # Docker fallback
 MIN_WORDS = 500
 
 

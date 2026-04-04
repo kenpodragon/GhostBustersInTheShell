@@ -6,7 +6,7 @@ from utils.ai_consolidator import (
     consolidate_observations,
     _aggregate_metric_descriptions,
     _aggregate_discovered_patterns,
-    _fallback_raw_prompts,
+    _fallback_from_clusters,
 )
 
 
@@ -57,93 +57,106 @@ class TestAggregateDiscoveredPatterns:
         assert result[0]["occurrences"] == 1
 
 
-class TestFallbackRawPrompts:
-    def test_wraps_prompts(self):
-        prompts = [{"prompt": "dry humor", "confidence": 0.8}]
-        result = _fallback_raw_prompts(prompts)
+class TestFallbackFromClusters:
+    def test_returns_significant_clusters(self):
+        clusters = [{"representative": "dry humor", "frequency": 5, "avg_confidence": 0.8, "members": []}]
+        result = _fallback_from_clusters(clusters)
         assert len(result) == 1
         assert result[0]["prompt"] == "dry humor"
-        assert result[0]["frequency"] == 1
-        assert result[0]["source_prompts"] == ["dry humor"]
+        assert result[0]["frequency"] == 5
         assert result[0]["confidence"] == 0.8
+
+    def test_filters_low_frequency(self):
+        clusters = [{"representative": "rare thing", "frequency": 2, "avg_confidence": 0.9, "members": []}]
+        result = _fallback_from_clusters(clusters)
+        assert len(result) == 0
 
 
 class TestConsolidateObservations:
-    """Integration tests that need DB. Use inline db_conn fixture."""
+    """Integration tests that need DB. Creates a temporary profile for isolation."""
+
+    TEST_PROFILE_ID = None
 
     @pytest.fixture(autouse=True)
     def db_conn(self):
-        """Set up test DB connection and clean up after."""
+        """Set up test DB connection, create temp profile, clean up after."""
         import sys, os
         sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-        from db import init_pool, execute
+        from db import init_pool, execute, query_one
         try:
             init_pool()
         except Exception:
             pass
+        # Create a temporary voice profile for test isolation
+        row = query_one(
+            "INSERT INTO voice_profiles (name, description) VALUES ('_test_consolidator', 'temp') RETURNING id"
+        )
+        self.__class__.TEST_PROFILE_ID = row["id"]
         yield
         # Clean up test data
         try:
-            execute("DELETE FROM ai_parse_observations WHERE profile_id = 1")
+            execute("DELETE FROM ai_parse_observations WHERE profile_id = %s", (self.TEST_PROFILE_ID,))
+            execute("DELETE FROM profile_prompts WHERE profile_id = %s", (self.TEST_PROFILE_ID,))
+            execute("DELETE FROM voice_profiles WHERE id = %s", (self.TEST_PROFILE_ID,))
         except Exception:
             pass
 
+    def _insert_observations(self, count, prompt_text="dry humor", confidence=0.8):
+        """Insert multiple observations with the same prompt to form a significant cluster."""
+        from db import execute, query_one
+        doc = query_one("SELECT id FROM documents LIMIT 1")
+        if not doc:
+            doc = query_one(
+                "INSERT INTO documents (filename, file_type, original_text, purpose) VALUES ('test.txt', 'text', 'test', 'analysis') RETURNING id"
+            )
+        doc_id = doc["id"]
+        for _ in range(count):
+            execute(
+                """INSERT INTO ai_parse_observations (profile_id, document_id, qualitative_prompts, metric_descriptions, discovered_patterns)
+                   VALUES (%s, %s, %s::jsonb, %s::jsonb, %s::jsonb)""",
+                (self.TEST_PROFILE_ID, doc_id,
+                 json.dumps([{"prompt": prompt_text, "confidence": confidence}]),
+                 json.dumps([{"element": "comma_rate", "value": 0.42, "description": "Heavy commas", "ai_assessment": "accurate"}]),
+                 json.dumps([])),
+            )
+
     @patch("utils.ai_consolidator._get_provider")
     def test_consolidation_with_ai(self, mock_get_provider):
-        from db import execute, query_one
+        """Insert 5 observations (meets MIN_FREQUENCY_FOR_AI), verify AI merge is called."""
         mock_provider = MagicMock()
         mock_provider._run_cli.return_value = {
             "consolidated_prompts": [
-                {"prompt": "Uses dry humor", "source_prompts": ["dry humor", "deadpan comedy"], "frequency": 2, "confidence": 0.85},
+                {"prompt": "Uses dry humor", "source_prompts": ["dry humor"] * 5, "frequency": 5, "confidence": 0.85},
             ]
         }
         mock_get_provider.return_value = mock_provider
 
-        # Need a valid document_id — use an existing one or insert
-        doc = query_one("SELECT id FROM documents LIMIT 1")
-        if not doc:
-            doc = query_one(
-                "INSERT INTO documents (filename, file_type, original_text, purpose) VALUES ('test.txt', 'text', 'test', 'analysis') RETURNING id"
-            )
-        doc_id = doc["id"]
-
-        execute(
-            """INSERT INTO ai_parse_observations (profile_id, document_id, qualitative_prompts, metric_descriptions, discovered_patterns)
-               VALUES (%s, %s, %s::jsonb, %s::jsonb, %s::jsonb)""",
-            (1, doc_id,
-             json.dumps([{"prompt": "dry humor", "confidence": 0.8}]),
-             json.dumps([{"element": "comma_rate", "value": 0.42, "description": "Heavy commas", "ai_assessment": "accurate"}]),
-             json.dumps([])),
-        )
-
-        result = consolidate_observations(profile_id=1)
+        self._insert_observations(5)
+        result = consolidate_observations(profile_id=self.TEST_PROFILE_ID)
         assert "consolidated_prompts" in result
-        assert result["observation_count"] == 1
+        assert result["observation_count"] == 5
+        mock_provider._run_cli.assert_called_once()
 
     @patch("utils.ai_consolidator._get_provider")
-    def test_consolidation_without_ai(self, mock_get_provider):
-        from db import execute, query_one
+    def test_consolidation_without_ai_significant(self, mock_get_provider):
+        """Without AI, significant clusters (freq >= 5) fall back to heuristic output."""
         mock_get_provider.return_value = None
+        self._insert_observations(5)
 
-        doc = query_one("SELECT id FROM documents LIMIT 1")
-        if not doc:
-            doc = query_one(
-                "INSERT INTO documents (filename, file_type, original_text, purpose) VALUES ('test.txt', 'text', 'test', 'analysis') RETURNING id"
-            )
-        doc_id = doc["id"]
-
-        execute(
-            """INSERT INTO ai_parse_observations (profile_id, document_id, qualitative_prompts, metric_descriptions, discovered_patterns)
-               VALUES (%s, %s, %s::jsonb, %s::jsonb, %s::jsonb)""",
-            (1, doc_id,
-             json.dumps([{"prompt": "dry humor", "confidence": 0.8}]),
-             json.dumps([]),
-             json.dumps([])),
-        )
-
-        result = consolidate_observations(profile_id=1)
+        result = consolidate_observations(profile_id=self.TEST_PROFILE_ID)
+        assert len(result["consolidated_prompts"]) == 1
         assert result["consolidated_prompts"][0]["prompt"] == "dry humor"
-        assert result["consolidated_prompts"][0]["frequency"] == 1
+        assert result["consolidated_prompts"][0]["frequency"] == 5
+
+    @patch("utils.ai_consolidator._get_provider")
+    def test_consolidation_below_threshold(self, mock_get_provider):
+        """Clusters below MIN_FREQUENCY_FOR_AI produce no consolidated prompts."""
+        mock_get_provider.return_value = None
+        self._insert_observations(2)
+
+        result = consolidate_observations(profile_id=self.TEST_PROFILE_ID)
+        assert result["observation_count"] == 2
+        assert result["consolidated_prompts"] == []
 
     def test_empty_observations(self):
         result = consolidate_observations(profile_id=99999)

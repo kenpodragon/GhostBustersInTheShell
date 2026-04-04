@@ -98,7 +98,7 @@ class TestGenerateProfile:
                 assert r1[key]["target_value"] == r2[key]["target_value"]
 
     def test_minimum_word_count(self):
-        with pytest.raises(ValueError, match="500"):
+        with pytest.raises(ValueError, match="200"):
             generate_voice_profile("Too short to analyze.")
 
     def test_punctuation_elements(self, sample_text):
