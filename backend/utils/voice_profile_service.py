@@ -112,8 +112,15 @@ class VoiceProfileService:
         self.conn.commit()
 
     def delete_profile(self, profile_id: int):
-        """Delete profile. CASCADE handles elements, prompts, and snapshots."""
+        """Delete profile and all dependent data."""
         with self.conn.cursor() as cur:
+            cur.execute("DELETE FROM document_elements WHERE document_id IN (SELECT id FROM documents WHERE voice_profile_id = %s)", (profile_id,))
+            cur.execute("DELETE FROM ai_parse_observations WHERE document_id IN (SELECT id FROM documents WHERE voice_profile_id = %s)", (profile_id,))
+            cur.execute("DELETE FROM documents WHERE voice_profile_id = %s", (profile_id,))
+            cur.execute("DELETE FROM element_convergence WHERE profile_id = %s", (profile_id,))
+            cur.execute("DELETE FROM profile_snapshots WHERE voice_profile_id = %s", (profile_id,))
+            cur.execute("DELETE FROM profile_prompts WHERE voice_profile_id = %s", (profile_id,))
+            cur.execute("DELETE FROM profile_elements WHERE voice_profile_id = %s", (profile_id,))
             cur.execute("DELETE FROM voice_profiles WHERE id = %s", (profile_id,))
         self.conn.commit()
 

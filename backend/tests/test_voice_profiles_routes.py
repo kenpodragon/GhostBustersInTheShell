@@ -27,6 +27,11 @@ def profile_id(client):
     assert resp.status_code == 201
     pid = resp.get_json()["id"]
     yield pid
+    # Reset active stack if it points to this test profile (prevents FK block)
+    from db import execute, query_one
+    row = query_one("SELECT active_baseline_id FROM settings WHERE id = 1")
+    if row and row["active_baseline_id"] == pid:
+        execute("UPDATE settings SET active_baseline_id = 1 WHERE id = 1")
     client.delete(f"/api/voice-profiles/{pid}")
 
 

@@ -96,7 +96,8 @@ class TestConsolidateObservations:
         # Clean up test data
         try:
             execute("DELETE FROM ai_parse_observations WHERE profile_id = %s", (self.TEST_PROFILE_ID,))
-            execute("DELETE FROM profile_prompts WHERE profile_id = %s", (self.TEST_PROFILE_ID,))
+            execute("DELETE FROM profile_prompts WHERE voice_profile_id = %s", (self.TEST_PROFILE_ID,))
+            execute("DELETE FROM profile_elements WHERE voice_profile_id = %s", (self.TEST_PROFILE_ID,))
             execute("DELETE FROM voice_profiles WHERE id = %s", (self.TEST_PROFILE_ID,))
         except Exception:
             pass
