@@ -65,10 +65,11 @@ class TestBaselineUpdateCheck:
 class TestBaselineUpdateApply:
     """POST /api/baseline/updates/apply"""
 
-    @patch("routes.baseline.VoiceProfileService")
+    @patch("utils.voice_profile_service.VoiceProfileService")
     @patch("routes.baseline.execute")
+    @patch("routes.baseline.get_conn")
     @patch("routes.baseline._fetch_github_json")
-    def test_successful_apply(self, mock_fetch, mock_execute, mock_svc_cls, client):
+    def test_successful_apply(self, mock_fetch, mock_get_conn, mock_execute, mock_svc_cls, client):
         mock_fetch.side_effect = [
             # First call: version manifest
             {"version": "1.1.0", "date": "2026-05-01", "min_app_version": "1.0.0", "changelog": "Update"},
@@ -81,6 +82,9 @@ class TestBaselineUpdateApply:
                 "prompts": [{"prompt_text": "Write naturally.", "sort_order": 0}],
             },
         ]
+        mock_conn = MagicMock()
+        mock_get_conn.return_value.__enter__ = MagicMock(return_value=mock_conn)
+        mock_get_conn.return_value.__exit__ = MagicMock(return_value=False)
         mock_svc = MagicMock()
         mock_svc.import_profile.return_value = {"id": 99, "name": "Modern Human Baseline"}
         mock_svc_cls.return_value = mock_svc
@@ -92,6 +96,7 @@ class TestBaselineUpdateApply:
         assert data["version"] == "1.1.0"
         assert data["baseline_id"] == 99
         mock_svc.import_profile.assert_called_once()
+        mock_execute.assert_called_once()
 
 
 class TestVersionEndpointIncludesBaseline:

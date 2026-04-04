@@ -2,7 +2,7 @@
 import json
 import os
 
-from db import query_one, execute
+from db import query_one, execute, get_conn
 
 
 def seed_baseline_profile():
@@ -42,8 +42,9 @@ def seed_baseline_profile():
         }
 
         from utils.voice_profile_service import VoiceProfileService
-        svc = VoiceProfileService()
-        result = svc.import_profile(import_data)
+        with get_conn() as conn:
+            svc = VoiceProfileService(conn)
+            result = svc.import_profile(import_data)
         new_id = result["id"]
 
         execute(

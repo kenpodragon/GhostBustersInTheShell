@@ -24,11 +24,12 @@ class TestSeedBaselineProfile:
     """Tests for seed_baseline_profile()."""
 
     @patch("utils.voice_profile_service.VoiceProfileService")
+    @patch("utils.baseline_seeder.get_conn")
     @patch("utils.baseline_seeder.query_one")
     @patch("utils.baseline_seeder.execute")
     @patch("builtins.open", new_callable=mock_open)
     @patch("os.path.exists", return_value=True)
-    def test_fresh_install_imports_baseline(self, mock_exists, mock_file, mock_execute, mock_query, mock_svc_cls):
+    def test_fresh_install_imports_baseline(self, mock_exists, mock_file, mock_execute, mock_query, mock_get_conn, mock_svc_cls):
         """On fresh install (no baseline_version in settings), imports baseline and sets version."""
         from utils.baseline_seeder import seed_baseline_profile
 
@@ -40,6 +41,11 @@ class TestSeedBaselineProfile:
             mock_open(read_data=_make_version_json())(),
             mock_open(read_data=_make_profile_json())(),
         ]
+
+        # Mock get_conn context manager
+        mock_conn = MagicMock()
+        mock_get_conn.return_value.__enter__ = MagicMock(return_value=mock_conn)
+        mock_get_conn.return_value.__exit__ = MagicMock(return_value=False)
 
         # Mock import_profile returning new profile
         mock_svc = MagicMock()
@@ -72,11 +78,12 @@ class TestSeedBaselineProfile:
         mock_svc_cls.assert_not_called()
 
     @patch("utils.voice_profile_service.VoiceProfileService")
+    @patch("utils.baseline_seeder.get_conn")
     @patch("utils.baseline_seeder.query_one")
     @patch("utils.baseline_seeder.execute")
     @patch("builtins.open", new_callable=mock_open)
     @patch("os.path.exists", return_value=True)
-    def test_version_upgrade_imports_new_baseline(self, mock_exists, mock_file, mock_execute, mock_query, mock_svc_cls):
+    def test_version_upgrade_imports_new_baseline(self, mock_exists, mock_file, mock_execute, mock_query, mock_get_conn, mock_svc_cls):
         """When seed version > DB version, imports new baseline."""
         from utils.baseline_seeder import seed_baseline_profile
 
@@ -85,6 +92,11 @@ class TestSeedBaselineProfile:
             mock_open(read_data=_make_version_json("1.1.0"))(),
             mock_open(read_data=_make_profile_json())(),
         ]
+
+        # Mock get_conn context manager
+        mock_conn = MagicMock()
+        mock_get_conn.return_value.__enter__ = MagicMock(return_value=mock_conn)
+        mock_get_conn.return_value.__exit__ = MagicMock(return_value=False)
 
         mock_svc = MagicMock()
         mock_svc.import_profile.return_value = {"id": 55, "name": "Modern Human Baseline"}

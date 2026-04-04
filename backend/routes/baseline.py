@@ -3,8 +3,7 @@ import json
 import urllib.request
 from flask import Blueprint, jsonify
 
-from db import query_one, execute
-from utils.voice_profile_service import VoiceProfileService
+from db import query_one, execute, get_conn
 
 baseline_bp = Blueprint("baseline", __name__)
 
@@ -77,8 +76,10 @@ def apply_update():
         "prompts": profile_data.get("prompts", []),
     }
 
-    svc = VoiceProfileService()
-    result = svc.import_profile(import_data)
+    from utils.voice_profile_service import VoiceProfileService
+    with get_conn() as conn:
+        svc = VoiceProfileService(conn)
+        result = svc.import_profile(import_data)
     new_id = result["id"]
 
     version = version_data.get("version", "unknown")
