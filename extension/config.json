@@ -1,0 +1,6 @@
+{
+  "backend_host": "localhost",
+  "backend_port": 8066,
+  "frontend_host": "localhost",
+  "frontend_port": 5176
+}
