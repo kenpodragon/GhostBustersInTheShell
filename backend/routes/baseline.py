@@ -5,6 +5,14 @@ from flask import Blueprint, jsonify
 
 from db import query_one, execute, get_conn
 
+
+def _parse_version(v):
+    """Parse '1.2.3' into (1, 2, 3) for proper numeric comparison."""
+    try:
+        return tuple(int(x) for x in v.split("."))
+    except (ValueError, AttributeError):
+        return (0, 0, 0)
+
 baseline_bp = Blueprint("baseline", __name__)
 
 _GITHUB_BASE = (
@@ -34,7 +42,7 @@ def check_for_updates():
 
     remote_version = remote.get("version", "0.0.0")
 
-    if current >= remote_version:
+    if _parse_version(current) >= _parse_version(remote_version):
         return jsonify({
             "status": "up_to_date",
             "current_version": current,
@@ -43,7 +51,7 @@ def check_for_updates():
 
     from version import APP_VERSION
     min_app = remote.get("min_app_version", "0.0.0")
-    app_update_required = APP_VERSION < min_app
+    app_update_required = _parse_version(APP_VERSION) < _parse_version(min_app)
 
     return jsonify({
         "status": "update_available",

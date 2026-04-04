@@ -24,6 +24,14 @@ import math
 from utils.weight_translator import translate_element
 
 
+def _parse_version(v):
+    """Parse '1.2.3' into (1, 2, 3) for proper numeric comparison."""
+    try:
+        return tuple(int(x) for x in v.split("."))
+    except (ValueError, AttributeError):
+        return (0, 0, 0)
+
+
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
@@ -258,7 +266,7 @@ def seed_routing_table():
         row = query_one("SELECT routing_version FROM settings WHERE id = 1")
         current_version = row["routing_version"] if row else "0.0.0"
 
-        if current_version >= seed_version:
+        if _parse_version(current_version) >= _parse_version(seed_version):
             return  # Already up to date
 
         # Upsert all routing entries

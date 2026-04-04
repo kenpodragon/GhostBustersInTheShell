@@ -5,6 +5,14 @@ import os
 from db import query_one, execute, get_conn
 
 
+def _parse_version(v):
+    """Parse '1.2.3' into (1, 2, 3) for proper numeric comparison."""
+    try:
+        return tuple(int(x) for x in v.split("."))
+    except (ValueError, AttributeError):
+        return (0, 0, 0)
+
+
 def seed_baseline_profile():
     """Import baseline voice profile if missing or outdated."""
     data_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "data"))
@@ -25,7 +33,7 @@ def seed_baseline_profile():
         )
         current_version = row["baseline_version"] if row and row["baseline_version"] else "0.0.0"
 
-        if current_version >= seed_version:
+        if _parse_version(current_version) >= _parse_version(seed_version):
             return  # Already up to date
 
         with open(profile_file, encoding="utf-8") as f:

@@ -3,6 +3,11 @@
 import pytest
 
 
+def pytest_configure(config):
+    """Register custom markers."""
+    config.addinivalue_line("markers", "integration: marks tests that require a running database or external services")
+
+
 @pytest.fixture
 def ai_text():
     """Typical AI-generated text with known AI patterns."""
