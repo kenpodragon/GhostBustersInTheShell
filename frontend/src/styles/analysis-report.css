@@ -1,0 +1,457 @@
+/* ============================================================
+   Analysis Report — Two-column layout + all sub-components
+   ============================================================ */
+
+/* --- Layout --- */
+
+.analysis-report {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+  margin-top: 0.75rem;
+}
+
+.analysis-report__left {
+  width: 320px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 1rem;
+}
+
+.analysis-report__right {
+  flex: 1;
+  min-width: 0;
+}
+
+.analysis-report__no-paragraphs {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  padding: 1rem 0;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* --- Tier Scores --- */
+
+.analysis-report__tiers {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.analysis-report__tier-box {
+  flex: 1;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 0.5rem;
+  text-align: center;
+}
+
+.analysis-report__tier-label {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  margin-bottom: 0.15rem;
+}
+
+.analysis-report__tier-weight {
+  font-size: 0.55rem;
+  color: var(--text-secondary);
+  opacity: 0.7;
+  margin-bottom: 0.25rem;
+}
+
+.analysis-report__tier-score {
+  font-size: 1rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+}
+
+/* --- Score Colors --- */
+
+.score--high {
+  color: var(--score-critical);
+}
+
+.score--medium {
+  color: var(--score-medium);
+}
+
+.score--low {
+  color: var(--score-low);
+}
+
+/* --- Temperature Gauge --- */
+
+.temperature-gauge {
+  margin-bottom: 0.5rem;
+}
+
+.temperature-gauge__bar {
+  position: relative;
+  display: flex;
+  height: 20px;
+  border-radius: 3px;
+  overflow: visible;
+  border: 1px solid var(--border-color);
+}
+
+.temperature-gauge__zone {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.temperature-gauge__zone--clean {
+  background: rgba(78, 205, 196, 0.2);
+  border-right: 1px solid rgba(78, 205, 196, 0.4);
+}
+
+.temperature-gauge__zone--touched {
+  background: rgba(255, 209, 102, 0.2);
+  border-right: 1px solid rgba(255, 209, 102, 0.4);
+}
+
+.temperature-gauge__zone--written {
+  background: rgba(255, 51, 102, 0.2);
+  flex: 1;
+}
+
+.temperature-gauge__label {
+  font-size: 0.5rem;
+  font-family: var(--font-mono);
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  opacity: 0.8;
+  text-transform: uppercase;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.temperature-gauge__needle {
+  position: absolute;
+  top: -3px;
+  width: 2px;
+  height: calc(100% + 6px);
+  background: #ffffff;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.9), 0 0 12px rgba(255, 255, 255, 0.5);
+  transform: translateX(-50%);
+  z-index: 2;
+  cursor: default;
+  border-radius: 1px;
+}
+
+.temperature-gauge__ticks {
+  position: relative;
+  height: 14px;
+  margin-top: 2px;
+  font-size: 0.5rem;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+}
+
+.temperature-gauge__ticks span {
+  position: absolute;
+  transform: translateX(-50%);
+}
+
+.temperature-gauge__ticks span:first-child {
+  left: 0;
+  transform: none;
+}
+
+/* --- Score Math Expander --- */
+
+.score-math-expander {
+  margin-bottom: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.score-math-expander__header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.6rem;
+  cursor: pointer;
+  background: var(--bg-primary);
+  user-select: none;
+}
+
+.score-math-expander__header:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.score-math-expander__arrow {
+  font-size: 0.55rem;
+  color: var(--text-secondary);
+  transition: transform 0.15s ease;
+  font-family: var(--font-mono);
+}
+
+.score-math-expander__arrow--open {
+  transform: rotate(90deg);
+}
+
+.score-math-expander__title {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+}
+
+.score-math-expander__body {
+  padding: 0.4rem 0.6rem 0.5rem;
+  background: var(--bg-secondary);
+}
+
+.score-math-expander__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 0.15rem 0;
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+}
+
+.score-math-expander__row--bonus .score-math-expander__value {
+  color: var(--score-low);
+}
+
+.score-math-expander__row--penalty .score-math-expander__value {
+  color: var(--score-critical);
+}
+
+.score-math-expander__row--total {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.score-math-expander__row--total .score-math-expander__value {
+  color: var(--accent-primary);
+}
+
+.score-math-expander__label {
+  opacity: 0.8;
+}
+
+.score-math-expander__value {
+  font-weight: 600;
+}
+
+.score-math-expander__divider {
+  border: none;
+  border-top: 1px solid var(--border-color);
+  margin: 0.3rem 0;
+}
+
+/* --- Document Patterns --- */
+
+.document-patterns {
+  margin-bottom: 0.75rem;
+}
+
+.document-patterns__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.4rem;
+}
+
+.document-patterns__title {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+}
+
+.document-patterns__count {
+  font-size: 0.6rem;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+
+.document-patterns__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.document-patterns__empty {
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  opacity: 0.6;
+  font-style: italic;
+}
+
+/* --- Pattern Chips --- */
+
+.analysis-pattern-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.45rem;
+  border-radius: 3px;
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  border: 1px solid transparent;
+  cursor: default;
+  white-space: nowrap;
+}
+
+.analysis-pattern-chip--high {
+  color: var(--score-critical);
+  background: rgba(255, 51, 102, 0.15);
+  border-color: rgba(255, 51, 102, 0.3);
+}
+
+.analysis-pattern-chip--medium {
+  color: var(--score-medium);
+  background: rgba(255, 209, 102, 0.15);
+  border-color: rgba(255, 209, 102, 0.3);
+}
+
+.analysis-pattern-chip--low {
+  color: var(--score-low);
+  background: rgba(78, 205, 196, 0.15);
+  border-color: rgba(78, 205, 196, 0.3);
+}
+
+.analysis-pattern-chip--small {
+  font-size: 0.55rem;
+  padding: 0.15rem 0.35rem;
+}
+
+.analysis-pattern-chip__count {
+  opacity: 0.75;
+  font-size: 0.55rem;
+}
+
+/* --- Paragraph Accordion --- */
+
+.paragraph-accordion {
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+  overflow: hidden;
+}
+
+.paragraph-accordion--high {
+  border-left: 3px solid var(--score-critical);
+}
+
+.paragraph-accordion--medium {
+  border-left: 3px solid var(--score-medium);
+}
+
+.paragraph-accordion--low {
+  border-left: 3px solid var(--score-low);
+}
+
+.paragraph-accordion__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.65rem;
+  cursor: pointer;
+  background: var(--bg-primary);
+  user-select: none;
+}
+
+.paragraph-accordion__header:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.paragraph-accordion__arrow {
+  font-size: 0.55rem;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+}
+
+.paragraph-accordion__arrow--open {
+  transform: rotate(90deg);
+}
+
+.paragraph-accordion__title {
+  flex: 1;
+  font-size: 0.7rem;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.paragraph-accordion__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.paragraph-accordion__right {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.paragraph-accordion__score {
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+}
+
+.paragraph-accordion__body {
+  padding: 0.4rem 0.65rem 0.5rem;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-color);
+}
+
+/* --- Sentence rows inside accordion --- */
+
+.paragraph-accordion__sentence {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.paragraph-accordion__sentence:last-child {
+  border-bottom: none;
+}
+
+.paragraph-accordion__sentence-text {
+  flex: 1;
+  font-size: 0.7rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.paragraph-accordion__sentence-right {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.paragraph-accordion__sentence-score {
+  font-size: 0.65rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  min-width: 2.5rem;
+  text-align: right;
+}
