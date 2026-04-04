@@ -33,7 +33,7 @@ export default function InputView() {
   const [scoringFidelity, setScoringFidelity] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
-  const baselines = profiles.filter(p => p.profile_type === 'baseline')
+  const baselines = profiles
   const overlays = profiles.filter(p => p.profile_type === 'overlay')
 
   useEffect(() => {
@@ -41,8 +41,8 @@ export default function InputView() {
       .then((data: VoiceProfile[]) => {
         setProfiles(data)
         if (!selectedProfileId) {
-          const firstBaseline = data.find(p => p.profile_type === 'baseline')
-          if (firstBaseline) selectProfile(firstBaseline.id)
+          const first = data[0]
+          if (first) selectProfile(first.id)
         }
       })
       .catch(() => {})
@@ -114,6 +114,8 @@ export default function InputView() {
         body: JSON.stringify({
           text: ' ',
           use_ai: true,
+          voice_profile_id: selectedProfileId || undefined,
+          overlay_ids: selectedOverlayIds.length > 0 ? selectedOverlayIds : undefined,
           comment: `GENERATE NEW CONTENT from this prompt (do NOT rewrite — create original content following the voice profile and anti-AI rules): ${text.trim()}`,
         }),
       })
@@ -163,6 +165,8 @@ export default function InputView() {
         body: JSON.stringify({
           text: text.trim(),
           use_ai: true,
+          voice_profile_id: selectedProfileId || undefined,
+          overlay_ids: selectedOverlayIds.length > 0 ? selectedOverlayIds : undefined,
           comment: 'Rewrite this text to sound more human, following the voice profile and anti-AI rules',
         }),
       })
