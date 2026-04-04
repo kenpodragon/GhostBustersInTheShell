@@ -236,3 +236,50 @@ def composite_score(
         density_bonus = min(5, (total_signals - 5))
 
     return min(100, round(weighted + convergence_bonus + density_bonus, 1))
+
+
+def composite_score_detailed(
+    sentence_score: float, paragraph_score: float, document_score: float,
+    sentence_signals: int, paragraph_signals: int, document_signals: int,
+) -> dict:
+    """Compute 3-tier composite score with full math breakdown."""
+    if sentence_score == 0 and paragraph_score == 0 and document_score == 0:
+        return {"score": 0.0, "score_math": {
+            "sentence_weighted": 0.0, "paragraph_weighted": 0.0, "document_weighted": 0.0,
+            "convergence_bonus": 0.0, "cross_tier_bonus": 0.0, "raw_composite": 0.0, "final_score": 0.0,
+        }}
+
+    _pipe = rules_config.pipeline
+    sw = _pipe.get("sentence_tier_weight", 0.45)
+    pw = _pipe.get("paragraph_tier_weight", 0.30)
+    dw = _pipe.get("document_tier_weight", 0.25)
+
+    sentence_weighted = round(sentence_score * sw, 1)
+    paragraph_weighted = round(paragraph_score * pw, 1)
+    document_weighted = round(document_score * dw, 1)
+    weighted = sentence_weighted + paragraph_weighted + document_weighted
+
+    scores = [sentence_score, paragraph_score, document_score]
+    non_zero = [s for s in scores if s > 0]
+    if len(non_zero) >= 2:
+        mean = sum(non_zero) / len(non_zero)
+        variance = sum((s - mean) ** 2 for s in non_zero) / len(non_zero)
+        convergence_bonus = min(10, (100 - variance) / 10) if variance < 100 else 0
+    else:
+        convergence_bonus = 0
+
+    total_signals = sentence_signals + paragraph_signals + document_signals
+    tiers_with_signals = sum(1 for s in [sentence_signals, paragraph_signals, document_signals] if s > 0)
+    density_bonus = 0
+    if tiers_with_signals >= 3 and total_signals >= 8:
+        density_bonus = min(10, (total_signals - 8) * 2)
+    elif tiers_with_signals >= 2 and total_signals >= 5:
+        density_bonus = min(5, (total_signals - 5))
+
+    final = min(100, round(weighted + convergence_bonus + density_bonus, 1))
+
+    return {"score": final, "score_math": {
+        "sentence_weighted": sentence_weighted, "paragraph_weighted": paragraph_weighted,
+        "document_weighted": document_weighted, "convergence_bonus": round(convergence_bonus, 1),
+        "cross_tier_bonus": round(density_bonus, 1), "raw_composite": round(weighted, 1), "final_score": final,
+    }}
