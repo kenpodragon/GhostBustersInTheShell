@@ -290,6 +290,71 @@ export interface BaselineUpdateApplyResult {
   error?: string
 }
 
+// --- Enriched Analysis Response Types ---
+
+export interface EnrichedPattern {
+  pattern: string
+  name: string
+  display_name: string
+  description: string
+  detail?: string
+  source?: 'ai' | 'heuristic'
+  severity?: 'high' | 'medium' | 'low'
+  count?: number
+}
+
+export interface ScoreMath {
+  sentence_weighted: number
+  paragraph_weighted: number
+  document_weighted: number
+  convergence_bonus: number
+  cross_tier_bonus: number
+  genre_dampening: number
+  raw_composite: number
+  final_score: number
+}
+
+export interface EnrichedTiers {
+  sentence_score: number
+  paragraph_score: number
+  document_score: number
+  score_math: ScoreMath
+}
+
+export interface EnrichedSentence {
+  index: number
+  text: string
+  score: number
+  patterns: EnrichedPattern[]
+}
+
+export interface EnrichedParagraph {
+  index: number
+  text: string
+  score: number
+  sentence_count: number
+  patterns: EnrichedPattern[]
+  sentences: EnrichedSentence[]
+}
+
+export interface EnrichedAnalyzeResponse {
+  overall_score: number
+  classification: Classification
+  confidence: [number, number]
+  genre: string
+  signal_count: number
+  tiers: EnrichedTiers
+  document_patterns: EnrichedPattern[]
+  paragraphs: EnrichedParagraph[]
+  sentences: SentenceResult[]
+  detected_patterns: Pattern[]
+}
+
+export interface ClassificationBoundaries {
+  clean_upper: number
+  ghost_written_lower: number
+}
+
 export interface CompletenessData {
   tier: 'starter' | 'bronze' | 'silver' | 'gold' | null
   tier_label: string | null
