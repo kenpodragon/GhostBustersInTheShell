@@ -1,2 +1,67 @@
 <!DOCTYPE html>
-<html><head><title>GBIS Options</title></head><body><p>Options</p></body></html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>GBIS Options</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 0 20px;
+      color: #333;
+    }
+    h1 { font-size: 1.4rem; margin-bottom: 8px; }
+    .subtitle { color: #666; margin-bottom: 24px; }
+    .config-display {
+      background: #f5f5f5;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 16px;
+      margin: 16px 0;
+      font-family: monospace;
+      font-size: 0.9rem;
+      white-space: pre;
+    }
+    .status { margin: 16px 0; padding: 12px; border-radius: 6px; }
+    .status.ok { background: #e8f5e9; color: #2e7d32; }
+    .status.err { background: #ffebee; color: #c62828; }
+    .instructions { line-height: 1.6; }
+    .instructions code { background: #f0f0f0; padding: 2px 6px; border-radius: 3px; }
+    button {
+      padding: 8px 16px;
+      border: 1px solid #4ecdc4;
+      background: #4ecdc4;
+      color: #0a0e1a;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button:hover { background: #3ba99e; }
+  </style>
+</head>
+<body>
+  <h1>GBIS — GhostBusters In The Shell</h1>
+  <p class="subtitle">Extension Configuration</p>
+
+  <h2>Current Config</h2>
+  <div id="config-display" class="config-display">Loading...</div>
+
+  <button id="test-btn">Test Connection</button>
+  <div id="status"></div>
+
+  <h2>Changing Ports</h2>
+  <div class="instructions">
+    <p>Port configuration lives in <code>config.json</code> inside the extension directory:</p>
+    <ol>
+      <li>Edit <code>code/extension/config.json</code> with new port values</li>
+      <li>Update <code>docker-compose.yml</code> port mappings to match</li>
+      <li>Run <code>docker compose up -d</code> to restart containers</li>
+      <li>Reload the extension in <code>chrome://extensions</code></li>
+    </ol>
+    <p>Most users won't need to change the defaults (backend: 8066, frontend: 5176).</p>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>
