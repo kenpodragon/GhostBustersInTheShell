@@ -7,11 +7,18 @@ import type { VoiceProfile, Pattern, SentenceResult, FidelityScoreResult } from 
 import { voiceProfilesApi } from '../services/voiceProfilesApi'
 import { scoringApi } from '../services/scoringApi'
 
+interface Tiers {
+  sentence_score: number
+  paragraph_score: number
+  document_score: number
+}
+
 interface AnalysisResult {
   overall_score: number
   classification: { category: string; label: string; confidence: string } | null
   patterns: Pattern[]
   sentences: SentenceResult[]
+  tiers?: Tiers
 }
 
 type Mode = 'scan' | 'generate'
@@ -94,6 +101,7 @@ export default function InputView() {
         classification: data.classification || null,
         patterns: data.detected_patterns || data.patterns || [],
         sentences: data.sentences || [],
+        tiers: data.tiers || undefined,
       })
     } catch (e: any) {
       setError(e.message)
@@ -143,6 +151,7 @@ export default function InputView() {
             classification: analyzeData.classification || null,
             patterns: analyzeData.detected_patterns || analyzeData.patterns || [],
             sentences: analyzeData.sentences || [],
+            tiers: analyzeData.tiers || undefined,
           })
         }
       } catch { /* analysis failed, text is still there */ }
@@ -190,6 +199,7 @@ export default function InputView() {
             classification: analyzeData.classification || null,
             patterns: analyzeData.detected_patterns || analyzeData.patterns || [],
             sentences: analyzeData.sentences || [],
+            tiers: analyzeData.tiers || undefined,
           })
         }
       } catch { /* ignore */ }
@@ -396,6 +406,26 @@ export default function InputView() {
             <ScoreBadge score={analysis.overall_score} classification={analysis.classification} />
           </div>
           <ScoreGauge score={analysis.overall_score} />
+
+          {/* Tier Breakdown */}
+          {analysis.tiers && (
+            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', marginTop: '0.5rem' }}>
+              {[
+                { label: 'Sentence', score: analysis.tiers.sentence_score, weight: '45%' },
+                { label: 'Paragraph', score: analysis.tiers.paragraph_score, weight: '30%' },
+                { label: 'Document', score: analysis.tiers.document_score, weight: '25%' },
+              ].map((tier) => (
+                <div key={tier.label} style={{ flex: 1, background: 'var(--bg-primary)', borderRadius: '4px', padding: '0.5rem', textAlign: 'center', border: '1px solid var(--border-color)' }}>
+                  <div className="text-muted" style={{ fontSize: '0.6rem', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
+                    {tier.label} ({tier.weight})
+                  </div>
+                  <div style={{ fontSize: '1rem', fontWeight: 700, color: tier.score > 30 ? 'var(--score-critical)' : tier.score > 15 ? 'var(--score-medium)' : 'var(--score-low)' }}>
+                    {tier.score.toFixed(1)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Detected Patterns */}
           {analysis.patterns.length > 0 && (
