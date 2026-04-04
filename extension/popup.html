@@ -1,2 +1,94 @@
 <!DOCTYPE html>
-<html><head><title>GBIS</title></head><body><p>Loading...</p></body></html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GBIS</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <img src="icons/icon-16.png" alt="GBIS" class="header-icon">
+      <span class="header-title">GBIS</span>
+    </div>
+    <div class="header-right">
+      <span id="status-dot" class="status-dot offline" title="Checking connection..."></span>
+      <button id="options-btn" class="icon-btn" title="Settings">&#9881;</button>
+    </div>
+  </div>
+
+  <!-- Mode Toggle -->
+  <div id="mode-toggle" class="mode-toggle" style="display:none;">
+    <button id="mode-scan" class="mode-btn mode-active" data-mode="scan">SCAN</button>
+    <button id="mode-generate" class="mode-btn" data-mode="generate">GENERATE</button>
+  </div>
+
+  <!-- Scan This Page -->
+  <div id="scan-page-section" class="section">
+    <button id="scan-page-btn" class="action-btn secondary">Scan This Page</button>
+  </div>
+
+  <!-- Voice Profile Selector -->
+  <div id="profile-section" class="section">
+    <label class="field-label" for="profile-select">Voice Profile</label>
+    <select id="profile-select" class="field-select">
+      <option value="">Loading...</option>
+    </select>
+  </div>
+
+  <!-- Text Input -->
+  <div class="section">
+    <textarea id="text-input" class="text-area" rows="8"
+      placeholder="Paste text to scan for AI patterns..."></textarea>
+  </div>
+
+  <!-- Action Buttons -->
+  <div id="action-section" class="section actions">
+    <button id="analyze-btn" class="action-btn primary">ANALYZE</button>
+    <button id="generate-btn" class="action-btn primary" style="display:none;">GENERATE</button>
+  </div>
+
+  <!-- Results -->
+  <div id="results-section" class="section" style="display:none;">
+    <div class="results-card">
+      <div class="results-header">
+        <div class="score-display">
+          <span class="score-label">Score:</span>
+          <span id="score-value" class="score-value">0</span>
+        </div>
+        <span id="classification-badge" class="classification-badge"></span>
+      </div>
+      <div class="score-gauge">
+        <div class="score-gauge-bar">
+          <div class="gauge-clean"></div>
+          <div class="gauge-touched"></div>
+          <div class="gauge-written"></div>
+          <div id="score-marker" class="score-gauge-marker" style="left:0%"></div>
+        </div>
+      </div>
+      <div id="pattern-count" class="pattern-count"></div>
+    </div>
+  </div>
+
+  <!-- Post-Analysis Actions -->
+  <div id="post-actions" class="section actions" style="display:none;">
+    <button id="rewrite-btn" class="action-btn primary">REWRITE</button>
+    <button id="report-btn" class="action-btn secondary">VIEW FULL REPORT</button>
+  </div>
+
+  <!-- Generated/Rewritten Text Output -->
+  <div id="output-section" class="section" style="display:none;">
+    <label class="field-label">Result</label>
+    <textarea id="text-output" class="text-area" rows="6" readonly></textarea>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <a id="dashboard-link" href="#" class="dashboard-link">GBIS Dashboard &rarr;</a>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
