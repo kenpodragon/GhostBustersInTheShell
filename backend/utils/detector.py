@@ -341,10 +341,39 @@ def _detect_ai_patterns_inner(text: str, detail: bool = False, use_lm_signals: b
 
 
 def _split_sentences(text: str) -> list:
-    """Split text into sentences."""
-    # Simple sentence splitter - handles common cases
-    parts = re.split(r'(?<=[.!?])\s+', text.strip())
-    return [p.strip() for p in parts if p.strip()]
+    """Split text into sentences, respecting paragraph boundaries.
+
+    Splits paragraphs first (double newline), then splits each paragraph
+    into sentences on punctuation (.!?). This ensures sentences never span
+    paragraph boundaries, so paragraph-sentence assignment always works.
+
+    For paragraphs with no sentence-ending punctuation, falls back to
+    single-newline splitting, then treats the whole paragraph as one sentence.
+    """
+    stripped = text.strip()
+    if not stripped:
+        return []
+
+    # Split into paragraphs first (respect paragraph boundaries)
+    paragraphs = [p.strip() for p in re.split(r'\n\s*\n', stripped) if p.strip()]
+
+    all_sentences = []
+    for para in paragraphs:
+        # Split paragraph into sentences on punctuation
+        parts = re.split(r'(?<=[.!?])\s+', para)
+        parts = [p.strip() for p in parts if p.strip()]
+
+        if len(parts) > 1:
+            all_sentences.extend(parts)
+        elif '\n' in para:
+            # No punctuation splits but has newlines — split on newlines
+            lines = [line.strip() for line in para.split('\n') if line.strip()]
+            all_sentences.extend(lines)
+        else:
+            # Single chunk — treat whole paragraph as one sentence
+            all_sentences.append(para)
+
+    return all_sentences
 
 
 def _score_sentence(sentence: str, all_sentences: list, use_lm_signals: bool = False) -> tuple:
@@ -1294,6 +1323,20 @@ def _score_paragraph(paragraph: str, para_index: int, total_paragraphs: int, use
             elif cv < 0.25:
                 signals["para_sent_uniformity"] = 20
 
+    # Paragraph-specific: fragment list detection
+    # Catches "Curious. Creative. Hard working. High agency." — consecutive short fragments
+    if len(sentences) >= 3:
+        fragment_count = sum(1 for s in sentences if len(s.split()) <= 3)
+        fragment_ratio = fragment_count / len(sentences)
+        if fragment_ratio >= 0.75 and fragment_count >= 3:
+            signals["fragment_list"] = 40
+            patterns.append({"pattern": "fragment_list",
+                             "detail": f"Paragraph {para_index+1}: {fragment_count} short fragments in a list — AI-typical triadic/listing pattern"})
+        elif fragment_ratio >= 0.5 and fragment_count >= 3:
+            signals["fragment_list"] = 20
+            patterns.append({"pattern": "fragment_list",
+                             "detail": f"Paragraph {para_index+1}: {fragment_count} short fragments — listing pattern"})
+
     # Paragraph-specific: vocabulary richness within paragraph
     words = re.findall(r'\b\w+\b', paragraph.lower())
     if len(words) > 20:
@@ -1509,6 +1552,20 @@ def _document_level_patterns(text: str, sentences: list, use_lm_signals: bool = 
             patterns.append({
                 "pattern": "tricolon_density",
                 "detail": f"{tricolon_count} triadic lists — elevated rule-of-three usage"
+            })
+
+    # B2b: Staccato rhythm — mix of very short (1-3 word) and longer sentences
+    # Catches the LinkedIn motivational pattern: "Curious. Creative." then long explanation
+    if len(sentences) >= 5:
+        lengths = [len(s.split()) for s in sentences]
+        short_count = sum(1 for l in lengths if l <= 3)
+        long_count = sum(1 for l in lengths if l >= 12)
+        short_ratio = short_count / len(sentences)
+        if short_ratio >= 0.3 and long_count >= 1 and short_count >= 3:
+            signals["staccato_rhythm"] = 30
+            patterns.append({
+                "pattern": "staccato_rhythm",
+                "detail": f"{short_count} short fragments + {long_count} long sentences — AI-typical punchy/explanatory rhythm"
             })
 
     # B3: Buzzword stack density — unique buzzwords per 100 words (Phase 3.12)

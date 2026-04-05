@@ -254,6 +254,41 @@
   margin: 0.3rem 0;
 }
 
+/* --- AI Reasoning --- */
+
+.analysis-report__ai-reasoning {
+  margin-bottom: 0.75rem;
+  border: 1px solid rgba(255, 209, 102, 0.3);
+  border-radius: 4px;
+  padding: 0.5rem 0.65rem;
+  background: rgba(255, 209, 102, 0.05);
+}
+
+.analysis-report__ai-reasoning-header {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--score-medium);
+  margin-bottom: 0.3rem;
+}
+
+.analysis-report__ai-reasoning-score {
+  font-size: 0.7rem;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  margin-bottom: 0.35rem;
+}
+
+.analysis-report__ai-reasoning-score .score-value {
+  font-weight: 700;
+}
+
+.analysis-report__ai-reasoning-text {
+  font-size: 0.7rem;
+  color: var(--text-primary);
+  line-height: 1.45;
+}
+
 /* --- Document Patterns --- */
 
 .document-patterns {

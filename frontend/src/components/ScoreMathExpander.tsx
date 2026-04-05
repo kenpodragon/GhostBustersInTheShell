@@ -53,10 +53,32 @@ export default function ScoreMathExpander({ tiers }: ScoreMathExpanderProps) {
             </div>
           )}
           <div className="score-math-expander__divider" />
-          <div className="score-math-expander__row score-math-expander__row--total">
-            <span>Final Score</span>
-            <span>{math.final_score.toFixed(1)}</span>
-          </div>
+          {math.ai_score != null && math.heuristic_final != null && math.ai_weight != null && math.heuristic_weight != null ? (
+            <>
+              <div className="score-math-expander__row">
+                <span>Heuristic Score</span>
+                <span>{math.heuristic_final.toFixed(1)}</span>
+              </div>
+              <div className="score-math-expander__row">
+                <span>AI Score ({math.ai_score.toFixed(1)}) × {math.ai_weight}</span>
+                <span>= {(math.ai_score * math.ai_weight).toFixed(1)}</span>
+              </div>
+              <div className="score-math-expander__row">
+                <span>Heuristic ({math.heuristic_final.toFixed(1)}) × {math.heuristic_weight}</span>
+                <span>= {(math.heuristic_final * math.heuristic_weight).toFixed(1)}</span>
+              </div>
+              <div className="score-math-expander__divider" />
+              <div className="score-math-expander__row score-math-expander__row--total">
+                <span>Final Score (Combined)</span>
+                <span>{math.final_score.toFixed(1)}</span>
+              </div>
+            </>
+          ) : (
+            <div className="score-math-expander__row score-math-expander__row--total">
+              <span>Final Score</span>
+              <span>{math.final_score.toFixed(1)}</span>
+            </div>
+          )}
         </div>
       )}
     </div>

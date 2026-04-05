@@ -312,6 +312,11 @@ export interface ScoreMath {
   genre_dampening: number
   raw_composite: number
   final_score: number
+  // Combined mode fields (present when AI+heuristic)
+  ai_score?: number
+  ai_weight?: number
+  heuristic_final?: number
+  heuristic_weight?: number
 }
 
 export interface EnrichedTiers {
@@ -339,15 +344,18 @@ export interface EnrichedParagraph {
 
 export interface EnrichedAnalyzeResponse {
   overall_score: number
-  classification: Classification
-  confidence: [number, number]
-  genre: string
-  signal_count: number
-  tiers: EnrichedTiers
-  document_patterns: EnrichedPattern[]
-  paragraphs: EnrichedParagraph[]
-  sentences: SentenceResult[]
-  detected_patterns: Pattern[]
+  classification?: Classification
+  confidence?: [number, number]
+  genre?: string
+  signal_count?: number
+  tiers?: EnrichedTiers
+  document_patterns?: EnrichedPattern[]
+  paragraphs?: EnrichedParagraph[]
+  sentences?: SentenceResult[]
+  detected_patterns?: Pattern[]
+  _ai_reasoning?: string
+  _ai_score?: number
+  _analysis_mode?: string
 }
 
 export interface ClassificationBoundaries {

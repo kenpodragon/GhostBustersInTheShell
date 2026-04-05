@@ -162,9 +162,17 @@ def route_analysis(text: str, use_ai: bool = None, use_lm_signals: bool = False)
             "_heuristic_score": round(heuristic_score, 1),
             "_ai_reasoning": ai_result.get("reasoning", ""),
         }
-        # Preserve tier breakdown from heuristics
+        # Preserve tier breakdown from heuristics, sync final_score with combined overall
         if "tiers" in heuristic_result:
-            result["tiers"] = heuristic_result["tiers"]
+            tiers = dict(heuristic_result["tiers"])
+            if "score_math" in tiers:
+                tiers["score_math"] = dict(tiers["score_math"])
+                tiers["score_math"]["heuristic_final"] = tiers["score_math"]["final_score"]
+                tiers["score_math"]["ai_score"] = round(ai_score, 1)
+                tiers["score_math"]["ai_weight"] = rules_config.pipeline.get("ai_weight", 0.6)
+                tiers["score_math"]["heuristic_weight"] = rules_config.pipeline.get("heuristic_weight", 0.4)
+                tiers["score_math"]["final_score"] = combined_score
+            result["tiers"] = tiers
         # Reclassify with combined score
         result["classification"] = classify_category(result)
         return result

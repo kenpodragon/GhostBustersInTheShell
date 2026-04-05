@@ -213,6 +213,14 @@ PATTERN_DESCRIPTIONS = {
         "display_name": "Tricolon Density",
         "description": "Three-part parallel structures appear at high density across the document — AI relies on tricolons to create rhythm and completeness.",
     },
+    "fragment_list": {
+        "display_name": "Fragment List",
+        "description": "Paragraph consists of short punchy fragments forming a list pattern — AI uses staccato one-word or two-word sentences for motivational effect.",
+    },
+    "staccato_rhythm": {
+        "display_name": "Staccato Rhythm",
+        "description": "Mix of very short fragments and longer explanatory sentences — AI-typical punchy motivational rhythm pattern.",
+    },
     "buzzword_density": {
         "display_name": "Buzzword Density",
         "description": "AI-favored buzzwords appear at high frequency across the document — a systemic pattern of corporate or tech jargon overuse.",

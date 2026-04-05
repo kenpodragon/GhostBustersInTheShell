@@ -40,6 +40,20 @@ export default function AnalysisReport({ data, boundaries }: AnalysisReportProps
         </div>
 
         {tiers.score_math && <ScoreMathExpander tiers={tiers} />}
+
+        {(data as any)._ai_reasoning && (
+          <div className="analysis-report__ai-reasoning">
+            <div className="analysis-report__ai-reasoning-header">AI Analysis</div>
+            <div className="analysis-report__ai-reasoning-score">
+              Score: <span className={`score-value ${
+                (data as any)._ai_score >= boundaries.ghost_written_lower ? 'score--high' :
+                (data as any)._ai_score > boundaries.clean_upper ? 'score--medium' : 'score--low'
+              }`}>{(data as any)._ai_score}</span>
+            </div>
+            <div className="analysis-report__ai-reasoning-text">{(data as any)._ai_reasoning}</div>
+          </div>
+        )}
+
         <DocumentPatterns patterns={documentPatterns} />
       </div>
 

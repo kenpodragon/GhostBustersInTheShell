@@ -18,6 +18,14 @@ interface AnalysisResult {
   patterns: Pattern[]
   sentences: SentenceResult[]
   tiers?: Tiers
+  paragraphs?: any[]
+  document_patterns?: any[]
+  confidence?: [number, number]
+  genre?: string
+  signal_count?: number
+  _ai_reasoning?: string
+  _ai_score?: number
+  _analysis_mode?: string
 }
 
 interface HistoryEntry {

@@ -20,6 +20,14 @@ interface AnalysisResult {
   patterns: Pattern[]
   sentences: SentenceResult[]
   tiers?: Tiers
+  paragraphs?: any[]
+  document_patterns?: any[]
+  confidence?: [number, number]
+  genre?: string
+  signal_count?: number
+  _ai_reasoning?: string
+  _ai_score?: number
+  _analysis_mode?: string
 }
 
 type Mode = 'scan' | 'generate'
@@ -120,6 +128,9 @@ export default function InputView() {
         confidence: data.confidence || [0, 0],
         genre: data.genre || 'general',
         signal_count: data.signal_count || 0,
+        _ai_reasoning: data._ai_reasoning || undefined,
+        _ai_score: data._ai_score || undefined,
+        _analysis_mode: data._analysis_mode || undefined,
       })
     } catch (e: any) {
       setError(e.message)
@@ -170,6 +181,11 @@ export default function InputView() {
             patterns: analyzeData.detected_patterns || analyzeData.patterns || [],
             sentences: analyzeData.sentences || [],
             tiers: analyzeData.tiers || undefined,
+            paragraphs: analyzeData.paragraphs || [],
+            document_patterns: analyzeData.document_patterns || [],
+            confidence: analyzeData.confidence || [0, 0],
+            genre: analyzeData.genre || 'general',
+            signal_count: analyzeData.signal_count || 0,
           })
         }
       } catch { /* analysis failed, text is still there */ }
@@ -218,6 +234,11 @@ export default function InputView() {
             patterns: analyzeData.detected_patterns || analyzeData.patterns || [],
             sentences: analyzeData.sentences || [],
             tiers: analyzeData.tiers || undefined,
+            paragraphs: analyzeData.paragraphs || [],
+            document_patterns: analyzeData.document_patterns || [],
+            confidence: analyzeData.confidence || [0, 0],
+            genre: analyzeData.genre || 'general',
+            signal_count: analyzeData.signal_count || 0,
           })
         }
       } catch { /* ignore */ }
