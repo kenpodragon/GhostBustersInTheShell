@@ -11,6 +11,10 @@ interface AnalysisReportProps {
 }
 
 export default function AnalysisReport({ data, boundaries }: AnalysisReportProps) {
+  const paragraphs = data.paragraphs || []
+  const documentPatterns = data.document_patterns || []
+  const tiers = data.tiers || { sentence_score: 0, paragraph_score: 0, document_score: 0, score_math: { sentence_weighted: 0, paragraph_weighted: 0, document_weighted: 0, convergence_bonus: 0, cross_tier_bonus: 0, genre_dampening: 0, raw_composite: 0, final_score: 0 } }
+
   return (
     <div className="analysis-report">
       <div className="analysis-report__left">
@@ -18,9 +22,9 @@ export default function AnalysisReport({ data, boundaries }: AnalysisReportProps
 
         <div className="analysis-report__tiers">
           {[
-            { label: 'Sentence', score: data.tiers.sentence_score, weight: '45%' },
-            { label: 'Paragraph', score: data.tiers.paragraph_score, weight: '30%' },
-            { label: 'Document', score: data.tiers.document_score, weight: '25%' },
+            { label: 'Sentence', score: tiers.sentence_score, weight: '45%' },
+            { label: 'Paragraph', score: tiers.paragraph_score, weight: '30%' },
+            { label: 'Document', score: tiers.document_score, weight: '25%' },
           ].map((tier) => (
             <div key={tier.label} className="analysis-report__tier-box">
               <div className="analysis-report__tier-label">{tier.label}</div>
@@ -35,13 +39,13 @@ export default function AnalysisReport({ data, boundaries }: AnalysisReportProps
           ))}
         </div>
 
-        <ScoreMathExpander tiers={data.tiers} />
-        <DocumentPatterns patterns={data.document_patterns} />
+        {tiers.score_math && <ScoreMathExpander tiers={tiers} />}
+        <DocumentPatterns patterns={documentPatterns} />
       </div>
 
       <div className="analysis-report__right">
-        {data.paragraphs.length > 0 ? (
-          data.paragraphs.map((para) => (
+        {paragraphs.length > 0 ? (
+          paragraphs.map((para) => (
             <ParagraphAccordion key={para.index} paragraph={para} boundaries={boundaries} />
           ))
         ) : (
