@@ -115,6 +115,11 @@ export default function InputView() {
         patterns: data.detected_patterns || data.patterns || [],
         sentences: data.sentences || [],
         tiers: data.tiers || undefined,
+        paragraphs: data.paragraphs || [],
+        document_patterns: data.document_patterns || [],
+        confidence: data.confidence || [0, 0],
+        genre: data.genre || 'general',
+        signal_count: data.signal_count || 0,
       })
     } catch (e: any) {
       setError(e.message)
