@@ -773,22 +773,22 @@ class VoiceProfileService:
             prompts = stack["prompts"]
             profile_name = stack["baseline"].get("name", "Unknown")
 
-        prompt_texts = [p.get("prompt_text", "") for p in prompts if p.get("prompt_text")]
         brief = generate_style_brief(
             mode="voice",
             voice_elements=elements,
-            voice_prompts=prompt_texts,
+            voice_prompts=prompts,
         )
 
         clean_prompt = brief.replace("{text}", "").strip()
         while "\n\n\n" in clean_prompt:
             clean_prompt = clean_prompt.replace("\n\n\n", "\n\n")
 
+        prompt_count = sum(1 for p in prompts if p.get("prompt_text"))
         return {
             "prompt": clean_prompt,
             "profile_name": profile_name,
             "element_count": len(elements),
-            "prompt_count": len(prompt_texts),
+            "prompt_count": prompt_count,
         }
 
     # -------------------------------------------------------------------------
