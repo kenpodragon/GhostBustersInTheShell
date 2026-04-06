@@ -10,6 +10,7 @@ from config import config
 from utils.rules_config import rules_config
 from utils.embedding_client import get_embedding_client
 from utils.heuristics.ngram_overlap import compute_ngram_overlap
+from utils.roberta_client import get_roberta_client
 
 # Runtime flag — set False on token/rate errors, checked on each request.
 # Reset to True on startup if DB setting ai_enabled=True and health check passes.
@@ -135,10 +136,17 @@ def route_analysis(text: str, use_ai: bool = None, use_lm_signals: bool = False)
                 print(f"[AI Router] AI analysis failed: {e}")
                 # Continue with heuristic-only
 
-    # Step 3: Combine scores
-    if ai_score is not None:
-        combined_score = round(ai_score * rules_config.pipeline.get("ai_weight", 0.6) + heuristic_score * rules_config.pipeline.get("heuristic_weight", 0.4), 1)
+    # Step 3: RoBERTa neural signal (optional)
+    roberta_client = get_roberta_client()
+    roberta_score = None
+    roberta_result = None
+    if roberta_client.is_available():
+        roberta_result = roberta_client.classify(text)
+        if roberta_result:
+            roberta_score = roberta_result["ai_probability"] * 100  # Convert 0-1 to 0-100
 
+    # Step 4: Combine scores
+    if ai_score is not None:
         # Merge patterns from both sources
         ai_patterns = ai_result.get("detected_patterns", [])
         heuristic_patterns = heuristic_result.get("patterns", [])
@@ -148,6 +156,14 @@ def route_analysis(text: str, use_ai: bool = None, use_lm_signals: bool = False)
         for p in heuristic_patterns:
             p["source"] = "heuristic"
         all_patterns = heuristic_patterns + ai_patterns
+
+        # Blend scores based on available sources
+        if roberta_score is not None:
+            # Triple blend
+            combined_score = round(heuristic_score * 0.35 + ai_score * 0.35 + roberta_score * 0.30, 1)
+        else:
+            # Existing dual blend (AI + heuristic)
+            combined_score = round(ai_score * rules_config.pipeline.get("ai_weight", 0.6) + heuristic_score * rules_config.pipeline.get("heuristic_weight", 0.4), 1)
 
         result = {
             "overall_score": combined_score,
@@ -177,11 +193,23 @@ def route_analysis(text: str, use_ai: bool = None, use_lm_signals: bool = False)
             result["tiers"] = tiers
         # Reclassify with combined score
         result["classification"] = classify_category(result)
-        return result
+    else:
+        # Heuristic-only path
+        if roberta_score is not None:
+            # Dual blend (heuristic + RoBERTa)
+            combined_score = round(heuristic_score * 0.60 + roberta_score * 0.40, 1)
+            heuristic_result["overall_score"] = combined_score
+            heuristic_result["classification"] = classify_category(heuristic_result)
+        heuristic_result["_analysis_mode"] = "heuristic"
+        result = heuristic_result
 
-    # Heuristic-only fallback
-    heuristic_result["_analysis_mode"] = "heuristic"
-    return heuristic_result
+    # Add RoBERTa fields to response
+    result["_roberta_available"] = roberta_score is not None
+    if roberta_score is not None:
+        result["_roberta_score"] = round(roberta_score, 1)
+        result["_roberta_chunks"] = roberta_result.get("chunks", [])
+
+    return result
 
 
 def _get_voice_elements_and_prompts(voice_profile_id: int = None, baseline_id: int = None, overlay_ids: list = None):
