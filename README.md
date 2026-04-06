@@ -2,6 +2,8 @@
 
 A local AI text detection and humanization tool. Analyzes text for AI-generated patterns, highlights suspicious sections at sentence level, scores content, and helps rewrite it to sound naturally human.
 
+[Learn more at does-god-exist.org/gbits](https://does-god-exist.org/gbits/)
+
 ## What It Does
 
 - **Detect**: Paste text or upload documents (PDF, DOCX, TXT). Get a sentence-level AI probability score with pattern breakdown.
