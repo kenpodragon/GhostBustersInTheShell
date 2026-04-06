@@ -68,6 +68,11 @@ HEURISTIC_LEVELS = {
     "zipf_deviation_v2": "document",
     "mattr_v2": "paragraph",
     "ttr_variance": "paragraph",
+
+    # Pangram-inspired heuristics (Phase 6)
+    "semantic_monotony": "document",
+    "chunked_consistency": "document",
+    "model_fingerprint": "sentence",
 }
 
 

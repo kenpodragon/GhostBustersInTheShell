@@ -289,6 +289,18 @@ PATTERN_DESCRIPTIONS = {
         "display_name": "Consensus Middle Ground (Strong)",
         "description": "The text strongly avoids taking sides, consistently offering balanced perspectives — a pronounced AI pattern of controversy avoidance.",
     },
+    "semantic_monotony": {
+        "display_name": "Semantic Monotony",
+        "description": "Sentence-level meaning is unusually uniform — AI text tends to stay in a narrow semantic band while human writing varies in topic, tone, and register.",
+    },
+    "chunked_consistency": {
+        "display_name": "Chunked Score Consistency",
+        "description": "All sections of the document score similarly for AI patterns — human writing typically varies more in AI-likeness across sections.",
+    },
+    "model_fingerprint": {
+        "display_name": "Model Fingerprint",
+        "description": "Matches characteristic phrasing patterns of a specific AI model (Claude, GPT, or Gemini).",
+    },
 }
 
 

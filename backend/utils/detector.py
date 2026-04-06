@@ -49,6 +49,9 @@ from utils.heuristics.crowdsourced import (
 )
 from utils.heuristics.ai_phrases import check_ai_phrases, check_ai_phrases_sentence
 from utils.heuristics.classification import classify_category
+from utils.heuristics.semantic_monotony import check_semantic_monotony
+from utils.heuristics.chunked_consistency import check_chunked_consistency
+from utils.heuristics.model_signatures import check_model_fingerprint
 
 
 def _enrich_pattern(pattern: dict) -> dict:
@@ -69,9 +72,9 @@ def _assign_sentences_to_paragraphs(raw_paragraphs, paragraph_results, sentence_
         pr["sentence_count"] = len(para_sentences)
 
 
-def detect_ai_patterns(text: str, use_lm_signals: bool = False) -> dict:
+def detect_ai_patterns(text: str, use_lm_signals: bool = False, _skip_chunked: bool = False) -> dict:
     """Public API — standard detection."""
-    return _detect_ai_patterns_inner(text, detail=False, use_lm_signals=use_lm_signals)
+    return _detect_ai_patterns_inner(text, detail=False, use_lm_signals=use_lm_signals, _skip_chunked=_skip_chunked)
 
 
 def detect_ai_patterns_detailed(text: str, use_lm_signals: bool = False) -> dict:
@@ -125,7 +128,7 @@ def _build_escalation_traces(sent_counts, para_signals_list, doc_signals):
     return traces
 
 
-def _detect_ai_patterns_inner(text: str, detail: bool = False, use_lm_signals: bool = False) -> dict:
+def _detect_ai_patterns_inner(text: str, detail: bool = False, use_lm_signals: bool = False, _skip_chunked: bool = False) -> dict:
     """Run all heuristic detectors on text. Returns 3-tier scores."""
     sentences = _split_sentences(text)
     if not sentences:
@@ -216,7 +219,7 @@ def _detect_ai_patterns_inner(text: str, detail: bool = False, use_lm_signals: b
         paragraph_overall = 0.0
 
     # --- TIER 3: Document-level ---
-    doc_patterns, doc_signals = _document_level_patterns(text, sentences, use_lm_signals=use_lm_signals)
+    doc_patterns, doc_signals = _document_level_patterns(text, sentences, use_lm_signals=use_lm_signals, _skip_chunked=_skip_chunked)
     all_patterns.extend(doc_patterns)
     doc_combined = combine_signals(doc_signals)
 
@@ -443,7 +446,13 @@ def _score_sentence(sentence: str, all_sentences: list, use_lm_signals: bool = F
         scores.append(phrase_score)
         patterns.extend(phrase_patterns)
 
-    # 12-13. LM signals (Phase 3.8) — gated behind feature flag
+    # 12. Cross-model phrase fingerprinting
+    mf_score, mf_patterns = check_model_fingerprint(sentence)
+    if mf_score > 0:
+        scores.append(mf_score)
+        patterns.extend(mf_patterns)
+
+    # 13-14. LM signals (Phase 3.8) — gated behind feature flag
     if use_lm_signals:
         from utils.heuristics.lm_signals import check_compression_ratio_sentence, check_ngram_perplexity, load_corpus
 
@@ -1390,7 +1399,7 @@ def _score_paragraph(paragraph: str, para_index: int, total_paragraphs: int, use
     return round(min(100, combined), 1), patterns, signals
 
 
-def _document_level_patterns(text: str, sentences: list, use_lm_signals: bool = False) -> tuple[list[dict], dict[str, float]]:
+def _document_level_patterns(text: str, sentences: list, use_lm_signals: bool = False, _skip_chunked: bool = False) -> tuple[list[dict], dict[str, float]]:
     """Run all document-level heuristics. Returns (patterns, named_signals)."""
     patterns = []
     signals = {}
@@ -1650,6 +1659,19 @@ def _document_level_patterns(text: str, sentences: list, use_lm_signals: bool = 
         if zipf_score > 0:
             signals["zipf_deviation_v2"] = zipf_score
             patterns.extend(zipf_patterns)
+
+    # Semantic embedding monotony
+    sm_score, sm_patterns = check_semantic_monotony(text)
+    if sm_score > 0:
+        signals["semantic_monotony"] = sm_score
+        patterns.extend(sm_patterns)
+
+    # Chunked score consistency (skip if called from chunked consistency itself)
+    if not _skip_chunked:
+        cc_score, cc_patterns = check_chunked_consistency(text)
+        if cc_score > 0:
+            signals["chunked_consistency"] = cc_score
+            patterns.extend(cc_patterns)
 
     return patterns, signals
 
