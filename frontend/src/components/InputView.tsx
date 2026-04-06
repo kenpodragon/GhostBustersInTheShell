@@ -4,7 +4,7 @@ import ScoreBadge from './ScoreBadge'
 import ScoreGauge from './ScoreGauge'
 import FidelityScore from './FidelityScore'
 import AnalysisReport from './AnalysisReport'
-import type { VoiceProfile, Pattern, SentenceResult, FidelityScoreResult, ClassificationBoundaries, EnrichedAnalyzeResponse } from '../types'
+import type { VoiceProfile, Pattern, SentenceResult, FidelityScoreResult, ClassificationBoundaries, EnrichedAnalyzeResponse, RewriteEvasionMetrics } from '../types'
 import { voiceProfilesApi } from '../services/voiceProfilesApi'
 import { scoringApi } from '../services/scoringApi'
 
@@ -45,6 +45,7 @@ export default function InputView() {
   const [wasGenerated, setWasGenerated] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [mode, setMode] = useState<Mode>('scan')
+  const [rewriteResult, setRewriteResult] = useState<RewriteEvasionMetrics | null>(null)
   const [fidelityResult, setFidelityResult] = useState<FidelityScoreResult | null>(null)
   const [scoringFidelity, setScoringFidelity] = useState(false)
   const [boundaries, setBoundaries] = useState<ClassificationBoundaries>({ clean_upper: 20, ghost_written_lower: 40 })
@@ -201,6 +202,7 @@ export default function InputView() {
     setRewriting(true)
     setError(null)
     setAnalysis(null)
+    setRewriteResult(null)
     try {
       const res = await fetch('/api/rewrite', {
         method: 'POST',
@@ -217,6 +219,14 @@ export default function InputView() {
       const data = await res.json()
       const rewritten = data.rewritten_text || data.text || ''
       setText(rewritten)
+      setRewriteResult({
+        divergence_score: data.divergence_score,
+        divergence_label: data.divergence_label,
+        divergence_warning: data.divergence_warning,
+        ngram_overlap: data.ngram_overlap,
+        ngram_label: data.ngram_label,
+        ngram_warning: data.ngram_warning,
+      })
       setRewriting(false)
       // Auto-analyze the rewritten text
       setAnalyzing(true)
@@ -447,6 +457,31 @@ export default function InputView() {
           <ScoreGauge score={analysis.overall_score} />
 
           <AnalysisReport data={analysis as EnrichedAnalyzeResponse} boundaries={boundaries} />
+        </div>
+      )}
+
+      {/* Evasion Metrics — shown after rewrite when divergence data is present */}
+      {rewriteResult?.divergence_score !== undefined && (
+        <div className="card" style={{ marginTop: '1rem' }}>
+          <div className="evasion-metrics">
+            <h4>Neural Evasion Assessment</h4>
+            <div className={`evasion-metric evasion-${rewriteResult.divergence_label}`}>
+              <span className="evasion-metric__label">Semantic Divergence:</span>
+              <span className="evasion-metric__value">{(rewriteResult.divergence_score * 100).toFixed(1)}%</span>
+              <span className="evasion-metric__badge">{rewriteResult.divergence_label}</span>
+              {rewriteResult.divergence_warning && (
+                <span className="evasion-metric__warning">{rewriteResult.divergence_warning}</span>
+              )}
+            </div>
+            <div className={`evasion-metric evasion-${rewriteResult.ngram_label}`}>
+              <span className="evasion-metric__label">Text Reuse:</span>
+              <span className="evasion-metric__value">{((rewriteResult.ngram_overlap ?? 0) * 100).toFixed(1)}%</span>
+              <span className="evasion-metric__badge">{rewriteResult.ngram_label}</span>
+              {rewriteResult.ngram_warning && (
+                <span className="evasion-metric__warning">{rewriteResult.ngram_warning}</span>
+              )}
+            </div>
+          </div>
         </div>
       )}
 

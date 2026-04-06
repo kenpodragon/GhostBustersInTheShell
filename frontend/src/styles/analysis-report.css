@@ -528,3 +528,58 @@
   color: var(--text-muted, #666);
   font-size: 0.85rem;
 }
+
+/* --- Evasion Metrics (divergence + n-gram) --- */
+
+.evasion-metrics {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color, #333);
+  border-radius: 4px;
+}
+
+.evasion-metrics h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.85rem;
+  color: var(--text-muted, #888);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.evasion-metric {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+  font-size: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.evasion-metric__label {
+  color: var(--text-secondary, #aaa);
+  min-width: 140px;
+}
+
+.evasion-metric__value {
+  font-family: monospace;
+  font-weight: bold;
+}
+
+.evasion-metric__badge {
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.evasion-low .evasion-metric__badge { background: #ff4444; color: #fff; }
+.evasion-moderate .evasion-metric__badge { background: #ffaa00; color: #000; }
+.evasion-high .evasion-metric__badge { background: #00cc44; color: #000; }
+
+.evasion-metric__warning {
+  color: var(--text-muted, #888);
+  font-style: italic;
+  font-size: 0.8rem;
+  width: 100%;
+  margin-top: 0.15rem;
+}
