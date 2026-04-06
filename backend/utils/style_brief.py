@@ -70,6 +70,7 @@ ALWAYS_ON_RULES = [
     "Reference something from early in the text later — create a callback.",
     "Include one brief digression or tangent.",
     "Name real specifics (companies, dates, numbers) instead of vague generalities.",
+    "Prioritize structural changes: reorder sentences, merge or split paragraphs, change voice (active to passive or vice versa), vary sentence rhythm and length. Do NOT add new content, examples, or elaboration unless the voice profile specifically calls for it.",
 ]
 
 TONE_REFERENCES = {
@@ -181,6 +182,7 @@ def generate_style_brief(
     voice_elements: list = None,
     voice_prompts: list = None,
     mode: str = "combined",
+    divergence_label: str = None,
 ) -> str:
     """Build a complete rewrite prompt from detection output.
 
@@ -277,7 +279,14 @@ def generate_style_brief(
             "",
             "Only fix the issues listed above. Do NOT rephrase text that already sounds natural.",
             "Preserve the original point of view exactly.",
+            "Prioritize structural changes: reorder sentences, merge or split paragraphs, change voice (active to passive or vice versa), vary sentence rhythm and length.",
         ])
+        if divergence_label == "low":
+            sections.append(
+                "\nCRITICAL: The previous rewrite was too close to the original. "
+                "Restructure paragraphs aggressively, change sentence order, "
+                "convert between direct and indirect speech, and vary paragraph lengths."
+            )
 
     else:  # combined (legacy default)
         sections = [

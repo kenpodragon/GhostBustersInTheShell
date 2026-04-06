@@ -8,6 +8,8 @@ re-enabled on next startup if the user's saved preference is 'on'.
 """
 from config import config
 from utils.rules_config import rules_config
+from utils.embedding_client import get_embedding_client
+from utils.heuristics.ngram_overlap import compute_ngram_overlap
 
 # Runtime flag — set False on token/rate errors, checked on each request.
 # Reset to True on startup if DB setting ai_enabled=True and health check passes.
@@ -225,6 +227,47 @@ def _get_voice_elements_and_prompts(voice_profile_id: int = None, baseline_id: i
         return [], []
 
 
+def _compute_divergence(original: str, rewrite: str) -> tuple[float, str, str]:
+    """Compute semantic divergence between original and rewrite.
+    Returns (divergence_score, label, warning).
+    Uses embedding sidecar with Jaccard fallback.
+    """
+    client = get_embedding_client()
+    cosine_sim = None
+    if client.is_available():
+        cosine_sim = client.similarity(original, rewrite)
+
+    if cosine_sim is not None:
+        divergence = round(1.0 - cosine_sim, 4)
+    else:
+        # Jaccard fallback on word-level 3-grams
+        def _word_ngrams(text, n=3):
+            words = text.lower().split()
+            return set(tuple(words[i:i+n]) for i in range(len(words) - n + 1))
+
+        orig_ng = _word_ngrams(original)
+        rewrite_ng = _word_ngrams(rewrite)
+        if not orig_ng and not rewrite_ng:
+            divergence = 0.0
+        elif not orig_ng or not rewrite_ng:
+            divergence = 1.0
+        else:
+            jaccard = len(orig_ng & rewrite_ng) / len(orig_ng | rewrite_ng)
+            divergence = round(1.0 - jaccard, 4)
+
+    if divergence < 0.15:
+        label = "low"
+        warning = "Likely still detectable by neural classifiers"
+    elif divergence <= 0.35:
+        label = "moderate"
+        warning = "May evade basic detectors"
+    else:
+        label = "high"
+        warning = "Good structural separation"
+
+    return divergence, label, warning
+
+
 def route_rewrite(text: str, voice_profile_id: int = None, use_ai: bool = None, threshold: int = 20, use_lm_signals: bool = False, comment: str = None, baseline_id: int = None, overlay_ids: list = None) -> dict:
     """Rewrite text using a two-pass pipeline.
 
@@ -280,13 +323,18 @@ def route_rewrite(text: str, voice_profile_id: int = None, use_ai: bool = None, 
         passes = 1
         brief_pass2 = None
 
+        # Compute divergence + n-gram overlap after Pass 1
+        divergence_score, divergence_label, divergence_warning = _compute_divergence(text, rewritten_text)
+        ngram_overlap_val, ngram_label, ngram_warning = compute_ngram_overlap(text, rewritten_text)
+
         # --- Pass 2: Detection fix (conditional) ---
-        if after_score > threshold:
+        if after_score > threshold or divergence_score < 0.15:
             brief_pass2 = generate_style_brief(
                 detection_result=recheck,
                 model=model_name,
                 mode="detection_fix",
                 comment=comment,
+                divergence_label=divergence_label,
             )
             try:
                 rewritten2 = provider.rewrite(rewritten_text, style_brief=brief_pass2)
@@ -333,6 +381,12 @@ def route_rewrite(text: str, voice_profile_id: int = None, use_ai: bool = None, 
             "_brief": brief_voice,
             "_brief_pass2": brief_pass2,
             "_voice_compliance": compliance,
+            "divergence_score": divergence_score,
+            "divergence_label": divergence_label,
+            "divergence_warning": divergence_warning,
+            "ngram_overlap": ngram_overlap_val,
+            "ngram_label": ngram_label,
+            "ngram_warning": ngram_warning,
         }
 
     except Exception as e:
