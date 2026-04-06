@@ -72,6 +72,45 @@ Use `score_fidelity` to measure how well any generated text matches your profile
 
 The more diverse your samples, the better. If you only submit formal writing, the profile won't know how you handle casual tone. Give it range.
 
+### What Makes Good Voice Samples
+
+Let's get specific about what to feed the system, because "submit writing samples" is vague and vague gets you a mediocre profile.
+
+**How much text do you actually need?**
+
+- **500 words** (minimum): Gets you a basic profile. Broad strokes only. Think of it like a pencil sketch of your voice.
+- **2,000 words** (solid): This is where most elements get properly represented. You'll see reliable values across vocabulary, structure, and tone markers. This is the sweet spot for most people.
+- **5,000+ words** (excellent): Now you're capturing the rare patterns and edge cases. The weird punctuation habit you have in long emails. The way your sentence length shifts when you're explaining something technical vs. telling a story. The stuff that makes your writing yours and not just "generally human."
+
+**What to submit:**
+
+- Emails you've written (especially the longer ones where you're actually explaining something, not just "sounds good, thanks")
+- Slack or Teams messages where you're being yourself (not the corporate-speak version of yourself)
+- Blog posts, articles, or essays in your own words
+- Personal writing: journal entries, letters, social media posts
+- Creative writing if that's something you do
+- Cover letters or professional bios that you actually wrote (not the template you grabbed from Indeed and filled in the blanks)
+
+**What NOT to submit:**
+
+- Text you copied from somewhere else (obviously, but people do it)
+- Heavily edited or polished text where an editor changed your voice into "publication voice"
+- Very short messages (a sentence or two doesn't give the parser enough to work with)
+- Text written by someone else, even if it's supposedly "in your style"
+- AI-generated text (you'd be training your voice profile on the thing you're trying to detect, which is... counterproductive)
+
+**Diversity matters (a lot):**
+
+Different topics help capture your full vocabulary range. If all your samples are about software engineering, the profile will think words like "refactor" and "pipeline" are core to your voice when really you also write about cooking and hiking and your kid's soccer games. Different contexts (formal email vs. casual message) show your register range, which is one of the strongest voice signals the system tracks. Different moods and tones reveal your emotional writing patterns. And here's the thing people miss: if every sample is about the same topic, the profile will conflate that topic's vocabulary with your vocabulary. Submit variety.
+
+**How to check profile quality:**
+
+After uploading samples, check the profile element breakdown in the UI. Look for elements showing "null" or extremely skewed values. That usually means not enough data hit that particular measurement. Use `score_fidelity` as a sanity check: write something yourself (fresh, not from your samples), then score it against your profile. Your own writing should land above 0.6 on the fidelity score. If it doesn't, submit more samples with different topics and contexts.
+
+**A few tips that save time:**
+
+You don't need 2,000 words ready in one sitting. Submit text over multiple sessions. Each new document gets parsed and merged into the existing profile, so it accumulates. If you submitted something that isn't really representative (bad day, unusual context, that one email you wrote while furious), you can remove individual documents from the profile. And after adding a significant batch of new material, hit reparse to rebuild the profile with the full corpus. The system doesn't auto-reparse because sometimes you want to review what you've added before committing to a rebuild.
+
 ## Rewriting with Voice
 
 Got text that scored high on the AI detector? Here's how to make it sound like you wrote it.
