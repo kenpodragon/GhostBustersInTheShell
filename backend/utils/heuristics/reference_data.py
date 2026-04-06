@@ -155,4 +155,8 @@ HEURISTIC_WEIGHTS = {
     "zipf_deviation_v2": 0.0,           # C1: HARMFUL — fires more on human (-2.3 disc)
     "mattr_v2": 0.0,                    # C2: no discrimination
     "ttr_variance": 0.0,                # C3: no discrimination
+    # Pangram-inspired heuristics (Phase 6) — disabled until calibrated
+    "semantic_monotony": 0.0,
+    "chunked_consistency": 0.0,
+    "model_fingerprint": 0.0,
 }
