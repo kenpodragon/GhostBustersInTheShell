@@ -6,8 +6,9 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 
-# Download model at build time
-RUN python -c "from transformers import AutoTokenizer, AutoModelForSequenceClassification; AutoTokenizer.from_pretrained('pangram/editlens_roberta-large'); AutoModelForSequenceClassification.from_pretrained('pangram/editlens_roberta-large')"
+# Download gated model at build time (requires HuggingFace token)
+ARG HF_TOKEN
+RUN python -c "from transformers import AutoTokenizer, AutoModelForSequenceClassification; AutoTokenizer.from_pretrained('pangram/editlens_roberta-large', token='${HF_TOKEN}'); AutoModelForSequenceClassification.from_pretrained('pangram/editlens_roberta-large', token='${HF_TOKEN}')"
 
 COPY app.py .
 
