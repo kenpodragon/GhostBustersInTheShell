@@ -41,6 +41,8 @@ services:
       MCP_PORT: 8067
       AI_PROVIDER: ${AI_PROVIDER:-claude}
       FASTMCP_PORT: 8067
+      EMBEDDING_SERVICE_URL: http://embeddings:5000
+      ROBERTA_SERVICE_URL: http://roberta:5000
     volumes:
       - ./backend:/app
       - ./tools:/tools
@@ -48,6 +50,8 @@ services:
       - ${USERPROFILE:-.}/.claude:/root/.claude
     depends_on:
       postgres:
+        condition: service_healthy
+      embeddings:
         condition: service_healthy
     networks:
       - ghostbusters-net
@@ -67,6 +71,37 @@ services:
       - backend
     networks:
       - ghostbusters-net
+
+  embeddings:
+    build:
+      context: ./docker/embeddings
+      dockerfile: Dockerfile
+    container_name: ghostbusters-embeddings
+    restart: "no"
+    networks:
+      - ghostbusters-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  roberta:
+    build:
+      context: ./docker/roberta
+      dockerfile: Dockerfile
+    container_name: ghostbusters-roberta
+    profiles: ["research"]
+    restart: "no"
+    networks:
+      - ghostbusters-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
 
 networks:
   ghostbusters-net:
