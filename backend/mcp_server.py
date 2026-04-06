@@ -113,6 +113,34 @@ def get_style_guide() -> dict:
 
 
 @mcp.tool()
+def get_voice_style_prompt(baseline_id: int = None, overlay_ids: list[int] = None) -> dict:
+    """Get the voice style prompt for injection into other tools.
+
+    Returns the exact prompt string sent to Claude during voice rewrites —
+    voice elements, directives, tone guidance, and structural rules.
+    Other tools can inject this into their prompts to capture the author's voice.
+
+    Args:
+        baseline_id: Voice profile ID to use as baseline. None = active stack.
+        overlay_ids: Overlay profile IDs. None = active stack overlays.
+
+    Returns:
+        prompt: The voice style prompt string (ready to inject)
+        profile_name: Name of the baseline profile
+        element_count: Number of voice elements in the profile
+        prompt_count: Number of voice directives
+    """
+    from db import get_conn
+    from utils.voice_profile_service import VoiceProfileService
+    try:
+        with get_conn() as conn:
+            svc = VoiceProfileService(conn)
+            return svc.get_voice_style_prompt(baseline_id=baseline_id, overlay_ids=overlay_ids)
+    except ValueError as e:
+        return {"error": str(e)}
+
+
+@mcp.tool()
 def get_rules() -> dict:
     """Get the active rules configuration (detection config only).
 
