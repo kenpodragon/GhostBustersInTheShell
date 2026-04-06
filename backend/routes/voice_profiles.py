@@ -719,3 +719,27 @@ def get_completeness(profile_id):
         return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+# ---------------------------------------------------------------------------
+# Voice Style Prompt (External Consumption)
+# ---------------------------------------------------------------------------
+
+@voice_profiles_bp.route("/voice-style-prompt", methods=["GET"])
+def get_voice_style_prompt_endpoint():
+    """Get the voice style prompt for injection into other tools."""
+    baseline_id = request.args.get("baseline_id", type=int)
+    overlay_ids_str = request.args.get("overlay_ids", "")
+    overlay_ids = [int(x.strip()) for x in overlay_ids_str.split(",") if x.strip()] if overlay_ids_str else None
+
+    try:
+        from db import get_conn
+        from utils.voice_profile_service import VoiceProfileService
+        with get_conn() as conn:
+            svc = VoiceProfileService(conn)
+            result = svc.get_voice_style_prompt(baseline_id=baseline_id, overlay_ids=overlay_ids)
+        return jsonify(result)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
