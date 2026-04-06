@@ -490,3 +490,41 @@
   min-width: 2.5rem;
   text-align: right;
 }
+
+/* --- RoBERTa Neural Classifier --- */
+
+.analysis-report__roberta {
+  margin-top: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--accent-purple, #9b59b6);
+  border-radius: 4px;
+}
+
+.analysis-report__roberta--offline {
+  opacity: 0.4;
+  border-color: var(--border-color, #333);
+}
+
+.analysis-report__roberta-header {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent-purple, #9b59b6);
+  margin-bottom: 0.25rem;
+}
+
+.analysis-report__roberta--offline .analysis-report__roberta-header {
+  color: var(--text-muted, #666);
+}
+
+.analysis-report__roberta-score .score-value {
+  font-size: 1.1rem;
+  font-weight: bold;
+  font-family: monospace;
+}
+
+.analysis-report__roberta-offline {
+  font-style: italic;
+  color: var(--text-muted, #666);
+  font-size: 0.85rem;
+}

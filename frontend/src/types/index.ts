@@ -25,6 +25,12 @@ export interface SectionRewrite {
   editedText: string | null
   comment: string
   iterations: number
+  divergence_score?: number
+  divergence_label?: 'low' | 'moderate' | 'high'
+  divergence_warning?: string
+  ngram_overlap?: number
+  ngram_label?: 'low' | 'moderate' | 'high'
+  ngram_warning?: string
 }
 
 export interface Section {
@@ -139,6 +145,15 @@ export interface VersionInfo {
   app_version: string
   rules_version: string
   rules_version_date: string | null
+}
+
+export interface RewriteEvasionMetrics {
+  divergence_score?: number
+  divergence_label?: 'low' | 'moderate' | 'high'
+  divergence_warning?: string
+  ngram_overlap?: number
+  ngram_label?: 'low' | 'moderate' | 'high'
+  ngram_warning?: string
 }
 
 // --- Scoring & AI Extraction Types ---
@@ -356,6 +371,9 @@ export interface EnrichedAnalyzeResponse {
   _ai_reasoning?: string
   _ai_score?: number
   _analysis_mode?: string
+  _roberta_score?: number
+  _roberta_available?: boolean
+  _roberta_chunks?: Array<{ text: string; ai_probability: number }>
 }
 
 export interface ClassificationBoundaries {

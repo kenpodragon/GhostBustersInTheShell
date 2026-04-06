@@ -54,6 +54,18 @@ export default function AnalysisReport({ data, boundaries }: AnalysisReportProps
           </div>
         )}
 
+        {/* RoBERTa Neural Classifier */}
+        <div className={`analysis-report__roberta ${(data as any)._roberta_available ? '' : 'analysis-report__roberta--offline'}`}>
+          <div className="analysis-report__roberta-header">Neural Classifier</div>
+          {(data as any)._roberta_available ? (
+            <div className="analysis-report__roberta-score">
+              <span className="score-value">{((data as any)._roberta_score ?? 0).toFixed(1)}% AI</span>
+            </div>
+          ) : (
+            <div className="analysis-report__roberta-offline">offline</div>
+          )}
+        </div>
+
         <DocumentPatterns patterns={documentPatterns} />
       </div>
 
