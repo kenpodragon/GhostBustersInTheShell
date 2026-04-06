@@ -4,6 +4,8 @@ from datetime import datetime
 
 import psycopg2.extras
 
+from utils.style_brief import generate_style_brief
+
 
 class VoiceProfileService:
     STARTER_ELEMENTS = [
@@ -745,6 +747,49 @@ class VoiceProfileService:
                 (profile_id,)
             )
         self.conn.commit()
+
+    def get_voice_style_prompt(self, baseline_id: int = None, overlay_ids: list[int] = None) -> dict:
+        """Return the voice style prompt string for injection into other tools."""
+        if baseline_id is not None:
+            profile = self.get_profile_summary(baseline_id)
+            if not profile:
+                raise ValueError(f"Voice profile not found: {baseline_id}")
+            elements = self._get_elements(baseline_id)
+            prompts = self._get_prompts(baseline_id)
+            profile_name = profile.get("name", f"Profile {baseline_id}")
+
+            if overlay_ids:
+                for oid in overlay_ids:
+                    overlay_elements = self._get_elements(oid)
+                    overlay_prompts = self._get_prompts(oid)
+                    overlay_names = {e["name"] for e in overlay_elements}
+                    elements = [e for e in elements if e["name"] not in overlay_names] + overlay_elements
+                    prompts = prompts + overlay_prompts
+        else:
+            stack = self.get_active_stack()
+            if not stack.get("baseline"):
+                raise ValueError("No active voice profile. Provide baseline_id or set an active profile.")
+            elements = stack["resolved_elements"]
+            prompts = stack["prompts"]
+            profile_name = stack["baseline"].get("name", "Unknown")
+
+        prompt_texts = [p.get("prompt_text", "") for p in prompts if p.get("prompt_text")]
+        brief = generate_style_brief(
+            mode="voice",
+            voice_elements=elements,
+            voice_prompts=prompt_texts,
+        )
+
+        clean_prompt = brief.replace("{text}", "").strip()
+        while "\n\n\n" in clean_prompt:
+            clean_prompt = clean_prompt.replace("\n\n\n", "\n\n")
+
+        return {
+            "prompt": clean_prompt,
+            "profile_name": profile_name,
+            "element_count": len(elements),
+            "prompt_count": len(prompt_texts),
+        }
 
     # -------------------------------------------------------------------------
     # Private helpers
