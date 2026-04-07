@@ -48,19 +48,77 @@ See [docker/SIDECAR_SETUP.md](docker/SIDECAR_SETUP.md) for configuration.
 
 ## Quick Start
 
+### Prerequisites
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running
+- Git
+- ~2GB disk space (base images + embeddings model)
+
+### 1. Clone
+
 ```bash
-# Clone
 git clone https://github.com/kenpodragon/GhostBustersInTheShell.git code
 cd code
+```
 
-# Start
+### 2. Create Required Directories
+
+The PostgreSQL container mounts a local data directory for persistence:
+
+```bash
+mkdir -p ../local_data/db_data
+```
+
+### 3. Configure Environment
+
+Create `backend/.env` with your settings:
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+Then edit `backend/.env` to add your API key (optional — the system works without it using Python heuristic fallback):
+
+```
+ANTHROPIC_API_KEY=your-key-here
+```
+
+See [AI Provider Setup](#ai-provider-setup) below for how to get an API key.
+
+### 4. Build and Start
+
+```bash
+# Build all images (first run downloads ~1GB of models)
+docker compose build
+
+# Start services
 docker compose up -d
+```
 
-# Verify
+### 5. Verify
+
+Wait ~30 seconds for the embeddings model to load, then:
+
+```bash
+# Check API health
 curl http://localhost:8066/api/health
+# Expected: {"db":"connected","status":"healthy"}
+
+# Check embeddings sidecar
+docker exec ghostbusters-app python -c "from utils.embedding_client import get_embedding_client; print(get_embedding_client().is_available())"
+# Expected: True
 ```
 
 Open http://localhost:5176 in your browser.
+
+### Ports
+
+| Service | Port | Description |
+|---------|------|-------------|
+| Frontend | 5176 | React UI |
+| API | 8066 | Flask REST API |
+| MCP | 8067 | SSE server for agent integration |
+| Database | 5566 | PostgreSQL 17 |
 
 ## Evasion Metrics
 
@@ -136,15 +194,20 @@ Any MCP-compatible agent can connect via SSE. Set the transport URL to `http://l
 
 ## AI Provider Setup
 
-The system works without any AI provider (Python heuristic fallback). For better analysis and rewriting, configure an AI provider:
+The system works without any AI provider — all detection runs on Python heuristics, and the neural sidecars handle embedding and classification locally. An AI provider improves analysis reasoning and rewrite quality.
 
 ### Claude (Default)
-Set `ANTHROPIC_API_KEY` in `backend/.env`:
-```
-ANTHROPIC_API_KEY=sk-ant-...
-```
+
+1. Create an account at [console.anthropic.com](https://console.anthropic.com/)
+2. Go to **API Keys** and create a new key
+3. Add it to `backend/.env`:
+   ```
+   ANTHROPIC_API_KEY=your-key-here
+   ```
+4. Restart the backend: `docker compose restart backend`
 
 ### Other Providers
+
 The AI router pattern supports adding custom providers. See `backend/ai_providers/router.py` for the interface.
 
 ## Tech Stack
@@ -159,20 +222,47 @@ The AI router pattern supports adding custom providers. See `backend/ai_provider
 
 ## Development
 
+### Running Outside Docker
+
 ```bash
-# Backend only (outside Docker)
+# Backend
 cd backend
 pip install -r requirements.txt
 python app.py
 
-# Frontend only
+# Frontend
 cd frontend
 npm install
 npm run dev
-
-# Database
-# Direct access: psql -h localhost -p 5566 -U ghostbusters -d ghostbusters
 ```
+
+Requires Python 3.13+ and Node 18+. The backend reads `backend/.env` for database connection and port settings.
+
+### Database Access
+
+```bash
+# Direct psql access
+psql -h localhost -p 5566 -U ghostbusters -d ghostbusters
+# Password: ghostbusters_dev (from .env)
+```
+
+Migrations run automatically on first start via the `db/migrations/` mount into PostgreSQL's init directory.
+
+### Stopping and Restarting
+
+```bash
+# Stop all services (preserves data)
+docker compose down
+
+# Stop including RoBERTa sidecar
+docker compose --profile research down
+
+# Rebuild after code changes
+docker compose build backend
+docker compose up -d
+```
+
+Data persists in `../local_data/db_data/` between restarts. To start fresh, delete that directory and recreate it.
 
 ## License
 
