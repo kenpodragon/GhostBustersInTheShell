@@ -1,11 +1,12 @@
 """MCP Server - Exposes GhostBusters tools via SSE transport."""
+from typing import Optional
 from mcp.server.fastmcp import FastMCP
 
 mcp = FastMCP("ghostbusters")
 
 
 @mcp.tool()
-def analyze_text(text: str, use_ai: bool = None, use_lm_signals: bool = None) -> dict:
+def analyze_text(text: str, use_ai: Optional[bool] = None, use_lm_signals: Optional[bool] = None) -> dict:
     """Analyze text for AI-generated content patterns.
 
     Returns sentence-level scores and an overall AI probability score.
@@ -24,7 +25,7 @@ def analyze_text(text: str, use_ai: bool = None, use_lm_signals: bool = None) ->
 
 
 @mcp.tool()
-def rewrite_text(text: str, voice_profile_id: int = None, use_ai: bool = None) -> dict:
+def rewrite_text(text: str, voice_profile_id: Optional[int] = None, use_ai: Optional[bool] = None) -> dict:
     """Rewrite AI-flagged text to sound more human.
 
     Uses the specified voice profile for style guidance.
@@ -36,7 +37,7 @@ def rewrite_text(text: str, voice_profile_id: int = None, use_ai: bool = None) -
 
 
 @mcp.tool()
-def get_score(text: str, use_lm_signals: bool = None) -> dict:
+def get_score(text: str, use_lm_signals: Optional[bool] = None) -> dict:
     """Quick AI detection score for a block of text (heuristics only).
 
     Returns overall_score (0-100, higher = more likely AI),
@@ -54,7 +55,7 @@ def get_score(text: str, use_lm_signals: bool = None) -> dict:
 
 
 @mcp.tool()
-def check_voice(text: str, voice_profile_id: int = None) -> dict:
+def check_voice(text: str, voice_profile_id: Optional[int] = None) -> dict:
     """Check text against a voice profile for anti-AI pattern compliance.
 
     Returns violations found and suggestions for improvement.
@@ -113,7 +114,7 @@ def get_style_guide() -> dict:
 
 
 @mcp.tool()
-def get_voice_style_prompt(baseline_id: int = None, overlay_ids: list[int] = None) -> dict:
+def get_voice_style_prompt(baseline_id: Optional[int] = None, overlay_ids: Optional[list[int]] = None) -> dict:
     """Get the voice style prompt for injection into other tools.
 
     Returns the exact prompt string sent to Claude during voice rewrites —
@@ -213,7 +214,7 @@ def list_voice_profiles() -> list:
 
 
 @mcp.tool()
-def set_active_profile(baseline_id: int, overlay_ids: list[int] = None) -> dict:
+def set_active_profile(baseline_id: int, overlay_ids: Optional[list[int]] = None) -> dict:
     """Set the active voice profile stack (baseline + overlays).
 
     baseline_id: ID of the profile to use as the baseline.
@@ -505,7 +506,7 @@ def parse_voice_text(profile_id: int, text: str, filename: str = "Untitled", use
 
 
 @mcp.tool()
-def list_documents(purpose: str = "analysis", older_than_days: int = None) -> dict:
+def list_documents(purpose: str = "analysis", older_than_days: Optional[int] = None) -> dict:
     """List documents for management. Filterable by purpose and age."""
     from db import query_all, query_one
     conditions = ["purpose = %s"]
