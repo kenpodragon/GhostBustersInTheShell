@@ -55,12 +55,38 @@ export default function AnalysisReport({ data, boundaries }: AnalysisReportProps
         )}
 
         {/* RoBERTa Neural Classifier */}
-        <div className={`analysis-report__roberta ${(data as any)._roberta_available ? '' : 'analysis-report__roberta--offline'}`}>
+        <div className={`analysis-report__roberta ${data._roberta_available ? '' : 'analysis-report__roberta--offline'}`}>
           <div className="analysis-report__roberta-header">Neural Classifier</div>
-          {(data as any)._roberta_available ? (
-            <div className="analysis-report__roberta-score">
-              <span className="score-value">{((data as any)._roberta_score ?? 0).toFixed(1)}% AI</span>
-            </div>
+          {data._roberta_available ? (
+            <>
+              <div className="analysis-report__roberta-score">
+                <span className="score-value">{(data._roberta_score ?? 0).toFixed(1)}% AI</span>
+                {data._roberta_bucket_label && (
+                  <span className={`analysis-report__roberta-badge analysis-report__roberta-badge--${data._roberta_bucket_label}`}>
+                    {data._roberta_bucket_label}
+                  </span>
+                )}
+              </div>
+              {data._roberta_bucket_probs && (
+                <div className="analysis-report__roberta-buckets">
+                  {['human', 'light-ai', 'significant-ai', 'heavy-ai'].map((bucket) => {
+                    const prob = data._roberta_bucket_probs![bucket] ?? 0
+                    return (
+                      <div key={bucket} className="analysis-report__roberta-bucket">
+                        <span className="analysis-report__roberta-bucket-label">{bucket}</span>
+                        <div className="analysis-report__roberta-bucket-bar">
+                          <div
+                            className={`analysis-report__roberta-bucket-fill analysis-report__roberta-bucket-fill--${bucket}`}
+                            style={{ width: `${Math.max(prob * 100, 1)}%` }}
+                          />
+                        </div>
+                        <span className="analysis-report__roberta-bucket-value">{(prob * 100).toFixed(1)}%</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </>
           ) : (
             <div className="analysis-report__roberta-offline">offline</div>
           )}

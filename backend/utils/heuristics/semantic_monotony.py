@@ -10,7 +10,7 @@ from collections import Counter
 from utils.embedding_client import get_embedding_client
 
 MIN_SENTENCES = 4
-THRESHOLD = 0.75          # neural embedding threshold
+THRESHOLD = 0.32          # neural embedding threshold (calibrated: human max 0.28, AI min 0.30, 0.32 for margin)
 THRESHOLD_TFIDF = 0.12    # TF-IDF fallback threshold (IDF penalizes shared terms, so values are lower)
 MAX_SCORE = 40
 

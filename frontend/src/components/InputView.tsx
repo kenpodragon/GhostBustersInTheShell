@@ -132,6 +132,12 @@ export default function InputView() {
         _ai_reasoning: data._ai_reasoning || undefined,
         _ai_score: data._ai_score || undefined,
         _analysis_mode: data._analysis_mode || undefined,
+        _roberta_available: data._roberta_available || false,
+        _roberta_score: data._roberta_score ?? undefined,
+        _roberta_label: data._roberta_label || undefined,
+        _roberta_bucket_label: data._roberta_bucket_label || undefined,
+        _roberta_bucket_probs: data._roberta_bucket_probs || undefined,
+        _roberta_chunks: data._roberta_chunks || undefined,
       })
     } catch (e: any) {
       setError(e.message)
@@ -187,6 +193,9 @@ export default function InputView() {
             confidence: analyzeData.confidence || [0, 0],
             genre: analyzeData.genre || 'general',
             signal_count: analyzeData.signal_count || 0,
+            _roberta_available: analyzeData._roberta_available || false,
+            _roberta_score: analyzeData._roberta_score ?? undefined,
+            _roberta_chunks: analyzeData._roberta_chunks || undefined,
           })
         }
       } catch { /* analysis failed, text is still there */ }
@@ -249,6 +258,9 @@ export default function InputView() {
             confidence: analyzeData.confidence || [0, 0],
             genre: analyzeData.genre || 'general',
             signal_count: analyzeData.signal_count || 0,
+            _roberta_available: analyzeData._roberta_available || false,
+            _roberta_score: analyzeData._roberta_score ?? undefined,
+            _roberta_chunks: analyzeData._roberta_chunks || undefined,
           })
         }
       } catch { /* ignore */ }

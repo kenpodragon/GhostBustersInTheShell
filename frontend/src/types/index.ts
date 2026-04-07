@@ -327,11 +327,13 @@ export interface ScoreMath {
   genre_dampening: number
   raw_composite: number
   final_score: number
-  // Combined mode fields (present when AI+heuristic)
+  // Combined mode fields (present when AI+heuristic and/or RoBERTa)
   ai_score?: number
   ai_weight?: number
   heuristic_final?: number
   heuristic_weight?: number
+  roberta_score?: number
+  roberta_weight?: number
 }
 
 export interface EnrichedTiers {
@@ -373,7 +375,10 @@ export interface EnrichedAnalyzeResponse {
   _analysis_mode?: string
   _roberta_score?: number
   _roberta_available?: boolean
-  _roberta_chunks?: Array<{ text: string; ai_probability: number }>
+  _roberta_label?: string
+  _roberta_bucket_label?: string
+  _roberta_bucket_probs?: Record<string, number>
+  _roberta_chunks?: Array<{ text: string; ai_probability: number; bucket_label?: string; bucket_probs?: Record<string, number> }>
 }
 
 export interface ClassificationBoundaries {

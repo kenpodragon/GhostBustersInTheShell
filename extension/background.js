@@ -44,6 +44,9 @@ chrome.runtime.onStartup.addListener(async () => {
   await checkHealth();
 });
 
+// Open side panel when extension icon is clicked
+chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
+
 // Respond to messages from popup
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === 'getConfig') {

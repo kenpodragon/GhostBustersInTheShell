@@ -25,9 +25,8 @@
 }
 
 body {
-  width: 400px;
+  width: 100%;
   min-height: 200px;
-  max-height: 580px;
   overflow-y: auto;
   font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
   font-size: 0.8rem;
@@ -124,6 +123,10 @@ body {
 
 .icon-btn:hover {
   color: var(--teal-primary);
+}
+
+.close-btn:hover {
+  color: var(--score-critical);
 }
 
 /* Mode Toggle */

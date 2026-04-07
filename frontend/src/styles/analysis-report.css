@@ -231,6 +231,10 @@
   color: var(--score-critical);
 }
 
+.score-math-expander__row--roberta {
+  color: var(--accent-purple, #9b59b6);
+}
+
 .score-math-expander__row--total {
   font-weight: 700;
   color: var(--text-primary);
@@ -521,6 +525,104 @@
   font-size: 1.1rem;
   font-weight: bold;
   font-family: monospace;
+}
+
+.analysis-report__roberta-score {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.analysis-report__roberta-badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.analysis-report__roberta-badge--human {
+  color: var(--score-low, #4ecdc4);
+  border: 1px solid var(--score-low, #4ecdc4);
+  background: rgba(78, 205, 196, 0.1);
+}
+
+.analysis-report__roberta-badge--light-ai {
+  color: var(--score-medium, #ffd166);
+  border: 1px solid var(--score-medium, #ffd166);
+  background: rgba(255, 209, 102, 0.1);
+}
+
+.analysis-report__roberta-badge--significant-ai {
+  color: #e67e22;
+  border: 1px solid #e67e22;
+  background: rgba(230, 126, 34, 0.1);
+}
+
+.analysis-report__roberta-badge--heavy-ai {
+  color: var(--score-critical, #ff3366);
+  border: 1px solid var(--score-critical, #ff3366);
+  background: rgba(255, 51, 102, 0.1);
+}
+
+.analysis-report__roberta-buckets {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.analysis-report__roberta-bucket {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.7rem;
+}
+
+.analysis-report__roberta-bucket-label {
+  width: 85px;
+  text-align: right;
+  color: var(--text-muted, #8892a4);
+  flex-shrink: 0;
+}
+
+.analysis-report__roberta-bucket-bar {
+  flex: 1;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.analysis-report__roberta-bucket-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+.analysis-report__roberta-bucket-fill--human {
+  background: var(--score-low, #4ecdc4);
+}
+
+.analysis-report__roberta-bucket-fill--light-ai {
+  background: var(--score-medium, #ffd166);
+}
+
+.analysis-report__roberta-bucket-fill--significant-ai {
+  background: #e67e22;
+}
+
+.analysis-report__roberta-bucket-fill--heavy-ai {
+  background: var(--score-critical, #ff3366);
+}
+
+.analysis-report__roberta-bucket-value {
+  width: 40px;
+  text-align: right;
+  font-family: monospace;
+  color: var(--text-muted, #8892a4);
+  flex-shrink: 0;
 }
 
 .analysis-report__roberta-offline {

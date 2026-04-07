@@ -187,8 +187,15 @@ def route_analysis(text: str, use_ai: bool = None, use_lm_signals: bool = False)
                 tiers["score_math"] = dict(tiers["score_math"])
                 tiers["score_math"]["heuristic_final"] = tiers["score_math"]["final_score"]
                 tiers["score_math"]["ai_score"] = round(ai_score, 1)
-                tiers["score_math"]["ai_weight"] = rules_config.pipeline.get("ai_weight", 0.6)
-                tiers["score_math"]["heuristic_weight"] = rules_config.pipeline.get("heuristic_weight", 0.4)
+                if roberta_score is not None:
+                    # Triple blend weights
+                    tiers["score_math"]["ai_weight"] = 0.35
+                    tiers["score_math"]["heuristic_weight"] = 0.35
+                    tiers["score_math"]["roberta_score"] = round(roberta_score, 1)
+                    tiers["score_math"]["roberta_weight"] = 0.30
+                else:
+                    tiers["score_math"]["ai_weight"] = rules_config.pipeline.get("ai_weight", 0.6)
+                    tiers["score_math"]["heuristic_weight"] = rules_config.pipeline.get("heuristic_weight", 0.4)
                 tiers["score_math"]["final_score"] = combined_score
             result["tiers"] = tiers
         # Reclassify with combined score
@@ -200,6 +207,14 @@ def route_analysis(text: str, use_ai: bool = None, use_lm_signals: bool = False)
             combined_score = round(heuristic_score * 0.60 + roberta_score * 0.40, 1)
             heuristic_result["overall_score"] = combined_score
             heuristic_result["classification"] = classify_category(heuristic_result)
+            # Update score_math with RoBERTa blend
+            if "tiers" in heuristic_result and "score_math" in heuristic_result["tiers"]:
+                sm = heuristic_result["tiers"]["score_math"]
+                sm["heuristic_final"] = sm["final_score"]
+                sm["heuristic_weight"] = 0.60
+                sm["roberta_score"] = round(roberta_score, 1)
+                sm["roberta_weight"] = 0.40
+                sm["final_score"] = combined_score
         heuristic_result["_analysis_mode"] = "heuristic"
         result = heuristic_result
 
@@ -207,7 +222,22 @@ def route_analysis(text: str, use_ai: bool = None, use_lm_signals: bool = False)
     result["_roberta_available"] = roberta_score is not None
     if roberta_score is not None:
         result["_roberta_score"] = round(roberta_score, 1)
-        result["_roberta_chunks"] = roberta_result.get("chunks", [])
+        result["_roberta_label"] = roberta_result.get("label", "")
+        chunks = roberta_result.get("chunks", [])
+        result["_roberta_chunks"] = chunks
+        # Aggregate bucket_probs across chunks (mean)
+        if chunks:
+            all_buckets = [c.get("bucket_probs", {}) for c in chunks if "bucket_probs" in c]
+            if all_buckets:
+                keys = all_buckets[0].keys()
+                result["_roberta_bucket_probs"] = {
+                    k: round(sum(b.get(k, 0) for b in all_buckets) / len(all_buckets), 4)
+                    for k in keys
+                }
+                # Use the top-level bucket label (most common across chunks)
+                labels = [c.get("bucket_label", "") for c in chunks if "bucket_label" in c]
+                if labels:
+                    result["_roberta_bucket_label"] = max(set(labels), key=labels.count)
 
     return result
 

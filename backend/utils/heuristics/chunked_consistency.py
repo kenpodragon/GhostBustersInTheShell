@@ -11,7 +11,8 @@ detect_ai_patterns = None
 
 CHUNK_WORDS = 300
 MIN_CHUNKS = 3
-CV_THRESHOLD = 0.2
+CV_THRESHOLD = 0.25
+MIN_MEAN_SCORE = 25  # only flag uniform scores when mean is elevated (human tech blogs score 20-25)
 MAX_SCORE = 35
 
 
@@ -78,8 +79,11 @@ def check_chunked_consistency(text: str) -> tuple[float, list[dict]]:
         chunk_scores.append(result.get("overall_score", 0))
 
     cv = _coefficient_of_variation(chunk_scores)
+    mean_score = sum(chunk_scores) / len(chunk_scores)
 
-    if cv >= CV_THRESHOLD:
+    # Low CV is only suspicious when chunk scores are elevated.
+    # Human text with uniformly low scores (10-14) also has low CV.
+    if cv >= CV_THRESHOLD or mean_score < MIN_MEAN_SCORE:
         return 0, []
 
     score_ratio = 1.0 - (cv / CV_THRESHOLD)
@@ -87,8 +91,6 @@ def check_chunked_consistency(text: str) -> tuple[float, list[dict]]:
 
     if score <= 0:
         return 0, []
-
-    mean_score = sum(chunk_scores) / len(chunk_scores)
     return score, [{
         "pattern": "chunked_consistency",
         "detail": f"Score CV {cv:.3f} across {len(chunks)} chunks (mean {mean_score:.1f}) — suspiciously uniform detection scores"

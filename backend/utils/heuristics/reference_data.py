@@ -155,8 +155,11 @@ HEURISTIC_WEIGHTS = {
     "zipf_deviation_v2": 0.0,           # C1: HARMFUL — fires more on human (-2.3 disc)
     "mattr_v2": 0.0,                    # C2: no discrimination
     "ttr_variance": 0.0,                # C3: no discrimination
-    # Pangram-inspired heuristics (Phase 6) — disabled until calibrated
-    "semantic_monotony": 0.0,
-    "chunked_consistency": 0.0,
-    "model_fingerprint": 0.0,
+    # Pangram-inspired heuristics (Phase 6) — calibrated 2026-04-07
+    # semantic_monotony: threshold 0.30 — perfect separation (0/15 human FP, 3/3 AI TP)
+    "semantic_monotony": 0.8,
+    # chunked_consistency: CV<0.25 + mean>25 gate + 3 chunks min — long docs only
+    "chunked_consistency": 0.4,
+    # model_fingerprint: fires 50% AI (mean 33.8) vs 23% human (mean 17.1)
+    "model_fingerprint": 0.7,
 }

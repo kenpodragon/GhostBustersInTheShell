@@ -6,11 +6,51 @@ let currentMode = 'scan';
 let lastAnalysis = null;
 let lastText = null;
 
+// --- State Persistence ---
+
+async function saveState() {
+  await chrome.storage.local.set({
+    popupState: {
+      text: document.getElementById('text-input').value,
+      mode: currentMode,
+      lastAnalysis,
+      lastText,
+      outputText: document.getElementById('text-output').value,
+      hasResults: document.getElementById('results-section').style.display !== 'none',
+      hasOutput: document.getElementById('output-section').style.display !== 'none',
+    }
+  });
+}
+
+async function restoreState() {
+  const { popupState } = await chrome.storage.local.get('popupState');
+  if (!popupState) return;
+
+  if (popupState.mode && popupState.mode !== currentMode) {
+    switchMode(popupState.mode);
+  }
+  if (popupState.text) {
+    document.getElementById('text-input').value = popupState.text;
+  }
+  if (popupState.lastAnalysis) {
+    lastAnalysis = popupState.lastAnalysis;
+    lastText = popupState.lastText;
+    displayResults(lastAnalysis);
+  }
+  if (popupState.outputText) {
+    document.getElementById('text-output').value = popupState.outputText;
+    if (popupState.hasOutput) {
+      document.getElementById('output-section').style.display = 'block';
+    }
+  }
+}
+
 // --- Init ---
 
 document.addEventListener('DOMContentLoaded', async () => {
   await init();
   bindEvents();
+  await restoreState();
 });
 
 async function init() {
@@ -30,6 +70,12 @@ async function init() {
   // Options button
   document.getElementById('options-btn').addEventListener('click', () => {
     chrome.runtime.openOptionsPage();
+  });
+
+  // Close button — clears saved state and closes
+  document.getElementById('close-btn').addEventListener('click', async () => {
+    await chrome.storage.local.remove('popupState');
+    window.close();
   });
 
   // Check backend health
@@ -193,6 +239,7 @@ async function handleAnalyze() {
     lastAnalysis = result;
     lastText = text;
     displayResults(result);
+    await saveState();
   } catch (err) {
     alert('Analysis failed: ' + err.message);
   } finally {
@@ -286,6 +333,7 @@ async function handleGenerate() {
     document.getElementById('text-input').value = generated;
     switchMode('scan');
     await handleAnalyze();
+    await saveState();
   } catch (err) {
     alert('Generation failed: ' + err.message);
   } finally {
@@ -328,6 +376,7 @@ async function handleRewrite() {
     // Auto-analyze the rewritten text
     document.getElementById('text-input').value = rewritten;
     await handleAnalyze();
+    await saveState();
   } catch (err) {
     alert('Rewrite failed: ' + err.message);
   } finally {
@@ -402,6 +451,7 @@ async function handleScanPage() {
     if (currentMode !== 'scan') {
       switchMode('scan');
     }
+    await saveState();
   } catch (err) {
     alert('Scan failed: ' + err.message);
   } finally {
