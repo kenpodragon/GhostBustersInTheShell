@@ -1,7 +1,16 @@
 """Claude CLI adapter using `claude -p` for non-interactive prompts."""
+import os
 import subprocess
 import json
 import re
+
+# Isolated cwd + empty plugin dir: stops the CLI from auto-loading ambient
+# CLAUDE.md files, user settings, and marketplace plugins. Without these,
+# each invocation loads ~17K cache tokens and runs 10-100x slower.
+_CLI_CWD = "/tmp/cli_cwd"
+_CLI_EMPTY_PLUGINS = "/tmp/empty_plugins"
+os.makedirs(_CLI_CWD, exist_ok=True)
+os.makedirs(_CLI_EMPTY_PLUGINS, exist_ok=True)
 
 from .base import AIProvider
 from utils.rules_config import rules_config
@@ -62,10 +71,19 @@ class ClaudeProvider(AIProvider):
     def _run_cli(self, prompt: str) -> dict:
         """Run claude -p <prompt> --output-format json and parse the result."""
         try:
-            cmd = [self.cli_command, "-p", prompt, "--output-format", "json"]
+            cmd = [
+                self.cli_command, "-p", prompt,
+                "--output-format", "json",
+                "--model", "haiku",
+                "--strict-mcp-config",
+                "--settings", "{}",
+                "--plugin-dir", _CLI_EMPTY_PLUGINS,
+                "--no-session-persistence",
+            ]
             result = subprocess.run(
                 cmd,
-                capture_output=True, text=True, timeout=600,
+                capture_output=True, text=True, timeout=120,
+                cwd=_CLI_CWD,
             )
             if result.returncode != 0:
                 raise RuntimeError(f"Claude CLI error: {result.stderr.strip()}")
@@ -123,7 +141,14 @@ class ClaudeProvider(AIProvider):
 
         result = self._run_cli(prompt)
         if "rewritten_text" not in result:
-            raise RuntimeError("Claude rewrite missing key: rewritten_text")
+            for alt_key in ("text", "output", "rewrite", "result", "content"):
+                if alt_key in result and isinstance(result[alt_key], str):
+                    result["rewritten_text"] = result[alt_key]
+                    break
+            else:
+                if isinstance(result, str):
+                    return {"rewritten_text": result, "changes": []}
+                raise RuntimeError(f"Claude rewrite missing key: rewritten_text (got keys: {list(result.keys()) if isinstance(result, dict) else type(result).__name__})")
         return result
 
     def health_check(self) -> dict:

@@ -6,6 +6,8 @@ local Python-based analysis if AI is unavailable.
 Runtime state: AI can be auto-disabled on token/rate errors and
 re-enabled on next startup if the user's saved preference is 'on'.
 """
+import os
+
 from config import config
 from utils.rules_config import rules_config
 from utils.embedding_client import get_embedding_client
@@ -386,7 +388,10 @@ def route_rewrite(text: str, voice_profile_id: int = None, use_ai: bool = None, 
         ngram_overlap_val, ngram_label, ngram_warning = compute_ngram_overlap(text, rewritten_text)
 
         # --- Pass 2: Detection fix (conditional) ---
-        if after_score > threshold or divergence_score < 0.15:
+        # Off by default: Pass 2 roughly doubles latency for a small score delta.
+        # Set GBITS_ENABLE_PASS2=1 to opt in.
+        _pass2_enabled = os.environ.get("GBITS_ENABLE_PASS2", "").lower() in ("1", "true", "yes")
+        if _pass2_enabled and (after_score > threshold or divergence_score < 0.15):
             brief_pass2 = generate_style_brief(
                 detection_result=recheck,
                 model=model_name,

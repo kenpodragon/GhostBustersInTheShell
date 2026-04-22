@@ -22,6 +22,10 @@ RUN python -c "import nltk; nltk.download('vader_lexicon', download_dir='/usr/lo
 
 COPY . .
 
+# Isolated cwd + empty plugin-dir for Claude CLI calls: stops CLAUDE.md,
+# user settings, and marketplace plugins from auto-loading on each call.
+RUN mkdir -p /tmp/cli_cwd /tmp/empty_plugins
+
 EXPOSE 8066 8067
 
 CMD ["python", "app.py"]
